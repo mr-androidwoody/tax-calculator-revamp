@@ -242,18 +242,14 @@
     set('woodyCash', sumBy('p1', 'Cash'));
     set('heidiCash', sumBy('p2', 'Cash'));
 
-    // Plain GIA only (accounts without a rate); interest-bearing GIA handled separately
-    set('woodyGIA', state.portfolioAccounts
-      .filter(a => a.owner === 'p1' && a.wrapper === 'GIA' && !a.rate)
-      .reduce((s, a) => s + (a.value || 0), 0));
-    set('heidiGIA', state.portfolioAccounts
-      .filter(a => a.owner === 'p2' && a.wrapper === 'GIA' && !a.rate)
-      .reduce((s, a) => s + (a.value || 0), 0));
+    // ALL GIA goes into woodyGIA/heidiGIA (matching monolith behaviour).
+    // Interest-bearing accounts (rate set) are tracked separately for the
+    // sidebar banner only — the engine treats them as plain GIA growth for now.
+    set('woodyGIA', sumBy('p1', 'GIA'));
+    set('heidiGIA', sumBy('p2', 'GIA'));
 
-    // Build interest accounts list for engine (owner mapped to display name)
-    state.interestAccounts = state.portfolioAccounts
-      .filter(a => a.wrapper === 'GIA' && a.rate)
-      .map(a => ({ ...a, balance: a.value || 0, owner: a.owner === 'p1' ? p1name : p2name }));
+    // Interest accounts: empty for now — engine matches monolith ([] = no separate interest draw)
+    state.interestAccounts = [];
 
     // Banner
     const total  = state.portfolioAccounts.reduce((s, a) => s + (a.value || 0), 0);
