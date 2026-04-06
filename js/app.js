@@ -50,6 +50,24 @@
     presetSelect.value = preset;
   }
 
+  function syncGrowthPresetToValue() {
+    const growthInput = document.getElementById('growth');
+    const presetSelect = document.getElementById('growthPreset');
+    if (!growthInput || !presetSelect) return;
+
+    const value = parseFloat(growthInput.value);
+
+    if (value === 3.0) {
+      presetSelect.value = 'defensive';
+    } else if (value === 3.5) {
+      presetSelect.value = 'baseline';
+    } else if (value === 4.5) {
+      presetSelect.value = 'optimistic';
+    } else {
+      presetSelect.value = 'custom';
+    }
+  }    
+
   function handleInputOrChange(target) {
     if (target.matches('[data-action="setup-summary-input"]')) {
       refreshSetupSummary();
@@ -65,12 +83,12 @@
     }
     if (target.id === 'growth') {
       syncGrowthPresetToValue();
-      return;
+     return;
     }
     if (target.id === 'bniEnabled') {
       document.getElementById('bni-fields').style.display = target.checked ? '' : 'none';
     }
-  }   
+  } 
 
   function refreshSetupSummary() {
     R.refreshOwnerOptions(state.portfolioAccounts, ownerNames());
@@ -300,33 +318,6 @@
       case 'set-tab': setTab(actionEl.getAttribute('data-value'), actionEl); break;
       default: break;
     }
-  }
-
-  function handleInputOrChange(target) {
-    if (target.matches('[data-action="setup-summary-input"]')) {
-      refreshSetupSummary();
-      return;
-    }
-    if (target.hasAttribute('data-account-id') && target.hasAttribute('data-field')) {
-      updateAccount(parseInt(target.getAttribute('data-account-id'), 10), target.getAttribute('data-field'), target.value);
-      return;
-    }
-    if (target.id === 'bniEnabled') {
-      document.getElementById('bni-fields').style.display = target.checked ? '' : 'none';
-    }
-  }
-
-  function initCurrencyFocusHandlers() {
-    document.addEventListener('focusin', (e) => {
-      if (!e.target.matches('.currency-input')) return;
-      if (String(e.target.value).trim() === '') return;
-      const parsed = D.parseCurrency(e.target.value);
-      e.target.value = String(Math.round(parsed));
-    });
-    document.addEventListener('focusout', (e) => {
-      if (!e.target.matches('.currency-input')) return;
-      R.applyCurrencyFormattingToInput(e.target);
-    });
   }
 
   function init() {
