@@ -1,1 +1,363 @@
+<!-- Fixed: no self-navigation; in-page view switching only -->
+<!DOCTYPE html>
 
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>rUK Retirement Tax Calculator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="css/styles.css" rel="stylesheet"/></head>
+<body>
+<!-- ═══════════════════════════════════════════
+     SETUP PAGE
+═══════════════════════════════════════════ -->
+<div id="setup-page">
+<div class="setup-header">
+<div>
+<h1>Portfolio setup</h1>
+<p>Add the accounts you hold, their current values, and how they're invested. Once done, continue to the tax calculator.</p>
+</div>
+<div style="display:flex;gap:8px;align-items:center">
+<button class="btn-save" data-action="preload-setup" type="button">⬇ Preload</button>
+<button class="btn-continue" data-action="continue-to-main" type="button">Continue to calculator →</button>
+</div>
+</div>
+<!-- Summary panels -->
+<div class="setup-grid">
+<!-- People -->
+<div class="setup-panel">
+<div class="setup-panel-title">People</div>
+<div class="setup-panel-sub">Name the people in this plan.</div>
+<div class="people-grid">
+<div>
+<label>Person 1</label>
+<input data-action="setup-summary-input" id="sp-p1name" type="text" value="Woody"/>
+</div>
+<div>
+<label>Current age</label>
+<input data-action="setup-summary-input" id="sp-p1age" type="number" value="58"/>
+</div>
+<div>
+<label>Person 2</label>
+<input data-action="setup-summary-input" id="sp-p2name" type="text" value="Heidi"/>
+</div>
+<div>
+<label>Current age</label>
+<input data-action="setup-summary-input" id="sp-p2age" type="number" value="59"/>
+</div>
+</div>
+</div>
+<!-- Overall allocation -->
+<div class="setup-panel">
+<div class="setup-panel-title">Overall asset allocation</div>
+<div class="setup-panel-sub">Weighted asset mix across the whole portfolio.</div>
+<div id="alloc-summary">
+<div class="alloc-row"><span class="alloc-label">Equities</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:0%;background:#4472C4"></div></div><span class="alloc-pct">–</span></div>
+<div class="alloc-row"><span class="alloc-label">Bonds</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:0%;background:#70AD47"></div></div><span class="alloc-pct">–</span></div>
+<div class="alloc-row"><span class="alloc-label">Cashlike</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:0%;background:#FFC000"></div></div><span class="alloc-pct">–</span></div>
+<div class="alloc-row"><span class="alloc-label">Cash</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:0%;background:#B0B0B0"></div></div><span class="alloc-pct">–</span></div>
+<div class="alloc-row" style="margin-top:4px;border:none">
+<span class="alloc-label">Total allocation</span>
+<span class="alloc-balanced" id="alloc-total-label">–</span>
+</div>
+</div>
+</div>
+<!-- Wrapper totals -->
+<div class="setup-panel">
+<div class="setup-panel-title">Wrapper totals</div>
+<div class="setup-panel-sub">How your investments are split by wrapper.</div>
+<div id="wrapper-summary">
+<div class="wrapper-row"><span class="wrapper-name">ISA</span><span class="wrapper-val" id="wt-ISA">£0</span></div>
+<div class="wrapper-row"><span class="wrapper-name">SIPP</span><span class="wrapper-val" id="wt-SIPP">£0</span></div>
+<div class="wrapper-row"><span class="wrapper-name">GIA</span><span class="wrapper-val" id="wt-GIA">£0</span></div>
+<div class="wrapper-row"><span class="wrapper-name">Cash</span><span class="wrapper-val" id="wt-Cash">£0</span></div>
+</div>
+</div>
+</div>
+<!-- Accounts table -->
+<div class="accounts-panel">
+<div class="accounts-toolbar">
+<div class="accounts-toolbar-left">
+<button class="btn-add" data-action="add-account" type="button">+ Add account</button>
+<div>
+<div class="total-label">Total portfolio</div>
+<div class="total-portfolio" id="sp-total">£0</div>
+</div>
+</div>
+<div style="display:flex;gap:8px">
+<button class="btn-save" data-action="preload-setup" type="button">⬇ Preload</button>
+<button class="btn-continue" data-action="continue-to-main" type="button">Continue to calculator →</button>
+</div>
+</div>
+<table class="acct-table">
+<thead>
+<tr>
+<th class="col-name">Account name</th>
+<th class="col-wrap">Wrapper</th>
+<th class="col-owner">Owner</th>
+<th class="col-value right">Value (£)</th>
+<th class="col-alloc right">Equities %</th>
+<th class="col-alloc right">Bonds %</th>
+<th class="col-alloc right">Cashlike %</th>
+<th class="col-alloc right">Cash %</th>
+<th class="col-rate right">Rate %</th>
+<th class="col-draw right">Mo. draw £</th>
+<th class="col-total">Total</th>
+<th class="col-action"></th>
+</tr>
+</thead>
+<tbody id="acct-tbody"></tbody>
+</table>
+</div>
+</div>
+<!-- ═══════════════════════════════════════════
+     MAIN APP (hidden until Continue)
+═══════════════════════════════════════════ -->
+<div id="main-app" style="display:none">
+<div class="app">
+<aside class="sidebar">
+<div class="sidebar-header">
+<h1>rUK Retirement Tax Calculator</h1>
+<div style="display:flex;gap:6px">
+<button class="preload-btn" data-action="back-to-setup" type="button">← Setup</button>
+<button class="preload-btn" data-action="preload-main" type="button">⬇ Preload</button>
+</div>
+</div>
+<div style="padding:0.5rem 1rem 0.6rem;border-bottom:2px solid #e0e8ff;background:#f5f8ff;flex-shrink:0">
+<button class="run-btn" data-action="run-projection" type="button">▶ Run projection</button>
+</div>
+<div class="sidebar-body">
+<!-- People — always open -->
+<div class="section">
+<div class="section-title" style="cursor:default">People</div>
+<div class="section-body">
+<div class="two-col">
+<div class="field"><label>Woody – birth year</label><input id="woodyDOB" placeholder="e.g. 1968" type="number"/></div>
+<div class="field"><label>Heidi – birth year</label><input id="heidiDOB" placeholder="e.g. 1967" type="number"/></div>
+</div>
+<div class="two-col">
+<div class="field"><label>Projection start year</label><input id="startYear" placeholder="e.g. 2026" type="number"/></div>
+<div class="field"><label>Projection end year</label><input id="endYear" placeholder="e.g. 2060" type="number"/></div>
+</div>
+</div>
+</div>
+<div class="section" data-collapsible="">
+<div class="section-title" data-action="toggle-section">Spending target<span class="section-chevron">▸</span></div>
+<div class="section-body collapsed">
+<div class="field"><label>Annual household spending (£)</label><input id="spending" placeholder="e.g. 45,000" type="text"/></div>
+</div>
+</div>
+<div class="section" data-collapsible="">
+<div class="section-title" data-action="toggle-section">Spending step-down at 75<span class="section-chevron">▸</span></div>
+<div class="section-body collapsed">
+<div class="field">
+<label>Reduce spending from Woody's age 75 by</label>
+<select id="stepDownPct">
+<option value="0">No step-down</option>
+<option value="5">5%</option>
+<option value="10">10%</option>
+<option value="15">15%</option>
+<option value="20">20%</option>
+<option value="25">25%</option>
+</select>
+</div>
+<div class="hint">Reduces the gross spending target from the year Woody turns 75. Inflation-uprating still applies to the reduced base.</div>
+</div>
+</div>
+<div class="section" data-collapsible="">
+<div class="section-title" data-action="toggle-section">Heidi salary (employment income)<span class="section-chevron">▸</span></div>
+<div class="section-body collapsed">
+<div class="two-col">
+<div class="field"><label>Gross annual (£)</label><input id="heidiSalary" placeholder="e.g. 15,000" type="text"/></div>
+<div class="field"><label>Stop age</label><input id="heidiSalaryStopAge" placeholder="e.g. 63" type="number"/></div>
+</div>
+<div class="hint">Employment income is taxed as rUK non-savings income. Employee NI is now included until State Pension age.</div>
+</div>
+</div>
+<div class="section" data-collapsible="">
+<div class="section-title" data-action="toggle-section">State pension<span class="section-chevron">▸</span></div>
+<div class="section-body collapsed">
+<div class="subsection">Woody</div>
+<div class="two-col">
+<div class="field"><label>Start age</label><input id="woodySPAge" placeholder="e.g. 67" type="number"/></div>
+<div class="field"><label>Annual amount (£)</label><input id="woodySP" placeholder="e.g. 12,000" type="text"/></div>
+</div>
+<div class="subsection">Heidi</div>
+<div class="two-col">
+<div class="field"><label>Start age</label><input id="heidiSPAge" placeholder="e.g. 67" type="number"/></div>
+<div class="field"><label>Annual amount (£)</label><input id="heidiSP" placeholder="e.g. 12,547" type="text"/></div>
+</div>
+</div>
+</div>
+<div class="section" data-collapsible="">
+<div class="section-title" data-action="toggle-section">Cash holdings<span class="section-chevron">▸</span></div>
+<div class="section-body collapsed">
+<div class="two-col">
+<div class="field"><label>Woody cash (£)</label><input id="woodyCash" placeholder="e.g. 96,264" type="text"/></div>
+<div class="field"><label>Heidi cash (£)</label><input id="heidiCash" placeholder="e.g. 100" type="text"/></div>
+</div>
+<div class="hint">Cash earns no return and is not inflation-uprated</div>
+</div>
+</div>
+<div class="section" data-collapsible="">
+<div class="section-title" data-action="toggle-section">Interest-bearing accounts<span class="section-chevron">▸</span></div>
+<div class="section-body collapsed">
+<div class="hint" style="margin-bottom:6px">Set on setup page – accounts with a Rate % are drawn first (interest then principal) before wrapper order.</div>
+<div id="interest-accounts-banner" style="display:none"></div>
+</div>
+</div>
+<div class="section" data-collapsible="">
+<div class="section-title" data-action="toggle-section">Pension (SIPP) balances<span class="section-chevron">▸</span></div>
+<div class="section-body collapsed">
+<div class="two-col">
+<div class="field"><label>Woody (£)</label><input id="woodySIPP" placeholder="e.g. 450,000" type="text"/></div>
+<div class="field"><label>Heidi (£)</label><input id="heidiSIPP" placeholder="e.g. 200,000" type="text"/></div>
+</div>
+</div>
+</div>
+<div class="section" data-collapsible="">
+<div class="section-title" data-action="toggle-section">ISA balances<span class="section-chevron">▸</span></div>
+<div class="section-body collapsed">
+<div class="two-col">
+<div class="field"><label>Woody (£)</label><input id="woodyISA" placeholder="e.g. 250,000" type="text"/></div>
+<div class="field"><label>Heidi (£)</label><input id="heidiISA" placeholder="e.g. 150,000" type="text"/></div>
+</div>
+</div>
+</div>
+<div class="section" data-collapsible="">
+<div class="section-title" data-action="toggle-section">GIA balances (equity growth accounts)<span class="section-chevron">▸</span></div>
+<div class="section-body collapsed">
+<div class="two-col">
+<div class="field"><label>Woody (£)</label><input id="woodyGIA" placeholder="e.g. 154,000" type="text"/></div>
+<div class="field"><label>Heidi (£)</label><input id="heidiGIA" placeholder="e.g. 5,000" type="text"/></div>
+</div>
+</div>
+</div>
+<div class="section" data-collapsible="">
+<div class="section-title" data-action="toggle-section">Withdrawal order (1st → last)<span class="section-chevron">▸</span></div>
+<div class="section-body collapsed">
+<div class="subsection">Woody</div>
+<div class="order-row">
+<select id="woodyOrder1"><option value="GIA">GIA</option><option value="SIPP">SIPP</option><option value="ISA">ISA</option><option value="Cash">Cash</option></select>
+<select id="woodyOrder2"><option value="SIPP">SIPP</option><option value="GIA">GIA</option><option value="ISA">ISA</option><option value="Cash">Cash</option></select>
+<select id="woodyOrder3"><option value="ISA">ISA</option><option value="GIA">GIA</option><option value="SIPP">SIPP</option><option value="Cash">Cash</option></select>
+<select id="woodyOrder4"><option value="Cash">Cash</option><option value="GIA">GIA</option><option value="SIPP">SIPP</option><option value="ISA">ISA</option></select>
+</div>
+<div class="subsection" style="margin-top:0.5rem">Heidi</div>
+<div class="order-row">
+<select id="heidiOrder1"><option value="GIA">GIA</option><option value="SIPP">SIPP</option><option value="ISA">ISA</option><option value="Cash">Cash</option></select>
+<select id="heidiOrder2"><option value="SIPP">SIPP</option><option value="GIA">GIA</option><option value="ISA">ISA</option><option value="Cash">Cash</option></select>
+<select id="heidiOrder3"><option value="ISA">ISA</option><option value="GIA">GIA</option><option value="SIPP">SIPP</option><option value="Cash">Cash</option></select>
+<select id="heidiOrder4"><option value="Cash">Cash</option><option value="GIA">GIA</option><option value="SIPP">SIPP</option><option value="ISA">ISA</option></select>
+</div>
+<div class="hint" style="margin-top:6px">Interest-bearing accounts always drawn first (priority 1), then Cash (priority 2), then this order.</div>
+</div>
+</div>
+<div class="section" data-collapsible="">
+<div class="section-title" data-action="toggle-section">Growth &amp; inflation<span class="section-chevron">▸</span></div>
+<div class="section-body collapsed">
+<div class="two-col">
+<div class="field"><label>Portfolio growth (%/yr)</label><input id="growth" placeholder="e.g. 4" step="0.1" type="number" value="4"/></div>
+<div class="field"><label>Inflation (%/yr)</label><input id="inflation" placeholder="e.g. 2.5" step="0.1" type="number"/></div>
+</div>
+<div class="field" style="margin-top:0.6rem">
+<label>Tax threshold uprating</label>
+<div style="display:flex;flex-direction:column;gap:5px;margin-top:5px">
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#333;font-weight:400;cursor:pointer">
+<input checked="" id="thresholdFrozen" name="thresholdMode" style="width:auto;margin:0" type="radio" value="frozen"/> Frozen – fiscal drag applies
+            </label>
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#333;font-weight:400;cursor:pointer">
+<input id="thresholdFromYear" name="thresholdMode" style="width:auto;margin:0" type="radio" value="fromYear"/> Uprated from year
+              <input id="thresholdFromYearVal" max="2060" min="2026" style="width:64px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;font-size:12px" type="number" value="2028"/>
+</label>
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#333;font-weight:400;cursor:pointer">
+<input id="thresholdAlways" name="thresholdMode" style="width:auto;margin:0" type="radio" value="always"/> Always uprated with inflation
+            </label>
+</div>
+</div>
+<div class="hint">Uprating applies PA, basic-rate limit, higher-rate threshold, and CGT exempt amount.</div>
+</div>
+</div>
+<div class="section" data-collapsible="">
+<div class="section-title" data-action="toggle-section">Bed &amp; ISA – annual transfers<span class="section-chevron">▸</span></div>
+<div class="section-body collapsed">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+<input id="bniEnabled" style="width:auto;margin:0;cursor:pointer" type="checkbox"/>
+<label for="bniEnabled" style="font-size:12px;color:#333;margin:0;cursor:pointer;font-weight:500">Enable bed-and-ISA strategy</label>
+</div>
+<div id="bni-fields" style="display:none">
+<div class="subsection">Woody</div>
+<div class="field"><label>GIA → ISA (£/yr)</label><input id="bniWoodyGIA" placeholder="e.g. 20,000" type="text"/></div>
+<div class="subsection" style="margin-top:0.25rem">Heidi</div>
+<div class="field"><label>GIA → ISA (£/yr)</label><input id="bniHeidiGIA" placeholder="e.g. 5,000" type="text"/></div>
+<div class="hint" style="margin-top:6px">Draws from GIA (equity accounts) only. Each transfer capped at source balance and £20k ISA allowance per person per year. CGT on GIA crystallisation settled from cash first.</div>
+</div>
+</div>
+</div>
+<div style="padding:0.75rem 1rem 1rem;border-top:1px solid #f0f2f5">
+<button class="preload-btn" data-action="toggle-all-sections" id="expand-all-btn" style="width:100%;text-align:center">Expand all</button>
+</div>
+</div><!-- /.sidebar-body -->
+</aside>
+<main class="main">
+<div class="controls">
+<div>
+<span class="controls-label">Person</span>
+<div class="toggle-group" style="margin-top:4px">
+<button class="active" data-action="set-view" data-value="both">Both</button>
+<button data-action="set-view" data-value="woody">Woody</button>
+<button data-action="set-view" data-value="heidi">Heidi</button>
+</div>
+</div>
+<div>
+<span class="controls-label">Values</span>
+<div class="toggle-group" style="margin-top:4px">
+<button data-action="set-real" data-value="false">Nominal</button>
+<button class="active" data-action="set-real" data-value="true">Real</button>
+</div>
+</div>
+<div style="margin-left:auto">
+<span class="controls-label">View</span>
+<div class="toggle-group" style="margin-top:4px">
+<button class="active" data-action="set-tab" data-value="charts" id="tab-charts">Charts</button>
+<button data-action="set-tab" data-value="tables" id="tab-tables">Tables</button>
+</div>
+</div>
+</div>
+<div class="metrics">
+<div class="metric"><div class="metric-label">Total tax paid</div><div class="metric-value" id="m-tax">–</div></div>
+<div class="metric"><div class="metric-label">Avg effective rate</div><div class="metric-value" id="m-rate">–</div></div>
+<div class="metric"><div class="metric-label">Peak tax year</div><div class="metric-value" id="m-peak">–</div></div>
+<div class="metric"><div class="metric-label">Portfolio at end</div><div class="metric-value" id="m-port">–</div></div>
+</div>
+<div class="charts">
+<div class="chart-card">
+<h2>Sources of income</h2>
+<div class="chart-wrap"><canvas id="incomeChart"></canvas></div>
+<div class="split-legend" id="incomeLegend"></div>
+</div>
+<div class="chart-card">
+<h2>Tax paid &amp; effective rate</h2>
+<div class="chart-wrap"><canvas id="taxChart"></canvas></div>
+</div>
+<div class="chart-card">
+<h2>Wealth by type</h2>
+<div class="chart-wrap"><canvas id="wealthChart"></canvas></div>
+</div>
+</div>
+<div class="alerts" id="alerts-container"></div>
+<div id="tables-panel" style="display:none;flex-direction:column;gap:1rem;">
+<div class="chart-card">
+<h2>Tax by year</h2>
+<div style="overflow-x:auto"><table class="data-table" id="tax-table"></table></div>
+</div>
+<div class="chart-card">
+<h2>Portfolio values by year</h2>
+<div style="overflow-x:auto"><table class="data-table" id="wealth-table"></table></div>
+</div>
+</div>
+</main>
+</div><!-- /.app -->
+</div><!-- /#main-app -->
+<script defer="" src="js/data.js"></script><script defer="" src="js/calculator.js"></script><script defer="" src="js/render.js"></script><script defer="" src="js/app.js"></script></body></html>
