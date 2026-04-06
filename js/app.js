@@ -215,6 +215,36 @@
   }
 
   // ─────────────────────────────
+  // SIDEBAR NAME SYNC
+  // ─────────────────────────────
+  function updateSidebarNames() {
+    const p1 = safeValue('sp-p1name').trim() || 'Person 1';
+    const p2 = safeValue('sp-p2name').trim() || 'Person 2';
+
+    // [data-p1="suffix"] → "{p1} suffix"
+    document.querySelectorAll('[data-p1]').forEach(el => {
+      const suffix = el.getAttribute('data-p1');
+      el.textContent = suffix ? `${p1} ${suffix}` : p1;
+    });
+    document.querySelectorAll('[data-p2]').forEach(el => {
+      const suffix = el.getAttribute('data-p2');
+      el.textContent = suffix ? `${p2} ${suffix}` : p2;
+    });
+
+    // Step-down label and hint
+    document.querySelectorAll('[data-p1-stepdown]').forEach(el => {
+      el.textContent = `Reduce spending from ${p1}'s age 75 by`;
+    });
+    document.querySelectorAll('[data-p1-stepdown-hint]').forEach(el => {
+      el.textContent = `Reduces the gross spending target from the year ${p1} turns 75.`;
+    });
+
+    // View toggle buttons
+    document.querySelectorAll('[data-p1-btn]').forEach(el => { el.textContent = p1; });
+    document.querySelectorAll('[data-p2-btn]').forEach(el => { el.textContent = p2; });
+  }
+
+  // ─────────────────────────────
   // HANDOFF: setup → calculator
   // ─────────────────────────────
   function continueToMain() {
@@ -265,6 +295,8 @@
     banner.innerHTML = `✓ Portfolio loaded: ${nAccts} accounts, ${D.formatMoney(total)} total`;
 
     R.updateInterestAccountsBanner(state.interestAccounts, [p1name, p2name]);
+
+    updateSidebarNames();
 
     safeEl('setup-page').style.display = 'none';
     safeEl('main-app').style.display   = '';
@@ -425,6 +457,7 @@
       safeEl('sp-p2age').value = currentYear - Number(params.heidiDOB);
 
     showToast(`Loaded ${accounts.length} accounts from Excel ✓`);
+    updateSidebarNames();
   });
 
   // ─────────────────────────────
