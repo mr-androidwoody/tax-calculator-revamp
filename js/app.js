@@ -71,7 +71,43 @@
   }
 
   // ─────────────────────────────────────────────
-  // SETUP STATE (NEW)
+  // 🔴 CRITICAL FIX: DOM → STATE SYNC
+  // ─────────────────────────────────────────────
+  function syncAccountsFromDOM() {
+    const rows = document.querySelectorAll('#acct-tbody tr');
+
+    const updated = [];
+
+    rows.forEach((row) => {
+      const id = Number(row.id.replace('acct-row-', ''));
+
+      const get = (field) =>
+        row.querySelector(`[data-field="${field}"]`);
+
+      updated.push({
+        id,
+        name: get('name')?.value || '',
+        wrapper: get('wrapper')?.value || 'GIA',
+        owner: get('owner')?.value || 'p1',
+        value: D.parseCurrency(get('value')?.value || 0),
+        alloc: {
+          equities: Number(get('equities')?.value || 0),
+          bonds: Number(get('bonds')?.value || 0),
+          cashlike: Number(get('cashlike')?.value || 0),
+          cash: Number(get('cash')?.value || 0),
+        },
+        rate: get('rate')?.value ? Number(get('rate').value) : null,
+        monthlyDraw: get('monthlyDraw')?.value
+          ? D.parseCurrency(get('monthlyDraw').value)
+          : null,
+      });
+    });
+
+    state.portfolioAccounts = updated;
+  }
+
+  // ─────────────────────────────────────────────
+  // SETUP STATE
   // ─────────────────────────────────────────────
   function readSetupInputs() {
     return {
@@ -111,9 +147,17 @@
     refreshSetupSummary();
   }
 
+  // ─────────────────────────────────────────────
+  // SAVE / LOAD
+  // ─────────────────────────────────────────────
   function saveSetup() {
+    syncAccountsFromDOM(); // ← FIX
+
     const data = readSetupInputs();
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+    console.log('Saved setup:', data);
   }
 
   function loadSetup() {
@@ -172,25 +216,6 @@
   }
 
   // ─────────────────────────────────────────────
-  // CALCULATOR INPUT STRUCTURE (PREP ONLY)
-  // ─────────────────────────────────────────────
-  function readCalculatorInputs() {
-    return {
-      growth: getInputValue('growth'),
-      inflation: getInputValue('inflation'),
-      spending: getCurrencyValue('spending'),
-    };
-  }
-
-  function applyCalculatorInputs(data) {
-    if (!data) return;
-    if (data.growth != null) document.getElementById('growth').value = data.growth;
-    if (data.inflation != null) document.getElementById('inflation').value = data.inflation;
-    if (data.spending != null)
-      document.getElementById('spending').value = D.formatCurrency(data.spending);
-  }
-
-  // ─────────────────────────────────────────────
   // EVENT HANDLING
   // ─────────────────────────────────────────────
   document.addEventListener('click', (e) => {
@@ -198,21 +223,10 @@
 
     if (!action) return;
 
-    if (action === 'add-account') {
-      addAccount({});
-    }
-
-    if (action === 'remove-account') {
-      removeAccount(Number(e.target.dataset.accountId));
-    }
-
-    if (action === 'save-setup') {
-      saveSetup();
-    }
-
-    if (action === 'load-setup') {
-      loadSetup();
-    }
+    if (action === 'add-account') addAccount({});
+    if (action === 'remove-account') removeAccount(Number(e.target.dataset.accountId));
+    if (action === 'save-setup') saveSetup();
+    if (action === 'load-setup') loadSetup();
 
     if (action === 'continue-to-main') {
       document.getElementById('setup-page').style.display = 'none';
