@@ -81,46 +81,125 @@
   // ─────────────────────────────
   function readSetupInputs() {
     return {
-      version: 1,
+      version: 2,
       p2enabled: state.p2enabled,
       people: {
-        p1: { name: safeValue('sp-p1name').trim(), dob: safeNumber(safeValue('sp-p1dob')) },
-        p2: { name: safeValue('sp-p2name').trim(), dob: safeNumber(safeValue('sp-p2dob')) },
+        p1: {
+          name:          safeValue('sp-p1name').trim(),
+          dob:           safeNumber(safeValue('sp-p1dob')),
+          spAge:         safeValue('p1SPAge'),
+          sp:            safeValue('p1SP'),
+          salary:        safeValue('p1Salary'),
+          salaryStopAge: safeValue('p1SalaryStopAge'),
+        },
+        p2: {
+          name:          safeValue('sp-p2name').trim(),
+          dob:           safeNumber(safeValue('sp-p2dob')),
+          spAge:         safeValue('p2SPAge'),
+          sp:            safeValue('p2SP'),
+          salary:        safeValue('p2Salary'),
+          salaryStopAge: safeValue('p2SalaryStopAge'),
+        },
       },
       startYear: safeNumber(safeValue('sp-startYear')),
       endYear:   safeNumber(safeValue('sp-endYear')),
-      accounts: state.portfolioAccounts,
+      accounts:  state.portfolioAccounts,
+      assumptions: {
+        spending:          safeValue('spending'),
+        stepDownPct:       safeValue('stepDownPct'),
+        growth:            safeValue('growth'),
+        inflation:         safeValue('inflation'),
+        thresholdMode:     document.querySelector('input[name="thresholdMode"]:checked')?.value || 'frozen',
+        thresholdFromYear: safeValue('thresholdFromYearVal'),
+        withdrawalMode:    document.querySelector('input[name="withdrawalMode"]:checked')?.value || 'tax-aware',
+        p1Order1:          safeValue('p1Order1'),
+        p1Order2:          safeValue('p1Order2'),
+        p1Order3:          safeValue('p1Order3'),
+        p2Order1:          safeValue('p2Order1'),
+        p2Order2:          safeValue('p2Order2'),
+        p2Order3:          safeValue('p2Order3'),
+        bniEnabled:        safeEl('bniEnabled')?.checked || false,
+        bniP1GIA:          safeValue('bniP1GIA'),
+        bniP2GIA:          safeValue('bniP2GIA'),
+        dividendYield:     safeValue('dividendYield'),
+      },
     };
   }
 
   function applySetupInputs(data) {
     if (!data) return;
-    if (safeEl('sp-p1name'))    safeEl('sp-p1name').value    = data.people?.p1?.name || '';
-    if (safeEl('sp-p1dob'))     safeEl('sp-p1dob').value     = data.people?.p1?.dob  || '';
-    if (safeEl('sp-p2name'))    safeEl('sp-p2name').value    = data.people?.p2?.name || '';
-    if (safeEl('sp-p2dob'))     safeEl('sp-p2dob').value     = data.people?.p2?.dob  || '';
-    if (safeEl('sp-startYear')) safeEl('sp-startYear').value = data.startYear || '';
-    if (safeEl('sp-endYear'))   safeEl('sp-endYear').value   = data.endYear   || '';
+
+    // ── People (Setup tab) ──
+    const sv = (id, val) => { const el = safeEl(id); if (el && val != null) el.value = val; };
+    sv('sp-p1name',       data.people?.p1?.name          || '');
+    sv('sp-p1dob',        data.people?.p1?.dob           || '');
+    sv('p1SPAge',         data.people?.p1?.spAge         || '');
+    sv('p1SP',            data.people?.p1?.sp            || '');
+    sv('p1Salary',        data.people?.p1?.salary        || '');
+    sv('p1SalaryStopAge', data.people?.p1?.salaryStopAge || '');
+    sv('sp-p2name',       data.people?.p2?.name          || '');
+    sv('sp-p2dob',        data.people?.p2?.dob           || '');
+    sv('p2SPAge',         data.people?.p2?.spAge         || '');
+    sv('p2SP',            data.people?.p2?.sp            || '');
+    sv('p2Salary',        data.people?.p2?.salary        || '');
+    sv('p2SalaryStopAge', data.people?.p2?.salaryStopAge || '');
+    sv('sp-startYear',    data.startYear                 || '');
+    sv('sp-endYear',      data.endYear                   || '');
 
     // Restore p2 toggle state
-    state.p2enabled = data.p2enabled !== false; // default true if not saved
+    state.p2enabled = data.p2enabled !== false;
     const p2cb = safeEl('p2enabled');
     if (p2cb) p2cb.checked = state.p2enabled;
     applyP2State();
 
+    // ── Accounts ──
     state.portfolioAccounts = data.accounts || [];
     state.nextId = Math.max(1, ...state.portfolioAccounts.map(a => a.id || 0)) + 1;
-
     const tbody = safeEl('acct-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    const ownerNames = getOwnerNames();
-    state.portfolioAccounts.forEach(acc => {
-      R.renderAccountRow(acc, ownerNames);
-      R.updateRowBadge(acc);
-      R.applyWrapperFieldState(acc);
-    });
+    if (tbody) {
+      tbody.innerHTML = '';
+      const ownerNames = getOwnerNames();
+      state.portfolioAccounts.forEach(acc => {
+        R.renderAccountRow(acc, ownerNames);
+        R.updateRowBadge(acc);
+        R.applyWrapperFieldState(acc);
+      });
+    }
     refreshSetupSummary();
+
+    // ── Assumptions ──
+    const a = data.assumptions;
+    if (!a) return;
+    sv('spending',             a.spending          || '');
+    sv('stepDownPct',          a.stepDownPct       || '0');
+    sv('growth',               a.growth            || '');
+    sv('inflation',            a.inflation         || '');
+    sv('thresholdFromYearVal', a.thresholdFromYear || '2028');
+    sv('dividendYield',        a.dividendYield     || '1.5');
+    sv('bniP1GIA',             a.bniP1GIA          || '');
+    sv('bniP2GIA',             a.bniP2GIA          || '');
+
+    if (a.thresholdMode) {
+      const r = document.querySelector(`input[name="thresholdMode"][value="${a.thresholdMode}"]`);
+      if (r) r.checked = true;
+    }
+    if (a.withdrawalMode) {
+      const r = document.querySelector(`input[name="withdrawalMode"][value="${a.withdrawalMode}"]`);
+      if (r) r.checked = true;
+    }
+
+    ['p1Order1','p1Order2','p1Order3','p2Order1','p2Order2','p2Order3'].forEach(id => {
+      sv(id, a[id] || '');
+    });
+
+    const bni = safeEl('bniEnabled');
+    if (bni) {
+      bni.checked = !!a.bniEnabled;
+      ['bniP1GIA','bniP2GIA'].forEach(id => {
+        const el = safeEl(id);
+        if (el) { el.disabled = !a.bniEnabled; el.style.opacity = a.bniEnabled ? '' : '0.45'; }
+      });
+    }
   }
 
   // ─────────────────────────────
@@ -140,7 +219,7 @@
     syncAccountsFromDOM();
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(readSetupInputs()));
-      showToast('Setup saved ✓');
+      showToast('Portfolio saved ✓');
     } catch (err) {
       console.error(err);
       showToast('Save failed – see console', true);
@@ -149,10 +228,10 @@
 
   function loadSetup() {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return showToast('No saved setup found.', true);
+    if (!raw) return showToast('No saved data found.', true);
     try {
       applySetupInputs(JSON.parse(raw));
-      showToast('Setup loaded ✓');
+      showToast('Portfolio loaded ✓');
     } catch (err) {
       console.error(err);
       showToast('Load failed – see console', true);
