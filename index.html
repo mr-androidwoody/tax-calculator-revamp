@@ -301,32 +301,29 @@
       </div>
 
       <div class="section" data-collapsible>
-        <div class="section-title" data-action="toggle-section">Withdrawal order (1st → last)<span class="section-chevron">▸</span></div>
+        <div class="section-title" data-action="toggle-section">Withdrawal mode &amp; order<span class="section-chevron">▸</span></div>
         <div class="section-body collapsed">
-          <div class="subsection" data-p1>Woody</div>
+          <div class="subsection" style="margin-bottom:4px">Withdrawal split mode</div>
+          <label style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:0.85rem">
+            <input type="radio" name="withdrawalMode" value="50/50"> 50/50 mechanical split (wrapper order only)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem">
+            <input type="radio" name="withdrawalMode" value="tax-aware" checked> Tax-aware (SIPP fills PA, then proportional by headroom)
+          </label>
+          <div class="subsection" style="margin-top:0.75rem;margin-bottom:4px">Wrapper order (1st → last) — applies after Cash</div>
+          <div class="subsection" data-p1 style="margin-bottom:2px">Woody</div>
           <div class="order-row">
             <select id="woodyOrder1"><option value="GIA">GIA</option><option value="SIPP">SIPP</option><option value="ISA">ISA</option></select>
             <select id="woodyOrder2"><option value="SIPP">SIPP</option><option value="GIA">GIA</option><option value="ISA">ISA</option></select>
             <select id="woodyOrder3"><option value="ISA">ISA</option><option value="GIA">GIA</option><option value="SIPP">SIPP</option></select>
-            <select id="woodyOrder4"><option value="ISA">ISA</option><option value="GIA">GIA</option><option value="SIPP">SIPP</option></select>
           </div>
-          <div class="subsection" data-p2 style="margin-top:0.5rem">Heidi</div>
+          <div class="subsection" data-p2 style="margin-top:0.5rem;margin-bottom:2px">Heidi</div>
           <div class="order-row">
             <select id="heidiOrder1"><option value="GIA">GIA</option><option value="SIPP">SIPP</option><option value="ISA">ISA</option></select>
             <select id="heidiOrder2"><option value="SIPP">SIPP</option><option value="GIA">GIA</option><option value="ISA">ISA</option></select>
             <select id="heidiOrder3"><option value="ISA">ISA</option><option value="GIA">GIA</option><option value="SIPP">SIPP</option></select>
-            <select id="heidiOrder4"><option value="ISA">ISA</option><option value="GIA">GIA</option><option value="SIPP">SIPP</option></select>
           </div>
-          <div class="hint" style="margin-top:6px">Interest-bearing accounts drawn first, then Cash (automatic), then this order.</div>
-          <div style="margin-top:10px">
-            <div class="subsection" style="margin-bottom:4px">Withdrawal split mode</div>
-            <label style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:0.85rem">
-              <input type="radio" name="withdrawalMode" value="50/50"> 50/50 mechanical split (wrapper order only)
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem">
-              <input type="radio" name="withdrawalMode" value="tax-aware" checked> Tax-aware (SIPP fills PA, then proportional by headroom)
-            </label>
-          </div>
+          <div class="hint" style="margin-top:6px">Interest-bearing accounts drawn first, then Cash (automatic), then wrapper order above.</div>
         </div>
       </div>
 
