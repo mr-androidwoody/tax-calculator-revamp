@@ -12,165 +12,178 @@
 
 <body>
 
-<!-- ═══════════════════════════════════════════
-     SETUP PAGE
-═══════════════════════════════════════════ -->
-<div id="setup-page">
+<div class="app">
 
-  <div class="setup-header">
-    <div>
-      <h1>Portfolio setup</h1>
-      <p>Add the accounts you hold, their current values, and how they're invested. Once done, continue to the tax calculator.</p>
-    </div>
+  <nav class="tab-bar">
+    <button data-action="switch-tab" data-tab="setup"       class="tab-btn tab-active">Setup</button>
+    <button data-action="switch-tab" data-tab="assumptions" class="tab-btn">Assumptions</button>
+    <button data-action="switch-tab" data-tab="results"     class="tab-btn">Results</button>
+  </nav>
 
-    <div style="display:flex;gap:8px;align-items:center">
-      <button class="btn-save" data-action="load-excel" type="button">📊 Load Excel</button>
-      <button class="btn-save" data-action="save-setup" type="button">💾 Save</button>
-      <button class="btn-save" data-action="load-setup" type="button">📂 Load</button>
-      <button class="btn-continue" data-action="continue-to-main" type="button">
-        Continue to calculator →
-      </button>
-    </div>
-  </div>
+  <!-- ═══════════════════════════════════════════
+       TAB 1 — SETUP
+  ═══════════════════════════════════════════ -->
+  <div id="tab-setup" class="tab-panel">
 
-  <!-- Summary panels -->
-  <div class="setup-grid">
-
-    <!-- People -->
-    <div class="setup-panel">
-      <div class="setup-panel-title">People &amp; projection</div>
-      <div class="setup-panel-sub">Names, birth years, and projection range.</div>
-
-      <div class="people-grid">
-        <div>
-          <label>Person 1 name</label>
-          <input data-action="setup-summary-input" id="sp-p1name" type="text" placeholder="Person 1"/>
-        </div>
-
-        <div>
-          <label>Person 2 name</label>
-          <input data-action="setup-summary-input" id="sp-p2name" type="text" placeholder="Person 2"/>
-        </div>
-
-        <div>
-          <label>Person 1 – birth year</label>
-          <input data-action="setup-summary-input" id="sp-p1dob" type="number" placeholder="e.g. 1968"/>
-        </div>
-
-        <div>
-          <label>Person 2 – birth year</label>
-          <input data-action="setup-summary-input" id="sp-p2dob" type="number" placeholder="e.g. 1967"/>
-        </div>
-
-        <div>
-          <label>Projection start year</label>
-          <input data-action="setup-summary-input" id="sp-startYear" type="number" placeholder="e.g. 2026"/>
-        </div>
-
-        <div>
-          <label>Projection end year</label>
-          <input data-action="setup-summary-input" id="sp-endYear" type="number" placeholder="e.g. 2060"/>
-        </div>
-      </div>
-    </div>
-
-    <!-- Overall allocation -->
-    <div class="setup-panel">
-      <div class="setup-panel-title">Overall asset allocation</div>
-      <div class="setup-panel-sub">Weighted asset mix across the whole portfolio.</div>
-
-      <div id="alloc-summary">
-        <div class="alloc-row"><span class="alloc-label">Equities</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:0%;background:#4472C4"></div></div><span class="alloc-pct">–</span></div>
-        <div class="alloc-row"><span class="alloc-label">Bonds</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:0%;background:#70AD47"></div></div><span class="alloc-pct">–</span></div>
-        <div class="alloc-row"><span class="alloc-label">Cashlike</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:0%;background:#FFC000"></div></div><span class="alloc-pct">–</span></div>
-        <div class="alloc-row"><span class="alloc-label">Cash</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:0%;background:#B0B0B0"></div></div><span class="alloc-pct">–</span></div>
-
-        <div class="alloc-row" style="margin-top:4px;border:none">
-          <span class="alloc-label">Total allocation</span>
-          <span class="alloc-balanced" id="alloc-total-label">–</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Wrapper totals -->
-    <div class="setup-panel">
-      <div class="setup-panel-title">Wrapper totals</div>
-      <div class="setup-panel-sub">How your investments are split by wrapper.</div>
-
-      <div id="wrapper-summary">
-        <div class="wrapper-row"><span class="wrapper-name">ISA</span><span class="wrapper-val" id="wt-ISA">£0</span></div>
-        <div class="wrapper-row"><span class="wrapper-name">SIPP</span><span class="wrapper-val" id="wt-SIPP">£0</span></div>
-        <div class="wrapper-row"><span class="wrapper-name">GIA</span><span class="wrapper-val" id="wt-GIA">£0</span></div>
-        <div class="wrapper-row"><span class="wrapper-name">Cash</span><span class="wrapper-val" id="wt-Cash">£0</span></div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Accounts table -->
-  <div class="accounts-panel">
-
-    <div class="accounts-toolbar">
-      <div class="accounts-toolbar-left">
-        <button class="btn-add" data-action="add-account" type="button">+ Add account</button>
-
-        <div>
-          <div class="total-label">Total portfolio</div>
-          <div class="total-portfolio" id="sp-total">£0</div>
-        </div>
+    <div class="setup-header">
+      <div>
+        <h1>Portfolio setup</h1>
+        <p>Add the accounts you hold, their current values, and how they're invested. Once done, continue to assumptions.</p>
       </div>
 
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;align-items:center">
         <button class="btn-save" data-action="load-excel" type="button">📊 Load Excel</button>
         <button class="btn-save" data-action="save-setup" type="button">💾 Save</button>
         <button class="btn-save" data-action="load-setup" type="button">📂 Load</button>
-        <button class="btn-continue" data-action="continue-to-main" type="button">
-          Continue →
+        <button class="btn-continue" data-action="switch-tab" data-tab="assumptions" type="button">
+          Continue to assumptions →
         </button>
       </div>
     </div>
 
-    <table class="acct-table">
-      <thead>
-        <tr>
-          <th class="col-name">Account name</th>
-          <th class="col-wrap">Wrapper</th>
-          <th class="col-owner">Owner</th>
-          <th class="col-value right">Value (£)</th>
-          <th class="col-alloc right">Equities %</th>
-          <th class="col-alloc right">Bonds %</th>
-          <th class="col-alloc right">Cashlike %</th>
-          <th class="col-alloc right">Cash %</th>
-          <th class="col-rate right">Rate %</th>
-          <th class="col-draw right">Mo. draw £</th>
-          <th class="col-total">Total</th>
-          <th class="col-action"></th>
-        </tr>
-      </thead>
+    <!-- Summary panels -->
+    <div class="setup-grid">
 
-      <tbody id="acct-tbody"></tbody>
-    </table>
+      <!-- Person 1 -->
+      <div class="setup-panel">
+        <div class="setup-panel-title">Person 1</div>
+        <div class="setup-panel-sub">Name, birth year, and projection range.</div>
 
-  </div>
+        <div class="people-grid">
+          <div>
+            <label>Person 1 name</label>
+            <input data-action="setup-summary-input" id="sp-p1name" type="text" placeholder="Person 1"/>
+          </div>
 
-</div>
+          <div>
+            <label>Birth year</label>
+            <input data-action="setup-summary-input" id="sp-p1dob" type="number" placeholder="e.g. 1968"/>
+          </div>
 
-<!-- ═══════════════════════════════════════════
-     MAIN APP
-═══════════════════════════════════════════ -->
-<div id="main-app" style="display:none">
-<div class="app">
+          <div>
+            <label>Projection start year</label>
+            <input data-action="setup-summary-input" id="sp-startYear" type="number" placeholder="e.g. 2026"/>
+          </div>
 
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <h1>rUK Retirement Tax Calculator</h1>
-      <div style="display:flex;gap:6px">
-        <button type="button" class="preload-btn" data-action="back-to-setup">← Setup</button>
+          <div>
+            <label>Projection end year</label>
+            <input data-action="setup-summary-input" id="sp-endYear" type="number" placeholder="e.g. 2060"/>
+          </div>
+        </div>
       </div>
+
+      <!-- Person 2 -->
+      <div class="setup-panel">
+        <div class="setup-panel-title" style="display:flex;align-items:center;gap:8px">
+          <span>Person 2</span>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:400;color:#555;cursor:pointer;margin-left:auto">
+            <input type="checkbox" id="p2enabled" data-action="toggle-p2" checked style="width:auto;margin:0;cursor:pointer">
+            Include Person 2
+          </label>
+        </div>
+        <div class="setup-panel-sub">Name and birth year.</div>
+
+        <div class="people-grid" id="p2-setup-fields">
+          <div>
+            <label>Person 2 name</label>
+            <input data-action="setup-summary-input" id="sp-p2name" type="text" placeholder="Person 2"/>
+          </div>
+
+          <div>
+            <label>Birth year</label>
+            <input data-action="setup-summary-input" id="sp-p2dob" type="number" placeholder="e.g. 1967"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Overall allocation -->
+      <div class="setup-panel">
+        <div class="setup-panel-title">Overall asset allocation</div>
+        <div class="setup-panel-sub">Weighted asset mix across the whole portfolio.</div>
+
+        <div id="alloc-summary">
+          <div class="alloc-row"><span class="alloc-label">Equities</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:0%;background:#4472C4"></div></div><span class="alloc-pct">–</span></div>
+          <div class="alloc-row"><span class="alloc-label">Bonds</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:0%;background:#70AD47"></div></div><span class="alloc-pct">–</span></div>
+          <div class="alloc-row"><span class="alloc-label">Cashlike</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:0%;background:#FFC000"></div></div><span class="alloc-pct">–</span></div>
+          <div class="alloc-row"><span class="alloc-label">Cash</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:0%;background:#B0B0B0"></div></div><span class="alloc-pct">–</span></div>
+
+          <div class="alloc-row" style="margin-top:4px;border:none">
+            <span class="alloc-label">Total allocation</span>
+            <span class="alloc-balanced" id="alloc-total-label">–</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wrapper totals -->
+      <div class="setup-panel">
+        <div class="setup-panel-title">Wrapper totals</div>
+        <div class="setup-panel-sub">How your investments are split by wrapper.</div>
+
+        <div id="wrapper-summary">
+          <div class="wrapper-row"><span class="wrapper-name">ISA</span><span class="wrapper-val" id="wt-ISA">£0</span></div>
+          <div class="wrapper-row"><span class="wrapper-name">SIPP</span><span class="wrapper-val" id="wt-SIPP">£0</span></div>
+          <div class="wrapper-row"><span class="wrapper-name">GIA</span><span class="wrapper-val" id="wt-GIA">£0</span></div>
+          <div class="wrapper-row"><span class="wrapper-name">Cash</span><span class="wrapper-val" id="wt-Cash">£0</span></div>
+        </div>
+      </div>
+
     </div>
 
-    <div style="padding:0.5rem 1rem 0.6rem;border-bottom:2px solid #e0e8ff;background:#f5f8ff;flex-shrink:0">
-      <button type="button" class="run-btn" data-action="run-projection">▶ Run projection</button>
+    <!-- Accounts table -->
+    <div class="accounts-panel">
+
+      <div class="accounts-toolbar">
+        <div class="accounts-toolbar-left">
+          <button class="btn-add" data-action="add-account" type="button">+ Add account</button>
+
+          <div>
+            <div class="total-label">Total portfolio</div>
+            <div class="total-portfolio" id="sp-total">£0</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button class="btn-save" data-action="load-excel" type="button">📊 Load Excel</button>
+          <button class="btn-save" data-action="save-setup" type="button">💾 Save</button>
+          <button class="btn-save" data-action="load-setup" type="button">📂 Load</button>
+          <button class="btn-continue" data-action="switch-tab" data-tab="assumptions" type="button">
+            Continue →
+          </button>
+        </div>
+      </div>
+
+      <table class="acct-table">
+        <thead>
+          <tr>
+            <th class="col-name">Account name</th>
+            <th class="col-wrap">Wrapper</th>
+            <th class="col-owner">Owner</th>
+            <th class="col-value right">Value (£)</th>
+            <th class="col-alloc right">Equities %</th>
+            <th class="col-alloc right">Bonds %</th>
+            <th class="col-alloc right">Cashlike %</th>
+            <th class="col-alloc right">Cash %</th>
+            <th class="col-rate right">Rate %</th>
+            <th class="col-draw right">Mo. draw £</th>
+            <th class="col-total">Total</th>
+            <th class="col-action"></th>
+          </tr>
+        </thead>
+
+        <tbody id="acct-tbody"></tbody>
+      </table>
+
+    </div>
+
+  </div><!-- /#tab-setup -->
+
+  <!-- ═══════════════════════════════════════════
+       TAB 2 — ASSUMPTIONS
+  ═══════════════════════════════════════════ -->
+  <div id="tab-assumptions" class="tab-panel" style="display:none">
+
+    <div class="hint" style="margin-bottom:1rem;font-size:12px;color:#666">
+      Balances, birth years, and projection dates are set on the Setup tab.
     </div>
 
     <div class="sidebar-body">
@@ -181,13 +194,13 @@
         <div class="section-body">
           <div class="two-col">
             <div class="field"><label data-p1="– birth year">Woody – birth year</label><input type="number" id="woodyDOB" class="from-setup" readonly></div>
-            <div class="field"><label data-p2="– birth year">Heidi – birth year</label><input type="number" id="heidiDOB" class="from-setup" readonly></div>
+            <div class="field p2-field"><label data-p2="– birth year">Heidi – birth year</label><input type="number" id="heidiDOB" class="from-setup" readonly></div>
           </div>
           <div class="two-col">
             <div class="field"><label>Projection start year</label><input type="number" id="startYear" class="from-setup" readonly></div>
             <div class="field"><label>Projection end year</label><input type="number" id="endYear" class="from-setup" readonly></div>
           </div>
-          <div class="hint">Set on the Setup page. Use ← Setup to change.</div>
+          <div class="hint">Set on the Setup tab.</div>
         </div>
       </div>
 
@@ -231,8 +244,8 @@
         <div class="section-title" data-action="toggle-section"><span data-p2="salary (employment income)">Heidi salary (employment income)</span><span class="section-chevron">▸</span></div>
         <div class="section-body collapsed">
           <div class="two-col">
-            <div class="field"><label>Gross annual (£)</label><input type="text" id="heidiSalary" class="currency-input" placeholder="e.g. 15,000"></div>
-            <div class="field"><label>Stop age</label><input type="number" id="heidiSalaryStopAge" placeholder="e.g. 63"></div>
+            <div class="field p2-field"><label>Gross annual (£)</label><input type="text" id="heidiSalary" class="currency-input" placeholder="e.g. 15,000"></div>
+            <div class="field p2-field"><label>Stop age</label><input type="number" id="heidiSalaryStopAge" placeholder="e.g. 63"></div>
           </div>
           <div class="hint">Employment income taxed as non-savings. Employee NI included until State Pension age.</div>
         </div>
@@ -246,10 +259,10 @@
             <div class="field"><label>Start age</label><input type="number" id="woodySPAge" placeholder="e.g. 67"></div>
             <div class="field"><label>Annual amount (£)</label><input type="text" id="woodySP" class="currency-input" placeholder="e.g. 12,000"></div>
           </div>
-          <div class="subsection" data-p2>Heidi</div>
+          <div class="subsection p2-field" data-p2>Heidi</div>
           <div class="two-col">
-            <div class="field"><label>Start age</label><input type="number" id="heidiSPAge" placeholder="e.g. 67"></div>
-            <div class="field"><label>Annual amount (£)</label><input type="text" id="heidiSP" class="currency-input" placeholder="e.g. 12,547"></div>
+            <div class="field p2-field"><label>Start age</label><input type="number" id="heidiSPAge" placeholder="e.g. 67"></div>
+            <div class="field p2-field"><label>Annual amount (£)</label><input type="text" id="heidiSP" class="currency-input" placeholder="e.g. 12,547"></div>
           </div>
         </div>
       </div>
@@ -259,7 +272,7 @@
         <div class="section-body collapsed">
           <div class="two-col">
             <div class="field"><label data-p1="cash (£)">Woody cash (£)</label><input type="text" id="woodyCash" class="currency-input from-setup" readonly></div>
-            <div class="field"><label data-p2="cash (£)">Heidi cash (£)</label><input type="text" id="heidiCash" class="currency-input from-setup" readonly></div>
+            <div class="field p2-field"><label data-p2="cash (£)">Heidi cash (£)</label><input type="text" id="heidiCash" class="currency-input from-setup" readonly></div>
           </div>
           <div class="hint">Cash earns no return and is not inflation-uprated.</div>
         </div>
@@ -278,7 +291,7 @@
         <div class="section-body collapsed">
           <div class="two-col">
             <div class="field"><label data-p1="(£)">Woody (£)</label><input type="text" id="woodySIPP" class="currency-input from-setup" readonly></div>
-            <div class="field"><label data-p2="(£)">Heidi (£)</label><input type="text" id="heidiSIPP" class="currency-input from-setup" readonly></div>
+            <div class="field p2-field"><label data-p2="(£)">Heidi (£)</label><input type="text" id="heidiSIPP" class="currency-input from-setup" readonly></div>
           </div>
         </div>
       </div>
@@ -288,7 +301,7 @@
         <div class="section-body collapsed">
           <div class="two-col">
             <div class="field"><label data-p1="(£)">Woody (£)</label><input type="text" id="woodyISA" class="currency-input from-setup" readonly></div>
-            <div class="field"><label data-p2="(£)">Heidi (£)</label><input type="text" id="heidiISA" class="currency-input from-setup" readonly></div>
+            <div class="field p2-field"><label data-p2="(£)">Heidi (£)</label><input type="text" id="heidiISA" class="currency-input from-setup" readonly></div>
           </div>
         </div>
       </div>
@@ -298,7 +311,7 @@
         <div class="section-body collapsed">
           <div class="two-col">
             <div class="field"><label data-p1="(£)">Woody (£)</label><input type="text" id="woodyGIA" class="currency-input from-setup" readonly></div>
-            <div class="field"><label data-p2="(£)">Heidi (£)</label><input type="text" id="heidiGIA" class="currency-input from-setup" readonly></div>
+            <div class="field p2-field"><label data-p2="(£)">Heidi (£)</label><input type="text" id="heidiGIA" class="currency-input from-setup" readonly></div>
           </div>
           <div class="field" style="margin-top:6px">
             <label>Dividend yield on GIA equities (%)</label>
@@ -325,8 +338,8 @@
             <select id="woodyOrder2"><option value="SIPP">SIPP</option><option value="GIA">GIA</option><option value="ISA">ISA</option></select>
             <select id="woodyOrder3"><option value="ISA">ISA</option><option value="GIA">GIA</option><option value="SIPP">SIPP</option></select>
           </div>
-          <div class="subsection" data-p2 style="margin-top:0.5rem;margin-bottom:2px">Heidi</div>
-          <div class="order-row">
+          <div class="subsection p2-field" data-p2 style="margin-top:0.5rem;margin-bottom:2px">Heidi</div>
+          <div class="order-row p2-field">
             <select id="heidiOrder1"><option value="GIA">GIA</option><option value="SIPP">SIPP</option><option value="ISA">ISA</option></select>
             <select id="heidiOrder2"><option value="SIPP">SIPP</option><option value="GIA">GIA</option><option value="ISA">ISA</option></select>
             <select id="heidiOrder3"><option value="ISA">ISA</option><option value="GIA">GIA</option><option value="SIPP">SIPP</option></select>
@@ -392,21 +405,34 @@
           <div id="bni-fields" style="display:none">
             <div class="subsection" data-p1>Woody</div>
             <div class="field"><label>GIA → ISA (£/yr)</label><input type="text" id="bniWoodyGIA" class="currency-input" placeholder="e.g. 20,000"></div>
-            <div class="subsection" data-p2 style="margin-top:0.25rem">Heidi</div>
-            <div class="field"><label>GIA → ISA (£/yr)</label><input type="text" id="bniHeidiGIA" class="currency-input" placeholder="e.g. 5,000"></div>
+            <div class="subsection p2-field" data-p2 style="margin-top:0.25rem">Heidi</div>
+            <div class="field p2-field"><label>GIA → ISA (£/yr)</label><input type="text" id="bniHeidiGIA" class="currency-input" placeholder="e.g. 5,000"></div>
             <div class="hint" style="margin-top:6px">Each transfer capped at source balance and £20k ISA allowance per person per year.</div>
           </div>
         </div>
       </div>
 
-      <div style="padding:0.75rem 1rem 1rem;border-top:1px solid #f0f2f5">
+      <div style="padding:0.75rem 1rem 0.5rem;border-top:1px solid #f0f2f5">
         <button id="expand-all-btn" class="preload-btn" style="width:100%;text-align:center" data-action="toggle-all">Expand all</button>
       </div>
 
     </div><!-- /.sidebar-body -->
-  </aside>
 
-  <main class="main">
+    <div style="padding:0.75rem 1rem 1rem">
+      <button type="button" class="run-btn" data-action="run-projection">▶ Run projection</button>
+    </div>
+
+  </div><!-- /#tab-assumptions -->
+
+  <!-- ═══════════════════════════════════════════
+       TAB 3 — RESULTS
+  ═══════════════════════════════════════════ -->
+  <div id="tab-results" class="tab-panel" style="display:none">
+
+    <div style="margin-bottom:1rem">
+      <button type="button" class="run-btn" data-action="run-projection">▶ Run projection</button>
+    </div>
+
     <div class="controls">
       <div>
         <span class="controls-label">Person</span>
@@ -419,9 +445,8 @@
       <div>
         <span class="controls-label">Values</span>
         <div class="toggle-group" style="margin-top:4px">
-         <button class="active" data-action="real-on">Real</button> 
+         <button class="active" data-action="real-on">Real</button>
          <button data-action="real-off">Nominal</button>
-          
         </div>
       </div>
       <div style="margin-left:auto">
@@ -468,10 +493,10 @@
         <div style="overflow-x:auto"><table id="wealth-table" class="data-table"></table></div>
       </div>
     </div>
-  </main>
+
+  </div><!-- /#tab-results -->
 
 </div><!-- /.app -->
-</div><!-- /#main-app -->
 
 <script src="js/data.js"></script>
 <script src="js/calculator.js"></script>
@@ -479,6 +504,7 @@
 <script src="js/engine.js"></script>
 <script src="js/calc-render.js"></script>
 <script src="js/excel-loader.js"></script>
+<script src="js/tabs.js"></script>
 <script src="js/app.js"></script>
 
 </body>
