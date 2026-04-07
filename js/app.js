@@ -295,32 +295,120 @@
         )
         .reduce((s, a) => s + (a.value || 0), 0);
 
-    const set = (id, val) => {
+    // ── Helper: set a plain-text span ──
+    const setText = (id, val) => {
+      const el = safeEl(id);
+      if (el) el.textContent = (val === undefined || val === null || val === '') ? '–' : val;
+    };
+
+    // ── Helper: set a hidden input (for gatherInputs()) ──
+    const setHidden = (id, val) => {
       const el = safeEl(id);
       if (!el) return;
       el.value = (val === undefined || val === null || val === '')
-        ? '' : D.MONEY_FIELDS.has(id) ? formatCurrency(val) : val;
+        ? '' : D.MONEY_FIELDS.has(id) ? String(Math.round(Number(val) || 0)) : val;
     };
 
-    set('p1SIPP', sumBy('p1', 'SIPP'));
-    set('p2SIPP', sumBy('p2', 'SIPP'));
-    set('p1ISA',  sumBy('p1', 'ISA'));
-    set('p2ISA',  sumBy('p2', 'ISA'));
-    set('p1Cash', sumBy('p1', 'Cash'));
-    set('p2Cash', sumBy('p2', 'Cash'));
+    // ── Card 1: People & Projection ──
+    const p1dob  = safeValue('sp-p1dob');
+    const p2dob  = safeValue('sp-p2dob');
+    const sy     = safeValue('sp-startYear');
+    const ey     = safeValue('sp-endYear');
 
-    // Yield accounts (rate/monthlyDraw set) are excluded from wrapper balances
-    // to avoid double-counting — they are passed directly to the engine loop.
-    set('p1GIA', sumBy('p1', 'GIA', true));
-    set('p2GIA', sumBy('p2', 'GIA', true));
+    // Find salary/SP for each person from setup inputs
+    const p1sal      = D.parseCurrency(safeEl('p1Salary')?.value      || '');
+    const p1salstop  = safeEl('p1SalaryStopAge')?.value || '–';
+    const p1spage    = safeEl('p1SPAge')?.value          || '–';
+    const p1sp       = D.parseCurrency(safeEl('p1SP')?.value           || '');
+    const p2sal      = D.parseCurrency(safeEl('p2Salary')?.value      || '');
+    const p2salstop  = safeEl('p2SalaryStopAge')?.value || '–';
+    const p2spage    = safeEl('p2SPAge')?.value          || '–';
+    const p2sp       = D.parseCurrency(safeEl('p2SP')?.value           || '');
 
-    // People and projection — populate read-only assumptions fields from setup
-    set('p1DOB',  safeValue('sp-p1dob'));
-    set('p2DOB',  safeValue('sp-p2dob'));
-    set('startYear', safeValue('sp-startYear'));
-    set('endYear',   safeValue('sp-endYear'));
+    setText('ai-p1name',      p1name);
+    setText('ai-p1dob',       p1dob  || '–');
+    setText('ai-p1salary',    p1sal  ? D.formatMoney(p1sal)  : '–');
+    setText('ai-p1salarystop', p1salstop);
+    setText('ai-p1spage',     p1spage);
+    setText('ai-p1sp',        p1sp   ? D.formatMoney(p1sp)   : '–');
 
-    // Banner
+    setText('ai-p2name',      p2name);
+    setText('ai-p2dob',       p2dob  || '–');
+    setText('ai-p2salary',    p2sal  ? D.formatMoney(p2sal)  : '–');
+    setText('ai-p2salarystop', p2salstop);
+    setText('ai-p2spage',     p2spage);
+    setText('ai-p2sp',        p2sp   ? D.formatMoney(p2sp)   : '–');
+
+    setText('ai-startyear', sy || '–');
+    setText('ai-endyear',   ey || '–');
+
+    // Hidden inputs consumed by gatherInputs()
+    setHidden('p1DOB',          p1dob);
+    setHidden('p2DOB',          p2dob);
+    setHidden('startYear',      sy);
+    setHidden('endYear',        ey);
+    setHidden('p1Salary',       p1sal);
+    setHidden('p1SalaryStopAge', p1salstop !== '–' ? p1salstop : '');
+    setHidden('p1SPAge',        p1spage !== '–' ? p1spage : '');
+    setHidden('p1SP',           p1sp);
+    setHidden('p2Salary',       p2sal);
+    setHidden('p2SalaryStopAge', p2salstop !== '–' ? p2salstop : '');
+    setHidden('p2SPAge',        p2spage !== '–' ? p2spage : '');
+    setHidden('p2SP',           p2sp);
+
+    // ── Card 3: Portfolio Balances ──
+    const p1cash = sumBy('p1', 'Cash');
+    const p2cash = sumBy('p2', 'Cash');
+    const p1sipp = sumBy('p1', 'SIPP');
+    const p2sipp = sumBy('p2', 'SIPP');
+    const p1isa  = sumBy('p1', 'ISA');
+    const p2isa  = sumBy('p2', 'ISA');
+    const p1gia  = sumBy('p1', 'GIA', true);
+    const p2gia  = sumBy('p2', 'GIA', true);
+
+    setText('ai-p1cash', D.formatMoney(p1cash));
+    setText('ai-p1sipp', D.formatMoney(p1sipp));
+    setText('ai-p1isa',  D.formatMoney(p1isa));
+    setText('ai-p1gia',  D.formatMoney(p1gia));
+    setText('ai-p2cash', D.formatMoney(p2cash));
+    setText('ai-p2sipp', D.formatMoney(p2sipp));
+    setText('ai-p2isa',  D.formatMoney(p2isa));
+    setText('ai-p2gia',  D.formatMoney(p2gia));
+
+    // Hidden inputs for gatherInputs()
+    setHidden('p1Cash', p1cash);
+    setHidden('p2Cash', p2cash);
+    setHidden('p1SIPP', p1sipp);
+    setHidden('p2SIPP', p2sipp);
+    setHidden('p1ISA',  p1isa);
+    setHidden('p2ISA',  p2isa);
+    setHidden('p1GIA',  p1gia);
+    setHidden('p2GIA',  p2gia);
+
+    // ── Interest accounts list (Card 3) ──
+    const intAccts = state.portfolioAccounts.filter(isYieldAccount);
+    const listEl = safeEl('int-accts-list');
+    if (listEl) {
+      if (!intAccts.length) {
+        listEl.innerHTML = '';
+      } else {
+        listEl.innerHTML = `
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#4a7fd4;margin-bottom:6px">
+            Interest-bearing accounts
+          </div>` +
+          intAccts.map(a => {
+            const owner = a.owner === 'p1' ? p1name : p2name;
+            const rate  = a.rate != null ? a.rate + '%' : '–';
+            const draw  = a.monthlyDraw != null ? D.formatMoney(a.monthlyDraw) + '/mo' : '–';
+            return `<div class="assump-int-row">
+              <span class="assump-int-name">${a.name || '(unnamed)'}</span>
+              <span class="assump-int-meta">${owner} · ${a.wrapper} · ${rate} · draw ${draw} · ${D.formatMoney(a.value || 0)}</span>
+            </div>`;
+          }).join('');
+      }
+    }
+
+    // ── Handoff banner ──
     const total  = state.portfolioAccounts.reduce((s, a) => s + (a.value || 0), 0);
     const nAccts = state.portfolioAccounts.length;
     let banner   = safeEl('handoff-banner');
@@ -328,48 +416,19 @@
       banner = document.createElement('div');
       banner.id = 'handoff-banner';
       banner.style.cssText = 'background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:8px 10px;font-size:12px;color:#166534;margin:0 0 0.75rem';
-      const sidebarBody = document.querySelector('.sidebar-body');
-      if (sidebarBody) sidebarBody.prepend(banner);
+      const assumpPanel = document.querySelector('#tab-assumptions .assump-cards');
+      if (assumpPanel) assumpPanel.prepend(banner);
     }
     banner.innerHTML = `✓ Portfolio loaded: ${nAccts} accounts, ${D.formatMoney(total)} total`;
 
-    R.updateInterestAccountsBanner(state.portfolioAccounts.filter(isYieldAccount), [p1name, p2name]);
-
     updateSidebarNames();
-
-    // Re-apply p2 state so any newly-synced fields are correctly dimmed/enabled
     applyP2State();
   }
 
   // ─────────────────────────────
-  // SIDEBAR COLLAPSIBLES
+  // SIDEBAR COLLAPSIBLES (removed — kept as no-op for safety)
   // ─────────────────────────────
-  function toggleSection(titleEl) {
-    const body    = titleEl.nextElementSibling;
-    const chevron = titleEl.querySelector('.section-chevron');
-    const nowCollapsed = body.classList.toggle('collapsed');
-    if (chevron) chevron.textContent = nowCollapsed ? '▸' : '▾';
-    syncExpandBtn();
-  }
-
-  function syncExpandBtn() {
-    const btn = safeEl('expand-all-btn');
-    if (!btn) return;
-    const allOpen = [...document.querySelectorAll('[data-collapsible] .section-body')]
-      .every(b => !b.classList.contains('collapsed'));
-    btn.textContent = allOpen ? 'Close all' : 'Expand all';
-  }
-
-  function toggleAllSections() {
-    const bodies  = [...document.querySelectorAll('[data-collapsible] .section-body')];
-    const allOpen = bodies.every(b => !b.classList.contains('collapsed'));
-    bodies.forEach(b => {
-      const chevron = b.previousElementSibling?.querySelector('.section-chevron');
-      if (allOpen) { b.classList.add('collapsed');    if (chevron) chevron.textContent = '▸'; }
-      else         { b.classList.remove('collapsed'); if (chevron) chevron.textContent = '▾'; }
-    });
-    syncExpandBtn();
-  }
+  function toggleAllSections() { /* collapse UI removed */ }
 
   // ─────────────────────────────
   // GATHER INPUTS (DOM → plain object)
@@ -477,8 +536,6 @@
     if (action === 'load-setup')     return loadSetup();
     if (action === 'load-excel')     return window.RetireExcelLoader.openFilePicker();
     if (action === 'run-projection') return runProjection();
-    if (action === 'toggle-section') return toggleSection(el);
-    if (action === 'toggle-all')     return toggleAllSections();
 
     if (action === 'switch-tab') {
       const tab = el.dataset.tab;
@@ -496,11 +553,17 @@
     if (action === 'tab-tables') return CR.setTab('tables', el);
   });
 
-  // BNI checkbox
+  // BNI checkbox — enable/disable inputs (fields always visible)
   document.addEventListener('change', (e) => {
     if (e.target.id === 'bniEnabled') {
-      const f = safeEl('bni-fields');
-      if (f) f.style.display = e.target.checked ? '' : 'none';
+      const enabled = e.target.checked;
+      ['bniP1GIA', 'bniP2GIA'].forEach(id => {
+        const el = safeEl(id);
+        if (el) {
+          el.disabled = !enabled;
+          el.style.opacity = enabled ? '' : '0.45';
+        }
+      });
     }
 
     // P2 toggle checkbox
@@ -546,8 +609,13 @@
       if (!el) return;
       if (el.type === 'checkbox') {
         el.checked = String(v).toLowerCase() === 'true';
-        const f = safeEl('bni-fields');
-        if (el.id === 'bniEnabled' && f) f.style.display = el.checked ? '' : 'none';
+        if (el.id === 'bniEnabled') {
+          // Enable/disable BNI inputs to match loaded state
+          ['bniP1GIA', 'bniP2GIA'].forEach(fid => {
+            const f = safeEl(fid);
+            if (f) { f.disabled = !el.checked; f.style.opacity = el.checked ? '' : '0.45'; }
+          });
+        }
         return;
       }
       if (el.type === 'radio') return; // handled separately below
