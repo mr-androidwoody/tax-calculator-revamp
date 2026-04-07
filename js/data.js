@@ -72,12 +72,12 @@
 
   function formatCurrency(val) {
     if (val === null || val === undefined || val === '') return '';
-    return Number(val).toLocaleString('en-GB');
+    return Math.round(Number(val)).toLocaleString('en-GB');
   }
 
   function formatMoney(val) {
     if (val === null || val === undefined) return '£0';
-    return '£' + Number(val).toLocaleString('en-GB');
+    return '£' + Math.round(Number(val)).toLocaleString('en-GB');
   }
 
   window.RetireData = {
