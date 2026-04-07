@@ -82,24 +82,30 @@
       let p1AnnualGains = 0;
       let p2AnnualGains = 0;
 
+      // Capture opening GIA balances and compute gain ratios ONCE (pre-growth, pre-B&I)
+      const p1GIABalBefore = p1Bal.GIA || 0;
+      const p2GIABalBefore = p2Bal.GIA || 0;
+      const p1GainRatio = p1GIABalBefore > 0
+        ? Math.max(0, p1GIABalBefore - p1GIACost) / p1GIABalBefore
+        : 0;
+      const p2GainRatio = p2GIABalBefore > 0
+        ? Math.max(0, p2GIABalBefore - p2GIACost) / p2GIABalBefore
+        : 0;
+
       // Bed-and-ISA: accumulate gains only, no exemption applied here
       if (bniEnabled) {
         if (bniP1GIA > 0 && p1Bal.GIA > 0) {
           const transfer  = Math.min(bniP1GIA, p1Bal.GIA, ISA_ALLOWANCE);
-          const giaGain   = Math.max(0, p1Bal.GIA - p1GIACost);
-          const gainFrac  = p1Bal.GIA > 0 ? giaGain / p1Bal.GIA : 0;
-          p1AnnualGains  += transfer * gainFrac;
-          const costFrac  = p1Bal.GIA > 0 ? transfer / p1Bal.GIA : 1;
+          p1AnnualGains  += transfer * p1GainRatio;
+          const costFrac  = p1GIABalBefore > 0 ? transfer / p1GIABalBefore : 1;
           p1Bal.GIA      -= transfer;
           p1Bal.ISA      += transfer;
           p1GIACost       = Math.max(0, p1GIACost * (1 - costFrac));
         }
         if (bniP2GIA > 0 && p2Bal.GIA > 0) {
           const transfer  = Math.min(bniP2GIA, p2Bal.GIA, ISA_ALLOWANCE);
-          const giaGain   = Math.max(0, p2Bal.GIA - p2GIACost);
-          const gainFrac  = p2Bal.GIA > 0 ? giaGain / p2Bal.GIA : 0;
-          p2AnnualGains  += transfer * gainFrac;
-          const costFrac  = p2Bal.GIA > 0 ? transfer / p2Bal.GIA : 1;
+          p2AnnualGains  += transfer * p2GainRatio;
+          const costFrac  = p2GIABalBefore > 0 ? transfer / p2GIABalBefore : 1;
           p2Bal.GIA      -= transfer;
           p2Bal.ISA      += transfer;
           p2GIACost       = Math.max(0, p2GIACost * (1 - costFrac));
@@ -216,19 +222,13 @@
       p1Drawn.Cash += p1CashDrawn;
       p2Drawn.Cash += p2CashDrawn;
 
-      // Growth & cost basis
-      const p1GIABalBefore = p1Bal.GIA || 0;
-      const p2GIABalBefore = p2Bal.GIA || 0;
+      // Growth (cost basis NOT grown — gains accumulate naturally)
       C.growBalances(p1Bal, growth);
       C.growBalances(p2Bal, growth);
-      p1GIACost += p1GIABalBefore * growth;
-      p2GIACost += p2GIABalBefore * growth;
 
-      // FIX 1: accumulate withdrawal GIA gains (no exemption yet)
-      const p1GIAGainFrac = p1Bal.GIA > 0 ? Math.max(0, p1Bal.GIA - p1GIACost) / p1Bal.GIA : 0;
-      const p2GIAGainFrac = p2Bal.GIA > 0 ? Math.max(0, p2Bal.GIA - p2GIACost) / p2Bal.GIA : 0;
-      p1AnnualGains += p1Drawn.GIA * p1GIAGainFrac;
-      p2AnnualGains += p2Drawn.GIA * p2GIAGainFrac;
+      // Accumulate withdrawal GIA gains using pre-computed gainRatio (no exemption yet)
+      p1AnnualGains += p1Drawn.GIA * p1GainRatio;
+      p2AnnualGains += p2Drawn.GIA * p2GainRatio;
 
       if (p1GIABalBefore > 0 && p1Drawn.GIA > 0)
         p1GIACost = Math.max(0, p1GIACost * (1 - Math.min(1, p1Drawn.GIA / p1GIABalBefore)));
