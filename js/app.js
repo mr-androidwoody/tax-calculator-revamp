@@ -787,13 +787,11 @@
       return RetireTabs.switchTab(tab);
     }
 
-    if (action === 'view-both')  return CR.setView('both', el);
-    if (action === 'view-p1')    return CR.setView('p1', el);
-    if (action === 'view-p2')    return CR.setView('p2', el);
-    if (action === 'real-on')    return CR.setReal(true, el);
-    if (action === 'real-off')   return CR.setReal(false, el);
-    if (action === 'tab-charts') return CR.setTab('charts', el);
-    if (action === 'tab-tables') return CR.setTab('tables', el);
+    if (action === 'view-both') return CR.setView('both', el);
+    if (action === 'view-p1')   return CR.setView('p1', el);
+    if (action === 'view-p2')   return CR.setView('p2', el);
+    if (action === 'real-on')   return CR.setReal(true, el);
+    if (action === 'real-off')  return CR.setReal(false, el);
   });
 
   // ─────────────────────────────
@@ -986,6 +984,8 @@
   refreshSetupSummary();
   R.initialiseCurrencyInputs();
   RetireTabs.init();
+  CR.initResultsTabs();
+  CR.initTableSelector();
 
   const savedAssumptions = localStorage.getItem(ASSUMPTIONS_KEY);
   if (savedAssumptions) {

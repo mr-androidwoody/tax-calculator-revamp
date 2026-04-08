@@ -5,7 +5,7 @@
   let _rows       = [];
   let _viewPerson = 'both';
   let _useReal    = true;
-  let _activeTab  = 'charts';
+  let _activeResultsTab = 'income';
   let _incomeChart     = null;
   let _taxChart        = null;
   let _wealthChart     = null;
@@ -36,35 +36,65 @@
   // ─────────────────────────────────────────────
   function setView(vp, btn) {
     _viewPerson = vp;
-    btn.closest('.toggle-group').querySelectorAll('button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    // sync all person toggle-groups across every sidebar
+    document.querySelectorAll('[data-action="view-both"],[data-action="view-p1"],[data-action="view-p2"]')
+      .forEach(b => b.classList.remove('is-active'));
+    document.querySelectorAll(`[data-action="${btn.dataset.action}"]`)
+      .forEach(b => b.classList.add('is-active'));
     renderCharts();
     renderMetrics();
   }
 
   function setReal(r, btn) {
     _useReal = r;
-    btn.closest('.toggle-group').querySelectorAll('button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    // sync all real/nominal toggle-groups across every sidebar
+    document.querySelectorAll('[data-action="real-on"],[data-action="real-off"]')
+      .forEach(b => b.classList.remove('is-active'));
+    document.querySelectorAll(`[data-action="${btn.dataset.action}"]`)
+      .forEach(b => b.classList.add('is-active'));
     renderCharts();
     renderMetrics();
-    if (_activeTab === 'tables') renderTables();
+    if (_activeResultsTab === 'tables') renderTables();
   }
 
-  function setTab(tab, btn) {
-    _activeTab = tab;
-    btn.closest('.toggle-group').querySelectorAll('button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const charts = document.querySelector('.charts');
-    const tables = document.getElementById('tables-panel');
-    if (tab === 'charts') {
-      if (charts) charts.style.display = 'flex';
-      if (tables) tables.style.display = 'none';
-    } else {
-      if (charts) charts.style.display = 'none';
-      if (tables) tables.style.display = 'flex';
-      renderTables();
-    }
+  function initResultsTabs() {
+    document.querySelectorAll('.results-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.resultsTab;
+        _activeResultsTab = tab;
+
+        // Update tab button states
+        document.querySelectorAll('.results-tab').forEach(b => {
+          b.classList.toggle('results-tab--active', b === btn);
+          b.classList.toggle('results-tab--inactive', b !== btn);
+        });
+
+        // Show the matching panel, hide others
+        document.querySelectorAll('.chart-panel').forEach(panel => {
+          panel.style.display = panel.id === `results-panel-${tab}` ? 'grid' : 'none';
+        });
+
+        // Render tables on first visit
+        if (tab === 'tables') renderTables();
+      });
+    });
+  }
+
+  function initTableSelector() {
+    document.querySelectorAll('[data-table-select]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const which = btn.dataset.tableSelect;
+
+        // Update selector button states
+        document.querySelectorAll('[data-table-select]').forEach(b => {
+          b.classList.toggle('is-active', b === btn);
+        });
+
+        // Show matching sub-view
+        document.getElementById('tables-tax-view').style.display    = which === 'tax'    ? '' : 'none';
+        document.getElementById('tables-wealth-view').style.display  = which === 'wealth' ? '' : 'none';
+      });
+    });
   }
 
   // ─────────────────────────────────────────────
@@ -123,59 +153,63 @@
     if (mPort) mPort.textContent = fmt(adj(last.totalPortfolio, last));
   }
 
-    // ─────────────────────────────────────────────
-    // INCOME LEGEND
-    // ─────────────────────────────────────────────
-    function renderIncomeLegend(chart, recomputeShortfall) {
-      const host = document.getElementById('incomeLegend');
-      if (!host) return;
-      host.innerHTML = '';
+  // ─────────────────────────────────────────────
+  // INCOME LEGEND
+  // ─────────────────────────────────────────────
+  function renderIncomeLegend(chart, recomputeShortfall) {
+    const host = document.getElementById('incomeLegend');
+    if (!host) return;
+    host.innerHTML = '';
 
-      const row = document.createElement('div');
-      row.className = 'split-legend-row';
+    const hint = document.createElement('p');
+    hint.className = 'sidebar-legend__hint';
+    hint.textContent = 'Click to toggle';
+    host.appendChild(hint);
 
-      chart.data.datasets.forEach((ds, i) => {
-        if (ds.stack !== 'income') return;
-        if (ds.label === 'Shortfall') return;
+    chart.data.datasets.forEach((ds, i) => {
+      if (ds.stack !== 'income') return;
+      if (ds.label === 'Shortfall') return;
 
-        const item = document.createElement('div');
-        item.className = 'split-legend-item';
-        if (!chart.isDatasetVisible(i)) item.classList.add('is-hidden');
+      const item = document.createElement('div');
+      item.className = 'sidebar-legend__item';
+      if (!chart.isDatasetVisible(i)) item.classList.add('is-hidden');
 
-        const swatch = document.createElement('span');
-        swatch.className = 'split-legend-swatch';
-        swatch.style.background = ds.backgroundColor;
+      const swatch = document.createElement('span');
+      swatch.className = 'sidebar-legend__swatch';
+      swatch.style.background = ds.backgroundColor;
 
-        const label = document.createElement('span');
-        label.textContent = ds.label;
+      const label = document.createElement('span');
+      label.textContent = ds.label;
 
-        item.appendChild(swatch);
-        item.appendChild(label);
+      item.appendChild(swatch);
+      item.appendChild(label);
 
-        item.addEventListener('click', () => {
-          chart.setDatasetVisibility(i, !chart.isDatasetVisible(i));
-          recomputeShortfall(chart);
-          chart.update();
-          renderIncomeLegend(chart, recomputeShortfall);
-        });
-
-        row.appendChild(item);
+      item.addEventListener('click', () => {
+        chart.setDatasetVisibility(i, !chart.isDatasetVisible(i));
+        recomputeShortfall(chart);
+        chart.update();
+        renderIncomeLegend(chart, recomputeShortfall);
       });
 
-      // Shortfall indicator — inside row so it sits in the flex layout
-      const sfItem = document.createElement('div');
-      sfItem.className = 'split-legend-item';
-      const sfSwatch = document.createElement('span');
-      sfSwatch.className = 'split-legend-swatch';
-      sfSwatch.style.background = '#DC2626';
-      const sfLabel = document.createElement('span');
-      sfLabel.textContent = 'Shortfall';
-      sfItem.appendChild(sfSwatch);
-      sfItem.appendChild(sfLabel);
-      row.appendChild(sfItem);
+      host.appendChild(item);
+    });
 
-      host.appendChild(row);
-    }
+    // Shortfall — always shown, not toggleable
+    const sfItem = document.createElement('div');
+    sfItem.className = 'sidebar-legend__item sidebar-legend__item--fixed';
+    const sfSwatch = document.createElement('span');
+    sfSwatch.className = 'sidebar-legend__swatch';
+    sfSwatch.style.background = '#DC2626';
+    const sfLabel = document.createElement('span');
+    sfLabel.textContent = 'Shortfall';
+    const sfNote = document.createElement('span');
+    sfNote.className = 'sidebar-legend__fixed-note';
+    sfNote.textContent = 'always on';
+    sfItem.appendChild(sfSwatch);
+    sfItem.appendChild(sfLabel);
+    sfItem.appendChild(sfNote);
+    host.appendChild(sfItem);
+  }
 
   // ─────────────────────────────────────────────
   // CHARTS
@@ -750,7 +784,8 @@
     setResults,
     setView,
     setReal,
-    setTab,
+    initResultsTabs,
+    initTableSelector,
     renderAlerts,
     renderMetrics,
     renderCharts,
