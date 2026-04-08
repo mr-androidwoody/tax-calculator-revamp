@@ -1,10 +1,6 @@
 (function () {
   const D = window.RetireData;
 
-  function ensureCurrencyInput(el) {
-    if (el) el.classList.add('currency-input');
-  }
-
   function initialiseCurrencyInputs() {
     D.MONEY_FIELDS.forEach((id) => {
       const el = document.getElementById(id);
@@ -81,12 +77,11 @@
       .join('');
   }
 
-  // Returns true for wrappers where rate/draw fields should be disabled.
-  // ISA interest compounds inside the wrapper and is never separately drawn.
-  // SIPP interest likewise — it grows inside the pension and exits via the
-  // normal withdrawal order. Only GIA and Cash wrappers support interest draws.
-  function _isNoInterestWrapper(wrapper) {
-    return wrapper === 'ISA' || wrapper === 'SIPP';
+  // Rate % and Monthly Draw are only available for accounts that have a
+  // cashlike allocation > 0. Wrapper type is irrelevant — it's the presence
+  // of cashlike instruments that determines whether interest/draw makes sense.
+  function _isCashlikeless(acc) {
+    return !((acc.alloc?.cashlike || 0) > 0);
   }
 
   function renderAccountRow(acc, ownerNames) {
@@ -95,7 +90,7 @@
     tr.id = 'acct-row-' + acc.id;
 
     const fixed      = D.FIXED_CASH_WRAPPERS.has(acc.wrapper);
-    const noInterest = _isNoInterestWrapper(acc.wrapper);
+    const noInterest = _isCashlikeless(acc);
 
     const wrapperOptions = D.WRAPPERS.map(
       (w) => `<option value="${w}" ${acc.wrapper === w ? 'selected' : ''}>${w}</option>`
@@ -123,9 +118,9 @@
     `
     ).join('');
 
-    // Rate and draw values are cleared and disabled for ISA/SIPP wrappers.
-    const rateValue = noInterest ? '' : (acc.rate ?? '');
-    const drawValue = noInterest ? '' : (acc.monthlyDraw != null ? D.formatCurrency(acc.monthlyDraw) : '');
+    // Rate and draw are cleared and disabled when cashlike % is zero.
+    const rateValue          = noInterest ? '' : (acc.rate ?? '');
+    const drawValue          = noInterest ? '' : (acc.monthlyDraw != null ? D.formatCurrency(acc.monthlyDraw) : '');
     const interestDisabledAttr = noInterest ? 'disabled style="opacity:0.35"' : '';
 
     tr.innerHTML = `
@@ -219,31 +214,33 @@
     });
   }
 
+  // Recomputes field states for a single account row based on current values.
+  // Called after any change that could affect rate/draw availability
+  // (cashlike % edit) or alloc disabled state (wrapper change).
   function applyWrapperFieldState(acc) {
     const row = document.getElementById('acct-row-' + acc.id);
     if (!row) return;
 
-    const fixed      = D.FIXED_CASH_WRAPPERS.has(acc.wrapper);
-    const noInterest = _isNoInterestWrapper(acc.wrapper);
-
-    // Alloc % inputs — disabled for fixed Cash wrappers (unchanged behaviour)
+    // Alloc % inputs — disabled for fixed Cash wrappers
+    const fixed = D.FIXED_CASH_WRAPPERS.has(acc.wrapper);
     D.ALLOC_CLASSES.forEach((cls) => {
       const inp = row.querySelector(`[data-field="${cls}"]`);
       if (!inp) return;
       inp.disabled = fixed;
     });
 
-    // Rate and monthly draw — disabled and cleared for ISA and SIPP wrappers
+    // Rate and monthly draw — enabled only when cashlike % > 0
+    const noInterest = _isCashlikeless(acc);
     const rateInp = row.querySelector('[data-field="rate"]');
     const drawInp = row.querySelector('[data-field="monthlyDraw"]');
 
     if (rateInp) {
-      rateInp.disabled     = noInterest;
+      rateInp.disabled      = noInterest;
       rateInp.style.opacity = noInterest ? '0.35' : '';
       if (noInterest) rateInp.value = '';
     }
     if (drawInp) {
-      drawInp.disabled     = noInterest;
+      drawInp.disabled      = noInterest;
       drawInp.style.opacity = noInterest ? '0.35' : '';
       if (noInterest) drawInp.value = '';
     }
