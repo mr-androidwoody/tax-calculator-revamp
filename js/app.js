@@ -830,7 +830,17 @@
       triggerLoadFeedback(loadSetupBtn, 'Load saved', 800);
       try {
         applySetupInputs(JSON.parse(raw));
-        showToast('Portfolio loaded ✓');
+        // Flash success state on the button in-place
+        loadSetupBtn.textContent = 'Portfolio loaded ✓';
+        loadSetupBtn.classList.remove('btn-secondary', 'btn-loading');
+        loadSetupBtn.classList.add('btn-load-success');
+        clearTimeout(loadSetupBtn._successTimer);
+        loadSetupBtn._successTimer = window.setTimeout(() => {
+          loadSetupBtn.textContent = 'Load saved';
+          loadSetupBtn.classList.remove('btn-load-success');
+          loadSetupBtn.classList.add('btn-secondary');
+          loadSetupBtn.disabled = false;
+        }, 2000);
       } catch (err) {
         console.error(err);
         showToast('Load failed – see console', true);
