@@ -28,6 +28,7 @@
   // ─────────────────────────────────────────────
   function setResults(rows) {
     _rows = rows;
+    window._debugRows = rows; // TEMP DEBUG — remove after diagnosis
   }
 
   // ─────────────────────────────────────────────
