@@ -149,6 +149,7 @@
           .replace('State Pension', 'Pension')
           .replace('Interest draw', 'Interest')
           .replace('Cash draw', 'Cash')
+          .replace('Dividends', 'Divs')
           .trim();
       }
     
@@ -242,6 +243,8 @@
       p1GIA: '#A9D18E',
       p2GIA: '#78C86A',
       intDraw: '#9B59B6',
+      p1Divs: '#C0392B',
+      p2Divs: '#E74C3C',
       p1Cash: '#B0B0B0',
       salary: '#FF7F7F',
       target: '#1F2937',
@@ -271,6 +274,7 @@
       sets.push(ds(`ISA – ${p1}`, r => r.p1Drawn.ISA, COLOURS.p1ISA));
       sets.push(ds(`GIA – ${p1}`, r => r.p1Drawn.GIA, COLOURS.p1GIA));
       sets.push(ds(`Interest draw – ${p1}`, r => r.p1IntDraw, COLOURS.intDraw));
+      sets.push(ds(`Dividends – ${p1}`, r => r.p1Divs || 0, COLOURS.p1Divs));
       sets.push(ds(`Cash draw – ${p1}`, r => r.p1Drawn.Cash, COLOURS.p1Cash));
     }
 
@@ -281,6 +285,7 @@
       sets.push(ds(`ISA – ${p2}`, r => r.p2Drawn.ISA, COLOURS.p2ISA));
       sets.push(ds(`GIA – ${p2}`, r => r.p2Drawn.GIA, COLOURS.p2GIA));
       sets.push(ds(`Interest draw – ${p2}`, r => r.p2IntDraw, COLOURS.intDraw));
+      sets.push(ds(`Dividends – ${p2}`, r => r.p2Divs || 0, COLOURS.p2Divs));
       sets.push(ds(`Cash draw – ${p2}`, r => r.p2Drawn.Cash, COLOURS.p1Cash));
     }
 
