@@ -196,7 +196,7 @@
       p1GIA: '#A9D18E',
       p2GIA: '#78C86A',
       intDraw: '#9B59B6',
-      p1Divs: '#C0392B',
+      p1Divs: '#27AE60',
       p2Divs: '#E74C3C',
       p1Cash: '#B0B0B0',
       salary: '#FF7F7F',
