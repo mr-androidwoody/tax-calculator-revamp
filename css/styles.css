@@ -329,6 +329,16 @@ canvas { display: block; width: 100%; height: auto; }
 }
 .btn-load-error:hover { background: #fff5f5; transform: none; }
 
+/* ── Load success state: button flashes green text in-place ── */
+.btn-load-success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1.5px solid #22c55e;
+  box-shadow: none;
+  cursor: default;
+}
+.btn-load-success:hover { background: #f0fdf4; transform: none; }
+
 /* ── Delete confirm box: red-bordered alert replacing the delete button ── */
 .delete-confirm-box {
   display: flex;
