@@ -1215,8 +1215,8 @@ input[type="radio"] { accent-color: var(--accent); }
   align-items: center;
   gap: 6px;
   white-space: nowrap;
-
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 110px;
 }
 
 .split-legend-swatch {
@@ -1339,8 +1339,14 @@ input[type="radio"] { accent-color: var(--accent); }
 .split-legend-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+
+  row-gap: 10px;
+  column-gap: 26px;
+
   align-items: center;
+
+  /* THIS forces wrap into 2 rows */
+  max-width: 520px;
 }
 
 .split-legend-item {
