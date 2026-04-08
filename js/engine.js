@@ -279,6 +279,27 @@
           p1Drawn.SIPP += extra.SIPP;
           p1Drawn.sippTaxable += extra.sippTaxable;
         }
+
+        // Final catch-all: if shortfall still unmet after all above
+        // (e.g. PA-capped SIPP draw + empty ISA/GIA), draw more SIPP regardless of PA limit
+        const totalDrawn = p1Drawn.GIA + p1Drawn.SIPP + p1Drawn.ISA
+                         + p2Drawn.GIA + p2Drawn.SIPP + p2Drawn.ISA;
+        const stillUnmet = Math.max(0, shortfall - totalDrawn);
+        if (stillUnmet > 0) {
+          const p1Extra = C.withdraw(p1Bal, ['SIPP'], stillUnmet / 2);
+          const p2Extra = C.withdraw(p2Bal, ['SIPP'], stillUnmet / 2 + Math.max(0, stillUnmet / 2 - p1Extra.SIPP));
+          p1Drawn.SIPP += p1Extra.SIPP;
+          p1Drawn.sippTaxable += p1Extra.sippTaxable;
+          p2Drawn.SIPP += p2Extra.SIPP;
+          p2Drawn.sippTaxable += p2Extra.sippTaxable;
+          // If p2 couldn't cover its share, try p1 again for the remainder
+          const p2StillUnmet = Math.max(0, stillUnmet / 2 - p2Extra.SIPP);
+          if (p2StillUnmet > 0) {
+            const p1Last = C.withdraw(p1Bal, ['SIPP'], p2StillUnmet);
+            p1Drawn.SIPP += p1Last.SIPP;
+            p1Drawn.sippTaxable += p1Last.sippTaxable;
+          }
+        }
       }
 
       p1Drawn.Cash += p1CashDrawn;
