@@ -41,12 +41,23 @@
     ═══════════════════════════════════════════ -->
     <div id="tab-setup" class="tab-panel">
 
-    <div class="setup-intro">
-      <div class="setup-intro__text">
-        <h1>Portfolio setup</h1>
-        <p>Add the accounts you hold, their current values, and how they're invested. This forms the foundation of your plan and feeds directly into your assumptions. Once done, continue to refine your 'Assumptions'.</p>
-      </div>
-    </div>
+        <div class="setup-intro-row">
+          <div class="setup-intro__text">
+            <h1>Portfolio setup</h1>
+            <p>Add the accounts you hold, their current values, and how they're invested. This forms the foundation of your plan and feeds directly into your assumptions. Once done, continue to refine your 'Assumptions'.</p>
+          </div>
+        
+          <div class="setup-intro-actions">
+            <button class="btn btn-secondary" data-action="load-excel" type="button">
+              <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M8 9l4-4 4 4"/><path d="M4 15v4h16v-4"/></svg>
+              Load Excel
+            </button>
+            <button class="btn btn-secondary" data-action="load-setup" type="button">
+              <svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h7l2 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/></svg>
+              Load saved
+            </button>
+          </div>
+        </div>
 
       <!-- Summary panels -->
       <div class="setup-grid">
@@ -212,14 +223,6 @@
             <button class="btn-add" data-action="add-account" type="button">+ Add account</button>
           </div>
         <div class="accounts-toolbar-right">
-          <button class="btn btn-secondary" data-action="load-excel" type="button">
-            <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M8 9l4-4 4 4"/><path d="M4 15v4h16v-4"/></svg>
-            Load Excel
-          </button>
-          <button class="btn btn-secondary" data-action="load-setup" type="button">
-            <svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h7l2 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/></svg>
-            Load saved
-          </button>
           <button class="btn btn-success" data-action="save-setup" type="button">
             <svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M7 21V5h8l2 2v14"/><path d="M9 9h6"/><path d="M9 13h6"/></svg>
             Save portfolio
@@ -227,7 +230,7 @@
           <button class="btn btn-primary" data-action="switch-tab" data-tab="assumptions" type="button">
             Continue to assumptions &#x2192;
           </button>
-        </div>on>
+        </div>
           </div>
         </div>
 
