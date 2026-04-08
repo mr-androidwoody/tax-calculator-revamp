@@ -594,8 +594,14 @@
       const wealthData = [
         {
           label: `${p1} Cash`,
-          data: _rows.map(r => Math.round(adj((r.snap.p1Cash || 0) + (r.snap.p1IntBal || 0), r))),
+          data: _rows.map(r => Math.round(adj(r.snap.p1Cash || 0, r))),
           backgroundColor: '#B0B0B0',
+          stack: 'wealth',
+        },
+        {
+          label: `${p1} Interest`,
+          data: _rows.map(r => Math.round(adj(r.snap.p1IntBal || 0, r))),
+          backgroundColor: '#9B59B6',
           stack: 'wealth',
         },
         {
@@ -618,8 +624,14 @@
         },
         {
           label: `${p2} Cash`,
-          data: _rows.map(r => Math.round(adj((r.snap.p2Cash || 0) + (r.snap.p2IntBal || 0), r))),
+          data: _rows.map(r => Math.round(adj(r.snap.p2Cash || 0, r))),
           backgroundColor: '#D0D0D0',
+          stack: 'wealth',
+        },
+        {
+          label: `${p2} Interest`,
+          data: _rows.map(r => Math.round(adj(r.snap.p2IntBal || 0, r))),
+          backgroundColor: '#C39BD3',
           stack: 'wealth',
         },
         {
@@ -648,9 +660,9 @@
         data: {
           labels,
           datasets: _viewPerson === 'p1'
-            ? wealthData.slice(0, 4)
+            ? wealthData.slice(0, 5)
             : _viewPerson === 'p2'
-              ? wealthData.slice(4)
+              ? wealthData.slice(5)
               : wealthData,
         },
         options: {
