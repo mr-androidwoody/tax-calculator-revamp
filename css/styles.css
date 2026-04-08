@@ -1201,7 +1201,7 @@ input[type="radio"] { accent-color: var(--accent); }
 
 .chart-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  grid-template-columns: 200px minmax(0, 3fr);
   border: 1px solid var(--border);
   border-radius: 0 var(--radius-xs) var(--radius-xs) var(--radius-xs);
   background: var(--panel-solid);
@@ -1323,6 +1323,14 @@ input[type="radio"] { accent-color: var(--accent); }
   color: var(--muted);
   margin-left: auto;
   font-style: italic;
+}
+
+.sidebar-legend__value {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* ─────────────────────────────
