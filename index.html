@@ -321,11 +321,13 @@
           <button class="btn btn-secondary" id="deletePortfolioBtn">
             Delete portfolio
           </button>
-          <span id="deletePortfolioConfirm" class="inline-confirm" style="display:none">
-            <span class="inline-confirm__label">Delete everything?</span>
-            <button type="button" class="btn btn-danger" id="confirmDeletePortfolioBtn">Yes, delete</button>
-            <button type="button" class="btn btn-secondary" id="cancelDeletePortfolioBtn">Cancel</button>
-          </span>
+          <div id="deletePortfolioConfirm" class="delete-confirm-box" style="display:none">
+            <span class="delete-confirm-box__label">Delete entire portfolio? This cannot be undone.</span>
+            <div class="delete-confirm-box__actions">
+              <button type="button" class="btn btn-primary" id="confirmDeletePortfolioBtn">Confirm delete</button>
+              <button type="button" class="btn btn-secondary" id="cancelDeletePortfolioBtn">Cancel</button>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -351,11 +353,13 @@
           <button class="btn btn-secondary" id="deleteAssumptionsBtn" type="button">
             Delete assumptions
           </button>
-          <span id="deleteAssumptionsConfirm" class="inline-confirm" style="display:none">
-            <span class="inline-confirm__label">Delete saved assumptions?</span>
-            <button type="button" class="btn btn-danger" id="confirmDeleteAssumptionsBtn">Yes, delete</button>
-            <button type="button" class="btn btn-secondary" id="cancelDeleteAssumptionsBtn">Cancel</button>
-          </span>
+        </div>
+      </div>
+      <div id="deleteAssumptionsConfirm" class="delete-confirm-box" style="display:none">
+        <span class="delete-confirm-box__label">Delete saved assumptions? This cannot be undone.</span>
+        <div class="delete-confirm-box__actions">
+          <button type="button" class="btn btn-primary" id="confirmDeleteAssumptionsBtn">Confirm delete</button>
+          <button type="button" class="btn btn-secondary" id="cancelDeleteAssumptionsBtn">Cancel</button>
         </div>
       </div>
         
