@@ -316,65 +316,67 @@
     }
 
     // ─────────────────────────────────────────────
-    // NET INCOME vs TARGET SPENDING CHART (FIXED)
+    // NET INCOME vs TARGET SPENDING CHART
+    // Line (target, dashed) + Line (net income) + Bar (gap: green=surplus, red=shortfall)
     // ─────────────────────────────────────────────
     const spendingCtx = document.getElementById('spendingChart')?.getContext('2d');
     if (spendingCtx) {
-    
+
       function getNet(r) {
-        if (_viewPerson === 'p1') return (r.p1NaturalNet || 0);
-        if (_viewPerson === 'p2') return (r.p2NaturalNet || 0);
-        return (r.householdNaturalNet || 0);
+        if (_viewPerson === 'p1') return (r.p1NetIncome || 0);
+        if (_viewPerson === 'p2') return (r.p2NetIncome || 0);
+        return (r.householdNetIncome || 0);
       }
-    
-      const targetData = _rows.map(r =>
-        Math.round(adj(r.target || 0, r))
-      );
-    
-      const netData = _rows.map(r =>
-        Math.round(adj(getNet(r), r))
-      );
-    
-      const shortfallData = _rows.map(r => {
-        const net = getNet(r);
-        const target = r.target || 0;
-        return Math.round(adj(net < target ? (target - net) : 0, r));
-      });
-    
-      const surplusData = _rows.map(r => {
-        const net = getNet(r);
-        const target = r.target || 0;
-        return Math.round(adj(net > target ? (net - target) : 0, r));
-      });
-    
+
+      function getTarget(r) {
+        // Per-person view: split household target 50/50 (no separate per-person target field)
+        const t = r.target || 0;
+        return (_viewPerson === 'p1' || _viewPerson === 'p2') ? t / 2 : t;
+      }
+
+      const targetData = _rows.map(r => Math.round(adj(getTarget(r), r) / 1000));
+      const netData    = _rows.map(r => Math.round(adj(getNet(r),    r) / 1000));
+
+      // Single gap bar: positive = surplus (green), negative = shortfall (red)
+      const gapValues  = _rows.map(r => Math.round(adj(getNet(r) - getTarget(r), r) / 1000));
+      const gapColours = gapValues.map(v => v >= 0 ? COLOURS.surplus : COLOURS.shortfall);
+
       if (_spendingChart) _spendingChart.destroy();
-    
+
       _spendingChart = new Chart(spendingCtx, {
-        type: 'bar',
         data: {
           labels,
           datasets: [
             {
+              type: 'line',
               label: 'Target spending',
               data: targetData,
-              backgroundColor: COLOURS.target,
+              borderColor: COLOURS.target,
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              borderDash: [6, 3],
+              pointRadius: 0,
+              tension: 0,
+              order: 1,
             },
             {
+              type: 'line',
               label: 'Net income',
               data: netData,
-              backgroundColor: COLOURS.net,
+              borderColor: COLOURS.net,
+              backgroundColor: 'rgba(37,99,235,0.08)',
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0,
+              fill: false,
+              order: 2,
             },
             {
-              label: 'Shortfall',
-              data: shortfallData,
-              backgroundColor: COLOURS.shortfall,
-              hidden: true, // default OFF
-            },
-            {
-              label: 'Surplus',
-              data: surplusData,
-              backgroundColor: COLOURS.surplus,
-              hidden: true, // default OFF
+              type: 'bar',
+              label: 'Gap (surplus / shortfall)',
+              data: gapValues,
+              backgroundColor: gapColours,
+              order: 3,
             },
           ],
         },
@@ -393,26 +395,30 @@
             },
             tooltip: {
               callbacks: {
-                label: ctx =>
-                  `${ctx.dataset.label}: ${D.formatMoney(ctx.parsed.y || 0)}`,
+                label: ctx => {
+                  const val = ctx.parsed.y || 0;
+                  if (ctx.dataset.label === 'Gap (surplus / shortfall)') {
+                    const sign = val >= 0 ? 'Surplus' : 'Shortfall';
+                    return `${sign}: ${D.formatMoney(Math.abs(val) * 1000)}`;
+                  }
+                  return `${ctx.dataset.label}: ${D.formatMoney(val * 1000)}`;
+                },
               },
             },
           },
           scales: {
             x: {
-              stacked: false, // critical: grouped bars
               ticks: { font: { size: 10 }, maxRotation: 45 },
             },
             y: {
-              stacked: false,
               title: {
                 display: true,
-                text: _useReal ? 'Real £' : 'Nominal £',
+                text: _useReal ? 'Real £k' : 'Nominal £k',
                 font: { size: 11 },
               },
               ticks: {
                 font: { size: 11 },
-                callback: v => '£' + Math.round(v).toLocaleString('en-GB'),
+                callback: v => '£' + v + 'k',
               },
             },
           },
