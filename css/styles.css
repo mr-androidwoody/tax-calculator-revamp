@@ -1185,41 +1185,43 @@ input[type="radio"] { accent-color: var(--accent); }
 }
 
 /* ─────────────────────────────
-   Income legend layout (2 rows, horizontal flow)
+   Income legend layout (balanced rows, natural flow)
    ───────────────────────────── */
 
 .legend-group {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .legend-heading {
   font-size: 11px;
   font-weight: 700;
   color: #6b778c;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .split-legend-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 16px;
+  gap: 8px 18px;
+  align-items: center;
+  max-width: 100%;
 }
 
 .split-legend-item {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   white-space: nowrap;
 
-  /* natural width — THIS is the key fix */
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 110px;
 }
 
 .split-legend-swatch {
   width: 10px;
   height: 10px;
   border-radius: 2px;
-  flex-shrink: 0;
+  flex: 0 0 10px;
 }
 
 .split-legend-item.is-hidden {
