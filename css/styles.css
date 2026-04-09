@@ -1149,6 +1149,11 @@ input[type="radio"] { accent-color: var(--accent); }
   line-height: 1.4;
 }
 
+/* Hint used inline inside radio labels — no flex stretching */
+.assump-radio-label .assump-inline-field__hint {
+  flex: 0 1 auto;
+}
+
 /* ─────────────────────────────
    Portfolio Balances footer — total only
    ───────────────────────────── */
