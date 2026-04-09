@@ -604,6 +604,34 @@
     }
 
     // ─────────────────────────────────────────────
+    // TAX / RATE DATA (hoisted — used by both Gross vs Net and Tax charts)
+    // ─────────────────────────────────────────────
+    const taxData = _rows.map(r => {
+      const t = _viewPerson === 'p1'
+        ? r.p1IncomeTax + r.p1CGT
+        : _viewPerson === 'p2'
+          ? r.p2IncomeTax + r.p2CGT
+          : r.p1IncomeTax + r.p1CGT + r.p2IncomeTax + r.p2CGT;
+      return Math.round(adj(t, r));
+    });
+
+    const rateData = _rows.map(r => {
+      const tax = _viewPerson === 'p1'
+        ? r.p1IncomeTax + r.p1CGT
+        : _viewPerson === 'p2'
+          ? r.p2IncomeTax + r.p2CGT
+          : r.p1IncomeTax + r.p1CGT + r.p2IncomeTax + r.p2CGT;
+
+      const gross = _viewPerson === 'p1'
+        ? (r.p1GrossIncome || 0)
+        : _viewPerson === 'p2'
+          ? (r.p2GrossIncome || 0)
+          : (r.householdGrossIncome || 0);
+
+      return gross > 0 ? parseFloat((tax / gross * 100).toFixed(1)) : 0;
+    });
+
+    // ─────────────────────────────────────────────
     // GROSS VS NET INCOME CHART
     // Two segments only: Net income (bottom) + Tax (top).
     // Bar total = gross drawn (~£65k target). Tax segment shows what's lost.
@@ -715,31 +743,6 @@
     // ─────────────────────────────────────────────
     // TAX CHART
     // ─────────────────────────────────────────────
-    const taxData = _rows.map(r => {
-      const t = _viewPerson === 'p1'
-        ? r.p1IncomeTax + r.p1CGT
-        : _viewPerson === 'p2'
-          ? r.p2IncomeTax + r.p2CGT
-          : r.p1IncomeTax + r.p1CGT + r.p2IncomeTax + r.p2CGT;
-      return Math.round(adj(t, r));
-    });
-
-    const rateData = _rows.map(r => {
-      const tax = _viewPerson === 'p1'
-        ? r.p1IncomeTax + r.p1CGT
-        : _viewPerson === 'p2'
-          ? r.p2IncomeTax + r.p2CGT
-          : r.p1IncomeTax + r.p1CGT + r.p2IncomeTax + r.p2CGT;
-
-      const gross = _viewPerson === 'p1'
-        ? (r.p1GrossIncome || 0)
-        : _viewPerson === 'p2'
-          ? (r.p2GrossIncome || 0)
-          : (r.householdGrossIncome || 0);
-
-      return gross > 0 ? parseFloat((tax / gross * 100).toFixed(1)) : 0;
-    });
-
     const taxCtx = document.getElementById('taxChart')?.getContext('2d');
     if (taxCtx) {
       if (_taxChart) _taxChart.destroy();
