@@ -440,32 +440,16 @@
             </div>
 
             <div class="portfolio-footer">
-              <div class="portfolio-footer__token portfolio-footer__token--total">
-                <span class="portfolio-footer__token-label">Total</span>
-                <span class="portfolio-footer__token-value" id="ai-total">–</span>
-              </div>
-              <div class="portfolio-footer__token">
-                <span class="portfolio-footer__token-label">ISA</span>
-                <span class="portfolio-footer__token-value" id="ai-total-isa">–</span>
-              </div>
-              <div class="portfolio-footer__token">
-                <span class="portfolio-footer__token-label">SIPP</span>
-                <span class="portfolio-footer__token-value" id="ai-total-sipp">–</span>
-              </div>
-              <div class="portfolio-footer__token">
-                <span class="portfolio-footer__token-label">GIA</span>
-                <span class="portfolio-footer__token-value" id="ai-total-gia">–</span>
-              </div>
-              <div class="portfolio-footer__token">
-                <span class="portfolio-footer__token-label">Cash</span>
-                <span class="portfolio-footer__token-value" id="ai-total-cash">–</span>
-              </div>
+              <span class="portfolio-footer__label">Total portfolio</span>
+              <span class="portfolio-footer__value" id="ai-total">–</span>
             </div>
           </div>
 
           <!-- Spending -->
           <div class="assump-card">
-            <div class="assump-card-title">Spending</div>
+            <div class="assump-card-title">
+              <span class="assump-tooltip-anchor">Spending<span class="assump-tooltip">Sets the gross household income target the projection will attempt to meet each year. The engine works backwards from this to determine how much to withdraw from each wrapper.</span></span>
+            </div>
             <div class="assump-section">
               <p class="assump-section__label">Target</p>
               <div class="assump-section__body">
@@ -567,7 +551,9 @@
 
           <!-- Tax -->
           <div class="assump-card">
-            <div class="assump-card-title">Tax</div>
+            <div class="assump-card-title">
+              <span class="assump-tooltip-anchor">Tax<span class="assump-tooltip">Controls how UK tax thresholds are uprated over the projection. Frozen means fiscal drag erodes real allowances each year; uprating preserves them in line with inflation.</span></span>
+            </div>
             <div class="assump-section">
               <p class="assump-section__label">Tax threshold uprating</p>
               <div class="assump-radio-group">
@@ -611,10 +597,10 @@
               <p class="assump-section__label">Split mode</p>
               <div class="assump-radio-group">
                 <label class="assump-radio-label">
-                  <input type="radio" name="withdrawalMode" value="50/50"> 50/50 mechanical split (wrapper order only)
+                  <input type="radio" name="withdrawalMode" value="50/50"> 50/50 split – each wrapper drawn in order, no tax optimisation
                 </label>
                 <label class="assump-radio-label">
-                  <input type="radio" name="withdrawalMode" value="tax-aware" checked> Tax-aware (SIPP fills PA, then proportional by headroom)
+                  <input type="radio" name="withdrawalMode" value="tax-aware" checked> Tax-aware – SIPP used to fill personal allowance first, then drawn proportionally
                 </label>
               </div>
             </div>
