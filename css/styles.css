@@ -893,7 +893,7 @@ input[type="radio"] { accent-color: var(--accent); }
 
 .assump-intro__text p {
   margin: 0;
-  color: #56657d;
+  color: var(--muted);
   font-size: 0.85rem;
   line-height: 1.42;
 }
@@ -918,13 +918,26 @@ input[type="radio"] { accent-color: var(--accent); }
 }
 
 .assump-card-title {
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 800;
   color: var(--text);
   margin-bottom: 14px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--border);
   letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.assump-card-title::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--accent);
+  flex-shrink: 0;
 }
 
 .assump-info-grid {
@@ -941,10 +954,10 @@ input[type="radio"] { accent-color: var(--accent); }
 
 .assump-info-label {
   font-size: 0.7rem;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--accent);
+  color: var(--muted);
   margin-bottom: 4px;
 }
 
@@ -954,8 +967,8 @@ input[type="radio"] { accent-color: var(--accent); }
   align-items: baseline;
   gap: 6px;
   font-size: 0.82rem;
-  padding: 3px 0;
-  border-bottom: 1px solid #f3f5f9;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
 }
 
 .assump-info-row:last-child {
@@ -1063,6 +1076,124 @@ input[type="radio"] { accent-color: var(--accent); }
     align-items: stretch;
   }
 }
+
+/* ─────────────────────────────
+   Assumptions: section structure (sidebar-style embedded panels)
+   ───────────────────────────── */
+
+.assump-section {
+  margin-bottom: 10px;
+}
+
+.assump-section:last-child {
+  margin-bottom: 0;
+}
+
+.assump-section__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 0 0 5px;
+}
+
+.assump-section__body {
+  background: var(--panel-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 6px 10px;
+}
+
+/* Info rows sit flush inside embedded body */
+.assump-section__body .assump-info-row {
+  padding: 4px 0;
+}
+
+/* Fields inside embedded panels — tighten margins */
+.assump-section__body .field {
+  margin-bottom: 8px;
+}
+
+.assump-section__body .field:last-child {
+  margin-bottom: 0;
+}
+
+/* Radio labels — replaces scattered inline styles */
+.assump-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--text);
+  cursor: pointer;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.3;
+}
+
+.assump-radio-label:last-of-type {
+  border-bottom: none;
+}
+
+.assump-radio-label input[type="radio"] {
+  width: auto;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Inline year input inside radio label */
+#thresholdFromYearVal {
+  width: 68px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 7px;
+  font-size: 0.8rem;
+  border: 1px solid var(--input-border);
+  border-radius: 7px;
+  background: var(--input-bg);
+  color: var(--text);
+}
+
+/* Preset label (Growth card) */
+.assump-preset-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-right: 2px;
+}
+
+/* Bed & ISA enable row */
+.assump-enable-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.assump-enable-row input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+.assump-enable-row label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  margin: 0;
+}
+
+/* Wrapper order dropdowns — slightly more refined */
+.order-row + .order-row {
+  margin-top: 4px;
+}
+
+
 
 /* ========================================
    Results tab
