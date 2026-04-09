@@ -157,10 +157,6 @@
     if (mRate)   mRate.textContent   = (avgRate * 100).toFixed(1) + '%';
     if (mTarget) mTarget.textContent = incomeTargetStr;
     if (mPort)   mPort.textContent   = fmt(adj(last.totalPortfolio, last));
-    const mIncomeLabel = document.getElementById('m-income-label');
-    if (mIncomeLabel) {
-      mIncomeLabel.childNodes[0].textContent = _useReal ? 'Real income target' : 'Nominal income target';
-    }
   }
 
   // ─────────────────────────────────────────────
@@ -816,9 +812,9 @@
                        : _viewPerson === 'p2' ? (r.p2NetIncome || 0)
                        : (r.householdNetIncome || 0);
 
-      const taxFn = r => _viewPerson === 'p1' ? (r.p1IncomeTax || 0) + (r.p1CGT || 0)
-                       : _viewPerson === 'p2' ? (r.p2IncomeTax || 0) + (r.p2CGT || 0)
-                       : (r.p1IncomeTax || 0) + (r.p1CGT || 0) + (r.p2IncomeTax || 0) + (r.p2CGT || 0);
+      const taxFn = r => _viewPerson === 'p1' ? (r.p1IncomeTax || 0) + (r.p1CGT || 0) + (r.p1NI || 0)
+                       : _viewPerson === 'p2' ? (r.p2IncomeTax || 0) + (r.p2CGT || 0) + (r.p2NI || 0)
+                       : (r.p1IncomeTax || 0) + (r.p1CGT || 0) + (r.p1NI || 0) + (r.p2IncomeTax || 0) + (r.p2CGT || 0) + (r.p2NI || 0);
 
       grossNetSets.push({
         label: 'Net income',
