@@ -570,6 +570,18 @@
     setText('ai-p2isa',  D.formatMoney(p2isa));
     setText('ai-p2gia',  D.formatMoney(p2gia));
 
+    // Portfolio footer totals
+    const totIsa  = p1isa  + p2isa;
+    const totSipp = p1sipp + p2sipp;
+    const totGia  = p1gia  + p2gia;
+    const totCash = p1cash + p2cash;
+    const totAll  = totIsa + totSipp + totGia + totCash;
+    setText('ai-total',      D.formatMoney(totAll));
+    setText('ai-total-isa',  D.formatMoney(totIsa));
+    setText('ai-total-sipp', D.formatMoney(totSipp));
+    setText('ai-total-gia',  D.formatMoney(totGia));
+    setText('ai-total-cash', D.formatMoney(totCash));
+
     setHidden('p1Cash', p1cash);
     setHidden('p2Cash', p2cash);
     setHidden('p1SIPP', p1sipp);
