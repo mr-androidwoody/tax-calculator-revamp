@@ -23,13 +23,16 @@
       </div>
         <div class="top-header__controls">
           <nav class="top-header__tabs">
-            <button data-action="switch-tab" data-tab="setup" class="tab-btn tab-active">Setup</button>
+            <button data-action="switch-tab" data-tab="setup" class="tab-btn tab-active">Portfolio</button>
+            <span class="tab-sep" aria-hidden="true"></span>
             <button data-action="switch-tab" data-tab="assumptions" class="tab-btn">Assumptions</button>
+            <span class="tab-sep" aria-hidden="true"></span>
             <button data-action="switch-tab" data-tab="results" class="tab-btn">Results</button>
           </nav>
-          <div class="top-header__actions">
-            <button type="button" class="btn-run btn-run--hidden" data-action="run-projection">Run projection</button>
-          </div>
+        
+            <div class="top-header__actions">
+              <button type="button" class="btn btn-secondary" data-action="run-projection">Run projection</button>
+            </div>
         </div>
     </div>
   </header>
@@ -52,10 +55,6 @@
           <button class="btn btn-secondary" id="loadExcelBtn" data-action="load-excel" type="button">
             <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M8 9l4-4 4 4"/><path d="M4 15v4h16v-4"/></svg>
             Load Excel
-          </button>
-          <button class="btn btn-secondary" id="loadSetupBtn" data-action="load-setup" type="button">
-            <svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h7l2 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/></svg>
-            Load saved
           </button>
         </div>
       </div>
