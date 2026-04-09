@@ -491,7 +491,6 @@ input[type="radio"] { accent-color: var(--accent); }
 .range-card,
 .accounts-panel,
 .assump-card,
-.metric,
 .chart-card,
 #tables-panel .chart-card {
   background: var(--panel);
@@ -1135,42 +1134,35 @@ input[type="radio"] { accent-color: var(--accent); }
 }
 
 .metric {
-  padding: 14px 16px;
+  padding: 16px 18px;
+  background: #1a2640;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: var(--shadow-sm);
 }
 
 .metric-label {
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--muted);
-  margin-bottom: 6px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 8px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .metric-value {
-  font-size: 1.25rem;
+  font-size: 1.4rem;
   font-weight: 800;
-  color: var(--text);
+  color: #ffffff;
   letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .metric-value--small {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-}
-
-.metric--income-target {
-  background: var(--text);
-  border-color: transparent;
-}
-
-.metric--income-target .metric-label {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.metric--income-target .metric-value {
-  color: #ffffff;
+  line-height: 1.3;
 }
 
 /* ─────────────────────────────
