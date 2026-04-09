@@ -467,14 +467,15 @@
 
     const intro = document.createElement('p');
     intro.className = 'chart-intro';
-    intro.textContent = 'Shows total income tax and CGT paid each year, with the effective rate as a percentage of gross income on the right axis. Click either item to show or hide it.';
+    intro.textContent = 'Shows total income tax and CGT paid each year, with the effective rate on the right axis. Click either item to show or hide it.';
     host.appendChild(intro);
 
     function toggleDataset(idx) {
       const visible = chart.isDatasetVisible(idx);
       chart.setDatasetVisibility(idx, !visible);
+      // Bar (idx 0) hides left y axis; line (idx 1) hides right y1 axis
       const axisKey = idx === 0 ? 'y' : 'y1';
-      if (chart.options.scales[axisKey]) {
+      if (chart.options.scales && chart.options.scales[axisKey]) {
         chart.options.scales[axisKey].display = !visible;
       }
       chart.update();
@@ -884,9 +885,15 @@
 
     // ─────────────────────────────────────────────
     // TAX CHART
+    // Rate line scaled to share the left axis so it tracks bar heights.
+    // Right axis back-calculates scaled values to show real % labels.
     // ─────────────────────────────────────────────
     const taxCtx = document.getElementById('taxChart')?.getContext('2d');
     if (taxCtx) {
+      const maxTax  = Math.max(...taxData, 1);
+      const maxRate = Math.max(...rateData, 1);
+      const rateScaled = rateData.map(v => (v / maxRate) * maxTax);
+
       if (_taxChart) _taxChart.destroy();
       _taxChart = new Chart(taxCtx, {
         data: {
@@ -898,17 +905,19 @@
               data: taxData,
               backgroundColor: '#C55A11',
               yAxisID: 'y',
+              order: 2,
             },
             {
               type: 'line',
               label: 'Effective tax rate',
-              data: rateData,
+              data: rateScaled,
               borderColor: '#7F6000',
-              backgroundColor: '#7F6000',
+              backgroundColor: 'transparent',
               borderWidth: 2,
               pointRadius: 2,
               tension: 0.2,
-              yAxisID: 'y1',
+              yAxisID: 'y',
+              order: 1,
             },
           ],
         },
@@ -920,8 +929,11 @@
             tooltip: {
               callbacks: {
                 label: ctx => {
-                  if (ctx.dataset.yAxisID === 'y1') return `${ctx.dataset.label}: ${ctx.parsed.y}%`;
-                  return `${ctx.dataset.label}: ${D.formatMoney(ctx.parsed.y || 0)}`;
+                  if (ctx.dataset.label === 'Effective tax rate') {
+                    const realRate = maxTax > 0 ? (ctx.parsed.y / maxTax * maxRate).toFixed(1) : '0.0';
+                    return `Effective tax rate: ${realRate}%`;
+                  }
+                  return `Tax paid: ${D.formatMoney(ctx.parsed.y || 0)}`;
                 },
               },
             },
@@ -932,6 +944,8 @@
             },
             y: {
               position: 'left',
+              min: 0,
+              max: maxTax * 1.05,
               title: {
                 display: true,
                 text: _useReal ? 'Real £' : 'Nominal £',
@@ -944,6 +958,8 @@
             },
             y1: {
               position: 'right',
+              min: 0,
+              max: maxRate * 1.05,
               grid: { drawOnChartArea: false },
               title: {
                 display: true,
@@ -951,7 +967,8 @@
                 font: { size: 11 },
               },
               ticks: {
-                callback: v => v + '%',
+                font: { size: 11 },
+                callback: v => v.toFixed(1) + '%',
               },
             },
           },
