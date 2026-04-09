@@ -1242,12 +1242,14 @@ input[type="radio"] { accent-color: var(--accent); }
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 14px;
+  align-items: stretch;
 }
 
 .sidebar-controls__col {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  align-items: stretch;
 }
 
 .sidebar-controls__col .chart-sidebar__label {
@@ -1255,20 +1257,32 @@ input[type="radio"] { accent-color: var(--accent); }
 }
 
 /* Pill-style toggle buttons in sidebar */
+
+/* Outer track — grey rounded container wrapping all buttons */
 .sidebar-toggle {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+  background: #c8d0df;
+  border-radius: 10px;
+  padding: 3px;
+  flex: 1;
+}
+
+.sidebar-controls__col {
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar-toggle button {
   width: 100%;
+  flex: 1;
   padding: 7px 6px;
   font-size: 0.76rem;
   font-weight: 600;
-  border-radius: 7px;
+  border-radius: 8px;
   border: none;
-  background: var(--border);
+  background: transparent;
   color: var(--muted);
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease;
@@ -1280,7 +1294,7 @@ input[type="radio"] { accent-color: var(--accent); }
 .sidebar-toggle button.is-active {
   background: #fff;
   color: var(--text);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.13);
+  box-shadow: 0 1px 5px rgba(0,0,0,0.15);
 }
 
 /* ─────────────────────────────
