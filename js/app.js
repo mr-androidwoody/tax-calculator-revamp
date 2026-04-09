@@ -558,8 +558,8 @@
     const p2sipp = sumBy('p2', 'SIPP');
     const p1isa  = sumBy('p1', 'ISA');
     const p2isa  = sumBy('p2', 'ISA');
-    const p1gia  = sumBy('p1', 'GIA', true);
-    const p2gia  = sumBy('p2', 'GIA', true);
+    const p1gia  = sumBy('p1', 'GIA');
+    const p2gia  = sumBy('p2', 'GIA');
 
     setText('ai-p1cash', D.formatMoney(p1cash));
     setText('ai-p1sipp', D.formatMoney(p1sipp));
