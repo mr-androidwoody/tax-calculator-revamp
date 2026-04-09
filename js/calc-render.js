@@ -157,6 +157,132 @@
   // ─────────────────────────────────────────────
   // INCOME LEGEND
   // ─────────────────────────────────────────────
+  // ─────────────────────────────────────────────
+  // LEGEND TOOLTIPS
+  // ─────────────────────────────────────────────
+
+  // Shared tooltip element — created once, reused on every hover
+  let _tooltip = null;
+  function getTooltip() {
+    if (!_tooltip) {
+      _tooltip = document.createElement('div');
+      _tooltip.id = 'legend-tooltip';
+      document.body.appendChild(_tooltip);
+    }
+    return _tooltip;
+  }
+
+  function showTooltip(anchorEl, text) {
+    const tip = getTooltip();
+    tip.textContent = text;
+    tip.classList.add('is-visible');
+    const rect = anchorEl.getBoundingClientRect();
+    // Position above the icon, centred on it
+    tip.style.left = '0';
+    tip.style.top  = '0';
+    const tw = tip.offsetWidth;
+    const th = tip.offsetHeight;
+    let left = rect.left + rect.width / 2 - tw / 2 + window.scrollX;
+    let top  = rect.top - th - 8 + window.scrollY;
+    // Keep within viewport horizontally
+    left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+    tip.style.left = left + 'px';
+    tip.style.top  = top  + 'px';
+  }
+
+  function hideTooltip() {
+    if (_tooltip) _tooltip.classList.remove('is-visible');
+  }
+
+  function buildTooltipText(label, rows, viewPerson) {
+    if (!rows || !rows.length) return null;
+
+    const fmt0 = n => '£' + Math.round(n).toLocaleString('en-GB');
+
+    if (label === 'Salary') {
+      // Find which person has salary and until when
+      const hasSal = rows.find(r => (r.p1SalInc || 0) + (r.p2SalInc || 0) > 0);
+      const lastSal = [...rows].reverse().find(r => (r.p1SalInc || 0) + (r.p2SalInc || 0) > 0);
+      if (!hasSal) return null;
+      const p1Has = hasSal.p1SalInc > 0;
+      const name  = p1Has ? (document.getElementById('sp-p1name')?.value || 'Person 1').trim()
+                           : (document.getElementById('sp-p2name')?.value || 'Person 2').trim();
+      const annual = p1Has ? hasSal.p1SalInc : hasSal.p2SalInc;
+      return `${name}'s salary of ${fmt0(annual)}/yr, drawn until ${lastSal.year} (age ${p1Has ? lastSal.p1Age : lastSal.p2Age})`;
+    }
+
+    if (label === 'Cash') {
+      const firstCash = rows.find(r => (r.p1Drawn?.Cash || 0) + (r.p2Drawn?.Cash || 0) > 0);
+      const lastCash  = [...rows].reverse().find(r => (r.p1Drawn?.Cash || 0) + (r.p2Drawn?.Cash || 0) > 0);
+      if (!firstCash) return null;
+      const yrs = lastCash.year - firstCash.year + 1;
+      return `Liquid cash reserves drawn in early retirement to bridge spending before investment wrappers — used across ${yrs} year${yrs !== 1 ? 's' : ''} (${firstCash.year}–${lastCash.year})`;
+    }
+
+    if (label === 'Interest') {
+      const firstInt = rows.find(r => (r.p1IntDraw || 0) + (r.p2IntDraw || 0) > 0);
+      const lastInt  = [...rows].reverse().find(r => (r.p1IntDraw || 0) + (r.p2IntDraw || 0) > 0);
+      if (!firstInt) return null;
+      const yrs = lastInt.year - firstInt.year + 1;
+      return `Monthly draws from interest-bearing accounts (e.g. money market funds) over ${yrs} years (${firstInt.year}–${lastInt.year}), at their configured draw rate`;
+    }
+
+    if (label === 'Dividends') {
+      // Average GIA balance across years that have dividends
+      const divRows = rows.filter(r => (r.p1Divs || 0) + (r.p2Divs || 0) > 0);
+      if (!divRows.length) return null;
+      const avgGIA = divRows.reduce((s, r) => s + (r.snap?.p1GIA || 0) + (r.snap?.p2GIA || 0), 0) / divRows.length;
+      const sampleDiv = divRows[0].p1Divs + divRows[0].p2Divs;
+      const sampleGIA = (divRows[0].snap?.p1GIA || 0) + (divRows[0].snap?.p2GIA || 0);
+      const yieldPct  = sampleGIA > 0 ? ((sampleDiv / sampleGIA) * 100).toFixed(1) : '?';
+      return `Estimated dividend income from GIA holdings — average GIA balance of ${fmt0(avgGIA)} at a ${yieldPct}% annual yield. Shown separately from GIA capital withdrawals`;
+    }
+
+    if (label === 'GIA') {
+      const firstGIA = rows.find(r => (r.p1Drawn?.GIA || 0) + (r.p2Drawn?.GIA || 0) > 0);
+      const lastGIA  = [...rows].reverse().find(r => (r.p1Drawn?.GIA || 0) + (r.p2Drawn?.GIA || 0) > 0);
+      const totalDivs = rows.reduce((s, r) => s + (r.p1Divs || 0) + (r.p2Divs || 0), 0);
+      if (!firstGIA) return null;
+      const yrs = lastGIA.year - firstGIA.year + 1;
+      return `Capital withdrawals from GIA over ${yrs} years (${firstGIA.year}–${lastGIA.year}). Excludes ${fmt0(totalDivs)} dividend income shown separately — GIA gains within annual CGT exemption where possible`;
+    }
+
+    if (label === 'ISA') {
+      const firstISA = rows.find(r => (r.p1Drawn?.ISA || 0) + (r.p2Drawn?.ISA || 0) > 0);
+      const lastISA  = [...rows].reverse().find(r => (r.p1Drawn?.ISA || 0) + (r.p2Drawn?.ISA || 0) > 0);
+      if (!firstISA) return null;
+      return `Completely tax-free withdrawals from ISA, drawn from ${firstISA.year} onwards. No income tax, CGT or dividend tax on any ISA income`;
+    }
+
+    if (label === 'SIPP / WP') {
+      const totalGross = rows.reduce((s, r) => s + (r.p1Drawn?.SIPP || 0) + (r.p2Drawn?.SIPP || 0), 0);
+      const totalTaxable = rows.reduce((s, r) => s + (r.p1Drawn?.sippTaxable || 0) + (r.p2Drawn?.sippTaxable || 0), 0);
+      const taxFree = totalGross - totalTaxable;
+      const firstSIPP = rows.find(r => (r.p1Drawn?.SIPP || 0) + (r.p2Drawn?.SIPP || 0) > 0);
+      if (!firstSIPP) return null;
+      return `Gross pension withdrawals from ${firstSIPP.year} — ${fmt0(taxFree)} tax-free (25%) and ${fmt0(totalTaxable)} taxable (75%). The largest single investment source over retirement`;
+    }
+
+    if (label === 'State Pension') {
+      const p1SP = rows.find(r => r.p1SP > 0);
+      const p2SP = rows.find(r => r.p2SP > 0);
+      const p1Name = (document.getElementById('sp-p1name')?.value || 'Person 1').trim();
+      const p2Name = (document.getElementById('sp-p2name')?.value || 'Person 2').trim();
+      const parts = [];
+      if (p1SP) parts.push(`${p1Name} from ${p1SP.year} (age ${p1SP.p1Age})`);
+      if (p2SP) parts.push(`${p2Name} from ${p2SP.year} (age ${p2SP.p2Age})`);
+      return `Combined state pension — ${parts.join(', ')}. The largest single lifetime income source`;
+    }
+
+    if (label === 'Shortfall') {
+      const sfRows = rows.filter(r => (r.spendingShortfall || 0) > 0);
+      if (!sfRows.length) return 'Portfolio fully meets the spending target across all years — no shortfall';
+      return `Spending target unmet in ${sfRows.length} year${sfRows.length !== 1 ? 's' : ''}, first occurring in ${sfRows[0].year}`;
+    }
+
+    return null;
+  }
+
   function renderIncomeLegend(chart, recomputeShortfall) {
     const host = document.getElementById('incomeLegend');
     if (!host) return;
@@ -190,6 +316,18 @@
 
       item.appendChild(swatch);
       item.appendChild(label);
+
+      // Info icon — shows contextual tooltip on hover
+      const tipText = buildTooltipText(ds.label, _rows, _viewPerson);
+      if (tipText) {
+        const info = document.createElement('span');
+        info.className = 'sidebar-legend__info';
+        info.textContent = 'ⓘ';
+        info.addEventListener('mouseenter', e => { e.stopPropagation(); showTooltip(info, tipText); });
+        info.addEventListener('mouseleave', hideTooltip);
+        item.appendChild(info);
+      }
+
       item.appendChild(value);
 
       item.addEventListener('click', () => {
@@ -214,6 +352,15 @@
     sfLabel.style.flex = '1';
     sfItem.appendChild(sfSwatch);
     sfItem.appendChild(sfLabel);
+    const sfTipText = buildTooltipText('Shortfall', _rows, _viewPerson);
+    if (sfTipText) {
+      const sfInfo = document.createElement('span');
+      sfInfo.className = 'sidebar-legend__info';
+      sfInfo.textContent = 'ⓘ';
+      sfInfo.addEventListener('mouseenter', e => { e.stopPropagation(); showTooltip(sfInfo, sfTipText); });
+      sfInfo.addEventListener('mouseleave', hideTooltip);
+      sfItem.appendChild(sfInfo);
+    }
     if (sfRaw > 0) {
       const sfVal = document.createElement('span');
       sfVal.className = 'sidebar-legend__value';
