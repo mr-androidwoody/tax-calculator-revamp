@@ -1154,6 +1154,11 @@ input[type="radio"] { accent-color: var(--accent); }
   flex: 0 1 auto;
 }
 
+/* Radio label titles — no bold */
+.assump-radio-label strong {
+  font-weight: 400;
+}
+
 /* ─────────────────────────────
    Portfolio Balances footer — total only
    ───────────────────────────── */
