@@ -639,6 +639,18 @@
         _fixed: true,
       });
 
+      grossNetSets.push({
+        type: 'line',
+        label: 'Effective tax rate',
+        data: rateData,
+        borderColor: '#7F6000',
+        backgroundColor: '#7F6000',
+        borderWidth: 2,
+        pointRadius: 2,
+        tension: 0.2,
+        yAxisID: 'y1',
+      });
+
       if (_spendingChart) _spendingChart.destroy();
       _spendingChart = new Chart(spendingCtx, {
         type: 'bar',
@@ -651,6 +663,7 @@
             tooltip: {
               callbacks: {
                 label: ctx => {
+                  if (ctx.dataset.yAxisID === 'y1') return `${ctx.dataset.label}: ${ctx.parsed.y}%`;
                   const val = (ctx.parsed.y || 0) * 1000;
                   if (!val) return null;
                   if (ctx.dataset.label === 'Spending target') return `Target: ${D.formatMoney(val)}`;
@@ -674,6 +687,18 @@
               ticks: {
                 font: { size: 11 },
                 callback: v => v + 'k',
+              },
+            },
+            y1: {
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              title: {
+                display: true,
+                text: 'Rate %',
+                font: { size: 11 },
+              },
+              ticks: {
+                callback: v => v + '%',
               },
             },
           },
