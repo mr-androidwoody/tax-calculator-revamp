@@ -127,15 +127,16 @@
       return s + adj(t, r);
     }, 0);
 
-    const avgRate = _rows.reduce((s, r) => {
-      const tax = _viewPerson === 'p1' ? r.p1IncomeTax + r.p1CGT + r.p1NI
-                : _viewPerson === 'p2' ? r.p2IncomeTax + r.p2CGT + r.p2NI
-                : r.p1IncomeTax + r.p1CGT + r.p1NI + r.p2IncomeTax + r.p2CGT + r.p2NI;
-      const p1Gross = r.p1SP + (r.p1SalInc || 0) + r.p1Drawn.SIPP + r.p1Drawn.ISA + r.p1Drawn.GIA + r.p1IntDraw + r.p1Drawn.Cash;
-      const p2Gross = r.p2SP + r.p2SalInc + r.p2Drawn.SIPP + r.p2Drawn.ISA + r.p2Drawn.GIA + r.p2IntDraw + r.p2Drawn.Cash;
-      const gross = _viewPerson === 'p1' ? p1Gross : _viewPerson === 'p2' ? p2Gross : p1Gross + p2Gross;
-      return s + (gross > 0 ? tax / gross : 0);
-    }, 0) / _rows.length;
+    const { lifetimeTax: _lt, lifetimeGross: _lg } = _rows.reduce((s, r) => {
+      const tax   = _viewPerson === 'p1' ? r.p1IncomeTax + r.p1CGT + r.p1NI
+                  : _viewPerson === 'p2' ? r.p2IncomeTax + r.p2CGT + r.p2NI
+                  : r.p1IncomeTax + r.p1CGT + r.p1NI + r.p2IncomeTax + r.p2CGT + r.p2NI;
+      const gross = _viewPerson === 'p1' ? (r.p1GrossIncome  || 0)
+                  : _viewPerson === 'p2' ? (r.p2GrossIncome  || 0)
+                  : (r.householdGrossIncome || 0);
+      return { lifetimeTax: s.lifetimeTax + adj(tax, r), lifetimeGross: s.lifetimeGross + adj(gross, r) };
+    }, { lifetimeTax: 0, lifetimeGross: 0 });
+    const avgRate = _lg > 0 ? _lt / _lg : 0;
 
     const spending    = D.parseCurrency(document.getElementById('spending')?.value || '0');
     const stepDownPct = parseFloat(document.getElementById('stepDownPct')?.value) || 0;
@@ -499,9 +500,9 @@
     const barValue = document.createElement('span');
     barValue.className = 'sidebar-legend__value';
     const totalTax = _rows.reduce((s, r) => {
-      const t = _viewPerson === 'p1' ? r.p1IncomeTax + r.p1CGT
-              : _viewPerson === 'p2' ? r.p2IncomeTax + r.p2CGT
-              : r.p1IncomeTax + r.p1CGT + r.p2IncomeTax + r.p2CGT;
+      const t = _viewPerson === 'p1' ? r.p1IncomeTax + r.p1CGT + r.p1NI
+              : _viewPerson === 'p2' ? r.p2IncomeTax + r.p2CGT + r.p2NI
+              : r.p1IncomeTax + r.p1CGT + r.p1NI + r.p2IncomeTax + r.p2CGT + r.p2NI;
       return s + adj(t, r);
     }, 0);
     barValue.textContent = fmt(totalTax);
@@ -530,15 +531,18 @@
     lineLabel.style.flex = '1';
 
     const avgRate = _rows.length
-      ? (_rows.reduce((s, r) => {
-          const tax = _viewPerson === 'p1' ? r.p1IncomeTax + r.p1CGT
-                    : _viewPerson === 'p2' ? r.p2IncomeTax + r.p2CGT
-                    : r.p1IncomeTax + r.p1CGT + r.p2IncomeTax + r.p2CGT;
-          const gross = _viewPerson === 'p1' ? (r.p1GrossIncome || 0)
-                      : _viewPerson === 'p2' ? (r.p2GrossIncome || 0)
-                      : (r.householdGrossIncome || 0);
-          return s + (gross > 0 ? tax / gross : 0);
-        }, 0) / _rows.length * 100).toFixed(1)
+      ? (() => {
+          const { t, g } = _rows.reduce((s, r) => {
+            const tax   = _viewPerson === 'p1' ? r.p1IncomeTax + r.p1CGT + r.p1NI
+                        : _viewPerson === 'p2' ? r.p2IncomeTax + r.p2CGT + r.p2NI
+                        : r.p1IncomeTax + r.p1CGT + r.p1NI + r.p2IncomeTax + r.p2CGT + r.p2NI;
+            const gross = _viewPerson === 'p1' ? (r.p1GrossIncome  || 0)
+                        : _viewPerson === 'p2' ? (r.p2GrossIncome  || 0)
+                        : (r.householdGrossIncome || 0);
+            return { t: s.t + adj(tax, r), g: s.g + adj(gross, r) };
+          }, { t: 0, g: 0 });
+          return g > 0 ? (t / g * 100).toFixed(1) : '0.0';
+        })()
       : '0.0';
 
     const lineValue = document.createElement('span');
@@ -1148,32 +1152,33 @@
     const taxTbl = document.getElementById('tax-table');
     if (taxTbl) {
       let cumTax = 0;
-      let grandWI = 0, grandWC = 0, grandHI = 0, grandHC = 0;
+      let grandWI = 0, grandWC = 0, grandWN = 0, grandHI = 0, grandHC = 0, grandHN = 0;
       let body = '<tbody>';
       _rows.forEach(r => {
-        const wi = a(r.p1IncomeTax, r), wc = a(r.p1CGT, r);
-        const hi = a(r.p2IncomeTax, r), hc = a(r.p2CGT, r);
-        const wt = wi + wc, ht = hi + hc, hh = wt + ht;
+        const wi = a(r.p1IncomeTax, r), wc = a(r.p1CGT, r), wn = a(r.p1NI || 0, r);
+        const hi = a(r.p2IncomeTax, r), hc = a(r.p2CGT, r), hn = a(r.p2NI || 0, r);
+        const wt = wi + wc + wn, ht = hi + hc + hn, hh = wt + ht;
         cumTax += hh;
-        grandWI += wi; grandWC += wc; grandHI += hi; grandHC += hc;
+        grandWI += wi; grandWC += wc; grandWN += wn;
+        grandHI += hi; grandHC += hc; grandHN += hn;
         body += `<tr>
           <td>${r.year}</td><td>${r.p1Age}</td><td>${r.p2Age}</td>
-          <td>${f(wi)}</td><td>${f(wc)}</td><td>${f(wt)}</td>
-          <td>${f(hi)}</td><td>${f(hc)}</td><td>${f(ht)}</td>
+          <td>${f(wi)}</td><td>${f(wc)}</td><td>${f(wn)}</td><td>${f(wt)}</td>
+          <td>${f(hi)}</td><td>${f(hc)}</td><td>${f(hn)}</td><td>${f(ht)}</td>
           <td>${f(hh)}</td><td>${f(cumTax)}</td>
         </tr>`;
       });
-      const grand = grandWI + grandWC + grandHI + grandHC;
+      const grand = grandWI + grandWC + grandWN + grandHI + grandHC + grandHN;
       body += `<tr class="total-row">
         <td colspan="3">Total</td>
-        <td>${f(grandWI)}</td><td>${f(grandWC)}</td><td>${f(grandWI+grandWC)}</td>
-        <td>${f(grandHI)}</td><td>${f(grandHC)}</td><td>${f(grandHI+grandHC)}</td>
+        <td>${f(grandWI)}</td><td>${f(grandWC)}</td><td>${f(grandWN)}</td><td>${f(grandWI+grandWC+grandWN)}</td>
+        <td>${f(grandHI)}</td><td>${f(grandHC)}</td><td>${f(grandHN)}</td><td>${f(grandHI+grandHC+grandHN)}</td>
         <td>${f(grand)}</td><td>${f(grand)}</td>
       </tr></tbody>`;
       taxTbl.innerHTML = `<thead><tr>
         <th>Year</th><th>${p1} age</th><th>${p2} age</th>
-        <th>${p1} income tax</th><th>${p1} CGT</th><th>${p1} total</th>
-        <th>${p2} income tax</th><th>${p2} CGT</th><th>${p2} total</th>
+        <th>${p1} income tax</th><th>${p1} CGT</th><th>${p1} NI</th><th>${p1} total</th>
+        <th>${p2} income tax</th><th>${p2} CGT</th><th>${p2} NI</th><th>${p2} total</th>
         <th>Household tax</th><th>Cumulative tax</th>
       </tr></thead>` + body;
     }
