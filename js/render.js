@@ -168,25 +168,32 @@
     initialiseCurrencyInputs();
   }
 
-  function updateRowBadge(acc) {
-    const el = document.getElementById('badge-' + acc.id);
-    if (!el) return;
-
-    const total = D.ALLOC_CLASSES.reduce((s, c) => s + (acc.alloc[c] || 0), 0);
-    const pct = Math.round(total);
-
-    let cls = 'total-warn';
-    let label = pct + '%';
-
-    if (pct === 100) {
-      cls = 'total-ok';
-      label = '100%<br><span style="font-weight:400;font-size:10px">Ready</span>';
-    } else if (pct > 100) {
-      cls = 'total-err';
+    function updateRowBadge(acc) {
+      const el = document.getElementById('badge-' + acc.id);
+      if (!el) return;
+    
+      const total = D.ALLOC_CLASSES.reduce((s, c) => s + (acc.alloc[c] || 0), 0);
+      const pct = Math.round(total);
+    
+      let cls = 'total-warn';
+      let label = pct + '%';
+    
+      if (pct === 100) {
+        el.innerHTML = `
+          <div class="status status-ok">
+            <span class="total-badge">100%</span>
+            <span class="status-label">Ready</span>
+          </div>
+        `;
+        return;
+      }
+    
+      if (pct > 100) {
+        cls = 'total-err';
+      }
+    
+      el.innerHTML = `<span class="total-badge ${cls}">${label}</span>`;
     }
-
-    el.innerHTML = `<span class="total-badge ${cls}">${label}</span>`;
-  }
 
   function refreshOwnerOptions(accounts, ownerNames) {
     accounts.forEach((acc) => {
