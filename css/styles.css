@@ -889,27 +889,39 @@ input[type="radio"] { accent-color: var(--accent); }
   border-color: #dde3ec;
 }
 
-.total-badge {
-  font-size: 0.85rem;
+/* Primary percentage value */
+.value {
+  font-size: 0.9rem;
   font-weight: 700;
-  display: inline-block;
-  line-height: 1;
+  color: var(--text);
+  line-height: 1.1;
 }
 
+/* Container for stacked layout */
 .status {
   display: flex;
   flex-direction: column;
   line-height: 1.1;
 }
 
-.status-ok .total-badge {
-  color: #16a34a;
-  font-weight: 700;
+/* Secondary status text (Ready / Allocate / Reduce) */
+.status-text {
+  font-size: 11px;
+  font-weight: 500;
 }
 
-.status-label {
-  font-size: 11px;
+/* State colours */
+.status-ok .value,
+.status-ok .status-text {
   color: #16a34a;
+}
+
+.status-warn .status-text {
+  color: #d97706;
+}
+
+.status-err .status-text {
+  color: #dc2626;
 }
 
 .total-ok { background: #dcfce7; color: #16a34a; }
