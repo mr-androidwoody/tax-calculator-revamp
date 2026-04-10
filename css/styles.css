@@ -1865,12 +1865,14 @@ input[type="radio"] { accent-color: var(--accent); }
 /* Horizontal variant of sidebar-toggle — preserves the inset track */
 .sidebar-toggle--row {
   flex-direction: row;
+  flex: 0 0 auto;
   padding: 3px;
   border-radius: 10px;
 }
 
 .sidebar-toggle--row button {
   flex: 0 0 auto;
+  width: auto;
   padding: 6px 14px;
 }
 
