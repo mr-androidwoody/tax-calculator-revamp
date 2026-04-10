@@ -1256,7 +1256,7 @@ input[type="radio"] { accent-color: var(--accent); }
    ───────────────────────────── */
 
 .portfolio-footer {
-  margin-top: 10px;
+  margin-top: 25px;
   padding: 10px 12px;
   border-top: 1px solid var(--border);
   display: flex;
