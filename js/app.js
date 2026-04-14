@@ -13,7 +13,7 @@
     nextId: 1,
     activeTab: 'setup',
     p2enabled: true,
-    simulationMode: 'deterministic', // 'deterministic' | 'montecarlo' — set on each run
+    simulationMode: 'deterministic', // kept for backwards compat with saved assumptions
   };
 
   // ─────────────────────────────
@@ -219,9 +219,6 @@
       bniP2GIA:          safeValue('bniP2GIA'),
       dividendYield:     safeValue('dividendYield'),
       dividendMode:      document.querySelector('input[name="dividendMode"]:checked')?.value ?? 'payout',
-      simulationMode:    document.querySelector('input[name="simulationMode"]:checked')?.value || 'deterministic',
-      equityVol:         safeValue('equityVol'),
-      inflationVol:      safeValue('inflationVol'),
     };
   }
 
@@ -296,14 +293,6 @@
     if (bniRadio) bniRadio.checked = true;
     applyBniState(!!a.bniEnabled);
 
-    if (a.simulationMode) {
-      const r = document.querySelector(`input[name="simulationMode"][value="${a.simulationMode}"]`);
-      if (r) r.checked = true;
-    }
-    sv('equityVol',   a.equityVol);
-    sv('inflationVol', a.inflationVol);
-    applySimModeState(a.simulationMode || 'deterministic');
-
     updateSidebarNames();
     applyP2State();
   }
@@ -337,7 +326,6 @@
       spending: '', stepDownPct: '0', growth: '', inflation: '',
       thresholdMode: 'frozen', withdrawalMode: 'tax-aware',
       dividendYield: '1.5', bniEnabled: false,
-      simulationMode: 'deterministic', equityVol: '16', inflationVol: '1.5',
     });
     showToast('Assumptions deleted');
   }
@@ -666,21 +654,7 @@
       },
       p1Order: getOrder('p1', 3),
       p2Order: getOrder('p2', 3),
-      simulationMode: document.querySelector('input[name="simulationMode"]:checked')?.value || 'deterministic',
-      equityVol:      (parseFloat(safeEl('equityVol')?.value)    || 12)  / 100,
-      inflationVol:   (parseFloat(safeEl('inflationVol')?.value)  || 1.5) / 100,
     };
-  }
-
-  // ─────────────────────────────
-  // SIMULATION MODE GATING
-  // Shows/hides the MC volatility fields using the same pattern as applyBniState.
-  // Called on radio change and on assumptions restore.
-  // ─────────────────────────────
-  function applySimModeState(mode) {
-    const isMC = mode === 'montecarlo';
-    const volBlock = safeEl('mcVolatilityBlock');
-    if (volBlock) volBlock.style.display = isMC ? '' : 'none';
   }
 
   // ─────────────────────────────
@@ -690,12 +664,14 @@
     syncSetupToAssumptions();
     const inputs = gatherInputs();
 
-    // Find the run button regardless of which tab it lives on.
+    // Stash inputs so runRisk() can use them without re-gathering.
+    state.lastInputs = inputs;
+
     const runBtn = document.querySelector('[data-action="run-projection"]');
     const originalLabel = runBtn ? runBtn.textContent : 'Run projection';
 
     if (runBtn) {
-      runBtn.textContent = inputs.simulationMode === 'montecarlo' ? 'Simulating…' : 'Running…';
+      runBtn.textContent = 'Running…';
       runBtn.classList.add('btn-loading');
       runBtn.disabled = true;
     }
@@ -708,58 +684,101 @@
     }
 
     try {
-      if (inputs.simulationMode === 'montecarlo') {
-        // ── Monte Carlo path ─────────────────────────────────────────────
-        const MCE = window.RetireMCEngine;
-        if (!MCE) throw new Error('RetireMCEngine not loaded — check mc-engine.js script tag.');
+      const result = E.runProjection(inputs, state.portfolioAccounts);
+      if (!result) { resetBtn(); return; }
 
-        // Run deterministic first (synchronous, cheap) so the Projection tab
-        // is always populated regardless of which mode was last run.
-        const detResult = E.runProjection(inputs, state.portfolioAccounts);
-        if (detResult) {
-          CR.setResults(detResult);
-          CR.renderMetrics();
-          CR.renderCharts();
-        }
+      resetBtn();
 
-        const result = await MCE.run({
-          inputs,
-          simCount:     10_000,
-          equityVol:    inputs.equityVol,
-          inflationVol: inputs.inflationVol,
-        });
+      CR.setResults(result);
+      CR.renderMetrics();
+      CR.renderCharts();
+      RetireTabs.switchTab('results');
+      state.activeTab = 'results';
 
-        state.simulationMode = 'montecarlo';
-        resetBtn();
-
-        const MCR = window.RetireMCRender;
-        if (!MCR) throw new Error('RetireMCRender not loaded — check mc-render.js script tag.');
-        MCR.setResults(result);
-        MCR.render();
-        RetireTabs.switchTab('results');
-        state.activeTab = 'results';
-        // Activate the Risk Outcomes sub-tab
-        const riskBtn = document.querySelector('.results-tab[data-results-tab="risk"]');
-        if (riskBtn) riskBtn.click();
-
-      } else {
-        // ── Deterministic path (unchanged) ───────────────────────────────
-        const result = E.runProjection(inputs, state.portfolioAccounts);
-        if (!result) { resetBtn(); return; }
-
-        state.simulationMode = 'deterministic';
-        resetBtn();
-
-        CR.setResults(result);
-        CR.renderMetrics();
-        CR.renderCharts();
-        RetireTabs.switchTab('results');
-        state.activeTab = 'results';
+      // Mark Risk Outcomes stale and re-enable the Run risk outcomes button.
+      _setRiskReady(false);
+      const riskRunBtn = safeEl('runRiskBtn');
+      if (riskRunBtn) {
+        riskRunBtn.disabled = false;
+        riskRunBtn.classList.remove('btn-run-risk--disabled');
       }
+
     } catch (err) {
       resetBtn();
       console.error('runProjection error:', err);
       showToast('Run failed — see console', true);
+    }
+  }
+
+  // ─────────────────────────────
+  // RUN RISK (Monte Carlo)
+  // ─────────────────────────────
+  function _setRiskReady(ready) {
+    const tabBtn = document.querySelector('.results-tab[data-results-tab="risk"]');
+    if (!tabBtn) return;
+    tabBtn.classList.toggle('results-tab--risk-ready', ready);
+  }
+
+  async function runRisk() {
+    const inputs = state.lastInputs;
+    if (!inputs) {
+      showToast('Run a projection first', true);
+      return;
+    }
+
+    const MCE = window.RetireMCEngine;
+    if (!MCE) {
+      showToast('MC engine not loaded', true);
+      return;
+    }
+
+    const riskRunBtn = safeEl('runRiskBtn');
+    const originalLabel = riskRunBtn ? riskRunBtn.textContent : 'Run risk outcomes';
+    if (riskRunBtn) {
+      riskRunBtn.textContent = 'Simulating…';
+      riskRunBtn.classList.add('btn-loading');
+      riskRunBtn.disabled = true;
+    }
+
+    function resetBtn() {
+      if (!riskRunBtn) return;
+      riskRunBtn.textContent = originalLabel;
+      riskRunBtn.classList.remove('btn-loading');
+      riskRunBtn.disabled = false;
+    }
+
+    try {
+      const result = await MCE.run({
+        inputs,
+        simCount:     10_000,
+        equityVol:    0.16,
+        inflationVol: 0.015,
+      });
+
+      // Disable until next projection run.
+      if (riskRunBtn) {
+        riskRunBtn.textContent = originalLabel;
+        riskRunBtn.classList.remove('btn-loading');
+        riskRunBtn.disabled = true;
+        riskRunBtn.classList.add('btn-run-risk--disabled');
+      }
+
+      const MCR = window.RetireMCRender;
+      if (!MCR) throw new Error('RetireMCRender not loaded');
+      MCR.setResults(result);
+      MCR.render();
+
+      // Switch to Results → Risk Outcomes sub-tab and mark ready (red).
+      RetireTabs.switchTab('results');
+      state.activeTab = 'results';
+      const riskTabBtn = document.querySelector('.results-tab[data-results-tab="risk"]');
+      if (riskTabBtn) riskTabBtn.click();
+      _setRiskReady(true);
+
+    } catch (err) {
+      resetBtn();
+      console.error('runRisk error:', err);
+      showToast('Simulation failed — see console', true);
     }
   }
 
@@ -828,11 +847,6 @@
       return;
     }
 
-    if (e.target.name === 'simulationMode') {
-      applySimModeState(e.target.value);
-      return;
-    }
-
     if (e.target.id === 'p2enabled') {
       state.p2enabled = e.target.checked;
       applyP2State();
@@ -852,6 +866,7 @@
     if (action === 'add-account')    return addAccount();
     if (action === 'remove-account') return removeAccount(el);
     if (action === 'run-projection') return runProjection();
+    if (action === 'run-risk')       return runRisk();
     // load-setup and load-excel handled by direct ID listeners below
 
     if (action === 'switch-tab') {
