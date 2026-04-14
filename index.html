@@ -30,6 +30,8 @@
             <button data-action="switch-tab" data-tab="assumptions" class="tab-btn">Assumptions</button>
             <span class="tab-sep" aria-hidden="true"></span>
             <button data-action="switch-tab" data-tab="results" class="tab-btn">Results</button>
+            <span class="tab-sep" aria-hidden="true"></span>
+            <button data-action="switch-tab" data-tab="outcomes" class="tab-btn" id="tab-btn-outcomes">Outcomes</button>
           </nav>
         
             <div class="top-header__actions">
@@ -667,6 +669,49 @@
             </div>
           </div>
 
+          <!-- Simulation Mode -->
+          <div class="assump-card">
+            <div class="assump-card-title">
+              <span class="assump-tooltip-anchor">Simulation Mode<span class="assump-tooltip">Deterministic runs a single projection using your exact growth and inflation inputs. Monte Carlo runs 10,000 paths with returns sampled from a normal distribution around your mean inputs, showing a range of outcomes.</span></span>
+            </div>
+            <div class="assump-section">
+              <p class="assump-section__label">Mode</p>
+              <div class="assump-radio-group">
+                <label class="assump-radio-label">
+                  <input type="radio" name="simulationMode" value="deterministic" checked> <strong>Deterministic</strong> <span class="assump-inline-field__hint">Single path using exact inputs</span>
+                </label>
+                <label class="assump-radio-label">
+                  <input type="radio" name="simulationMode" value="montecarlo"> <strong>Monte Carlo</strong> <span class="assump-inline-field__hint">10,000 paths — shows range of outcomes</span>
+                </label>
+              </div>
+            </div>
+            <div id="mcVolatilityBlock" class="assump-section" style="display:none">
+              <p class="assump-section__label">Return volatility</p>
+              <div class="assump-section__body">
+                <div class="assump-inline-field" style="margin-bottom:8px">
+                  <label class="assump-inline-field__label" for="equityVol">
+                    <span class="assump-tooltip-anchor">Equity volatility<span class="assump-tooltip">Annualised standard deviation of real equity returns. A typical value is 12–16%. The mean return is taken from your Growth input above.</span></span>
+                  </label>
+                  <div class="stepper-input">
+                    <input type="number" id="equityVol" value="12" min="1" max="40" step="0.5"> %
+                    <button class="stepper-btn" data-step-for="equityVol" data-step-direction="1"  data-step-amount="0.5" type="button">&#x25B2;</button>
+                    <button class="stepper-btn" data-step-for="equityVol" data-step-direction="-1" data-step-amount="0.5" type="button">&#x25BC;</button>
+                  </div>
+                </div>
+                <div class="assump-inline-field">
+                  <label class="assump-inline-field__label" for="inflationVol">
+                    <span class="assump-tooltip-anchor">Inflation volatility<span class="assump-tooltip">Annualised standard deviation of inflation. A typical value is 1–2%. The mean is taken from your Inflation input above.</span></span>
+                  </label>
+                  <div class="stepper-input">
+                    <input type="number" id="inflationVol" value="1.5" min="0.1" max="10" step="0.1"> %
+                    <button class="stepper-btn" data-step-for="inflationVol" data-step-direction="1"  data-step-amount="0.1" type="button">&#x25B2;</button>
+                    <button class="stepper-btn" data-step-for="inflationVol" data-step-direction="-1" data-step-amount="0.1" type="button">&#x25BC;</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div><!-- /.assump-row-bottom -->
 
       </div><!-- /.assump-layout -->
@@ -856,6 +901,87 @@
 
     </div><!-- /#tab-results -->
 
+
+    <!-- ═══════════════════════════════════════════
+         TAB 4 — OUTCOMES (Monte Carlo)
+    ═══════════════════════════════════════════ -->
+    <div id="tab-outcomes" class="tab-panel">
+
+      <div class="results-intro">
+        <h1>Outcomes</h1>
+        <p class="results-projection">Monte Carlo simulation — <span id="mc-sim-count">10,000</span> paths</p>
+      </div>
+
+      <!-- Success rate stat card -->
+      <div class="metrics-band">
+        <div class="metrics">
+          <div class="metric">
+            <div class="metric-label">
+              <span class="assump-tooltip-anchor">Success rate<span class="assump-tooltip">Percentage of simulated paths where the portfolio never reached zero across the full projection period.</span></span>
+            </div>
+            <div class="metric-value" id="mc-success-rate">–</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Median final portfolio</div>
+            <div class="metric-value metric-value--small" id="mc-median-final">–</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">10th pct final portfolio</div>
+            <div class="metric-value metric-value--small" id="mc-p10-final">–</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">90th pct final portfolio</div>
+            <div class="metric-value metric-value--small" id="mc-p90-final">–</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fan chart -->
+      <div class="chart-panel" style="margin-top:16px">
+        <div class="chart-sidebar">
+          <div class="sidebar-controls">
+            <div class="sidebar-controls__col">
+              <p class="chart-sidebar__label">Percentile bands</p>
+            </div>
+          </div>
+          <hr class="chart-sidebar__divider"/>
+          <div id="mcFanLegend" class="sidebar-legend">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:rgba(59,130,246,0.15)"></span><span class="legend-label">p10–p90 range</span></div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:rgba(59,130,246,0.25)"></span><span class="legend-label">p25–p75 range</span></div>
+            <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:12px;height:3px;border-radius:2px;background:rgb(59,130,246)"></span><span class="legend-label">Median (p50)</span></div>
+          </div>
+        </div>
+        <div class="chart-canvas-area">
+          <div class="chart-canvas-area__header">
+            <h2>Total portfolio — percentile fan</h2>
+          </div>
+          <div class="chart-wrap"><canvas id="mcFanChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Median tax chart -->
+      <div class="chart-panel" style="margin-top:16px">
+        <div class="chart-sidebar">
+          <div class="sidebar-controls">
+            <div class="sidebar-controls__col">
+              <p class="chart-sidebar__label">Median across paths</p>
+            </div>
+          </div>
+          <hr class="chart-sidebar__divider"/>
+          <div class="sidebar-legend">
+            <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:rgba(239,68,68,0.7)"></span><span class="legend-label">Median tax paid</span></div>
+          </div>
+        </div>
+        <div class="chart-canvas-area">
+          <div class="chart-canvas-area__header">
+            <h2>Median household tax paid per year</h2>
+          </div>
+          <div class="chart-wrap"><canvas id="mcTaxChart"></canvas></div>
+        </div>
+      </div>
+
+    </div><!-- /#tab-outcomes -->
+
   </div><!-- /.page-content -->
 
 </div><!-- /.app -->
@@ -866,8 +992,10 @@
 <script src="js/render.js"></script>
 <script src="js/withdrawal-strategy.js"></script>
 <script src="js/engine.js"></script>
+<script src="js/mc-engine.js"></script>
 <script src="js/calc-render-logic.js"></script>
 <script src="js/calc-render.js"></script>
+<script src="js/mc-render.js"></script>
 <script src="js/excel-loader.js"></script>
 <script src="js/tabs.js"></script>
 <script src="js/app.js"></script>
