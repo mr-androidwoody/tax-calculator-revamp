@@ -815,6 +815,18 @@ input[type="radio"] { accent-color: var(--accent); }
   flex-wrap: wrap;
 }
 
+/* Portfolio alert bar — shown when no accounts or any row unbalanced */
+.port-alert {
+  flex: 1;
+  padding: 9px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: #fff0f0;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+}
+
 .acct-table {
   width: 100%;
   border-collapse: collapse;
