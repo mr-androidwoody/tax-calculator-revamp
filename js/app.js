@@ -769,34 +769,37 @@
       const resultHigh = await MCE.run({ inputs: inputsHigh, simCount: 2_000, equityVol: 0.16, inflationVol: 0.015 });
 
       // ── Interpolate to find spending level at TARGET_CONFIDENCE ─────────
-      // Three data points: (spendingLow, rateA), (spending, rate), (spendingHigh, rateB)
-      // Linear interpolation between the bracketing pair that straddles the target.
+      // Three data points — higher spending = lower success rate.
+      // We want the spending where successRate crosses TARGET_CONFIDENCE.
       const S  = inputs.spending;
       const sL = S * 0.85;
       const sH = S * 1.15;
       const rC = result.successRate;
-      const rL = resultLow.successRate;
-      const rH = resultHigh.successRate;
+      const rL = resultLow.successRate;   // rate at lower spend (should be highest)
+      const rH = resultHigh.successRate;  // rate at higher spend (should be lowest)
 
       let sustainableSpending = null;
+      let sustainableIsFloor  = false; // true = "at least £X", false = exact estimate
 
-      // Find which pair straddles TARGET_CONFIDENCE and interpolate.
-      if (rL <= TARGET_CONFIDENCE && rC >= TARGET_CONFIDENCE) {
-        // Target is between low and current
-        const t = (TARGET_CONFIDENCE - rL) / Math.max(rC - rL, 0.001);
-        sustainableSpending = sL + t * (S - sL);
-      } else if (rC >= TARGET_CONFIDENCE && rH <= TARGET_CONFIDENCE) {
-        // Target is between current and high
-        const t = (TARGET_CONFIDENCE - rC) / Math.max(rH - rC, -0.001);
-        sustainableSpending = S + t * (sH - S);
-      } else if (rL >= TARGET_CONFIDENCE) {
-        // Even 85% spending exceeds target confidence — very conservative plan
-        sustainableSpending = sL; // floor estimate
-      } else if (rH <= TARGET_CONFIDENCE) {
-        // Even 115% spending is below target confidence — extrapolate cautiously
-        const slope = (rH - rL) / (sH - sL);
-        if (Math.abs(slope) > 0.0001) {
-          sustainableSpending = sL + (TARGET_CONFIDENCE - rL) / slope;
+      if (rH >= TARGET_CONFIDENCE) {
+        // All three points are above 95% — plan is very strong.
+        // Report the high bracket as a lower-bound floor.
+        sustainableSpending = Math.round(sH);
+        sustainableIsFloor  = true;
+      } else if (rC >= TARGET_CONFIDENCE && rH < TARGET_CONFIDENCE) {
+        // Target straddles current and high — interpolate between them.
+        const t = (rC - TARGET_CONFIDENCE) / Math.max(rC - rH, 0.001);
+        sustainableSpending = Math.round(S + t * (sH - S));
+      } else if (rL >= TARGET_CONFIDENCE && rC < TARGET_CONFIDENCE) {
+        // Target straddles low and current — interpolate between them.
+        const t = (rL - TARGET_CONFIDENCE) / Math.max(rL - rC, 0.001);
+        sustainableSpending = Math.round(sL + t * (S - sL));
+      } else {
+        // All three points are below 95% — plan is under stress.
+        // Extrapolate below sL cautiously.
+        const slope = (rL - rH) / (sH - sL); // rate change per £ of spending (positive)
+        if (slope > 0.0001) {
+          sustainableSpending = Math.round(sL - (TARGET_CONFIDENCE - rL) / slope);
         }
       }
 
@@ -812,7 +815,8 @@
       if (!MCR) throw new Error('RetireMCRender not loaded');
       MCR.setResults(result, inputs.inflation, {
         currentSpending:     inputs.spending,
-        sustainableSpending: sustainableSpending != null ? Math.round(sustainableSpending) : null,
+        sustainableSpending: sustainableSpending,
+        sustainableIsFloor,
         targetConfidence:    TARGET_CONFIDENCE,
         openingPortfolio:    Object.values(inputs.p1Bal).reduce((s, v) => s + v, 0) +
                              Object.values(inputs.p2Bal).reduce((s, v) => s + v, 0),

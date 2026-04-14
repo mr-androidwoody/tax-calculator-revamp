@@ -135,7 +135,7 @@
     // ── 2. SUSTAINABLE SPENDING ───────────────────────────────────────────
     let sustainHTML = '';
     if (_spendingContext && _spendingContext.sustainableSpending != null) {
-      const { currentSpending, sustainableSpending, targetConfidence, openingPortfolio } = _spendingContext;
+      const { currentSpending, sustainableSpending, sustainableIsFloor, targetConfidence, openingPortfolio } = _spendingContext;
       const headroom    = sustainableSpending - currentSpending;
       const isAbove     = headroom >= 0;
       const absDiff     = Math.abs(Math.round(headroom));
@@ -144,21 +144,25 @@
         : null;
       const confPct     = (targetConfidence * 100).toFixed(0);
 
-      // Severity: green = headroom exists, amber = within 15% over, red = >15% over
-      const overBy = isAbove ? 0 : Math.abs(headroom) / currentSpending;
+      const overBy  = isAbove ? 0 : Math.abs(headroom) / currentSpending;
       const sClass  = isAbove        ? 'mc-sustain--safe' :
                       overBy <= 0.15 ? 'mc-sustain--warn' :
                                        'mc-sustain--danger';
 
-      const portClause = pctOfPort
-        ? ` (${pctOfPort}% of your opening portfolio)`
-        : '';
+      const portClause = pctOfPort ? ` (${pctOfPort}% of your opening portfolio)` : '';
+      const floorPrefix = sustainableIsFloor ? 'at least ' : '';
 
       let sustainBody;
-      if (isAbove) {
+      if (sustainableIsFloor) {
+        // All three runs at or above 95% — plan is very strong
+        sustainBody = `Your plan succeeds in ${confPct}% or more of simulations even at
+          ${fmt(sustainableSpending)}/year — ${fmt(absDiff)}/year above your current target.
+          Your plan is highly resilient; the true sustainable spending level is
+          likely higher still.`;
+      } else if (isAbove) {
         sustainBody = `Your current spending target of ${fmt(currentSpending)}/year is within
-          the ${confPct}% confidence threshold. Based on your portfolio and guaranteed
-          income, the sustainable spending level is estimated at ${fmt(sustainableSpending)}/year${portClause} —
+          the ${confPct}% confidence threshold. The estimated sustainable spending level is
+          ${floorPrefix}${fmt(sustainableSpending)}/year${portClause} —
           giving you headroom of approximately ${fmt(absDiff)}/year above your current target.`;
       } else {
         sustainBody = `To achieve ${confPct}% confidence of never running out, the estimated
