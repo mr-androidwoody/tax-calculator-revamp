@@ -28,6 +28,14 @@
     const p1Bal = { ...inputs.p1Bal };
     const p2Bal = { ...inputs.p2Bal };
 
+    // Merge GIAeq + GIAcash → GIA (the engine's internal key).
+    // app.js splits GIA into equity and cashlike portions for the MC worker;
+    // the engine uses a single .GIA key. GIAcash accounts that have a rate/draw
+    // are handled via intAccts and their balance is subtracted from p1Bal.GIA
+    // below, so including GIAcash here is safe — the intAccts loop corrects it.
+    p1Bal.GIA = (inputs.p1Bal.GIAeq || 0) + (inputs.p1Bal.GIAcash || 0);
+    p2Bal.GIA = (inputs.p2Bal.GIAeq || 0) + (inputs.p2Bal.GIAcash || 0);
+
     if (!startYear || !endYear || endYear <= startYear) {
       alert('Please enter valid start and end years.');
       return null;
