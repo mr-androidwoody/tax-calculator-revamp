@@ -865,30 +865,30 @@
       </div>
 
       <!-- ── Risk Outcomes tab (Monte Carlo) ── -->
-      <div id="results-panel-risk" class="chart-panel" style="display:none">
+      <div id="results-panel-risk" class="chart-panel chart-panel--full" style="display:none">
+        <div class="chart-canvas-area" id="risk-panel">
 
-        <!-- Sidebar with Real/Nominal toggle -->
-        <div class="chart-sidebar">
-          <div class="sidebar-controls">
-            <div class="sidebar-controls__col">
+          <!-- Toolbar: title left, Real/Nominal right -->
+          <div class="table-toolbar">
+            <div class="table-toolbar__left">
+              <h2 style="margin:0">Risk Outcomes
+                <span class="results-projection" style="font-size:0.8rem;font-weight:400;margin-left:10px">
+                  <span id="mc-sim-count">–</span> simulations
+                </span>
+              </h2>
+            </div>
+            <div class="table-toolbar__right">
               <p class="chart-sidebar__label">Values</p>
-              <div class="sidebar-toggle">
+              <div class="sidebar-toggle sidebar-toggle--row">
                 <button class="is-active" data-action="mc-real-on">Real</button>
                 <button data-action="mc-real-off">Nominal</button>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Narrative canvas -->
-        <div class="chart-canvas-area">
-          <div class="results-intro" style="margin-bottom:20px">
-            <h2>Risk Outcomes</h2>
-            <p class="results-projection">Monte Carlo — <span id="mc-sim-count">–</span> paths</p>
-          </div>
-          <div id="mc-narrative"></div>
-        </div>
+          <div id="mc-narrative" style="margin-top:20px"></div>
 
+        </div>
       </div>
 
     </div><!-- /#tab-results -->
