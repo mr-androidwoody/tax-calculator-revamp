@@ -559,6 +559,29 @@
     setHidden('p1GIA',  p1gia);
     setHidden('p2GIA',  p2gia);
 
+    // ── GIA equity/cashlike split for MC worker ────────────────────────────
+    // Each GIA account carries a cashlike % in its alloc. We weight by value
+    // to compute how much of each person's total GIA is cashlike vs equity.
+    const giaAccts = (owner) => state.portfolioAccounts.filter(
+      a => a.owner === owner && a.wrapper === 'GIA'
+    );
+    const giaSplit = (owner) => {
+      const accts = giaAccts(owner);
+      const total = accts.reduce((s, a) => s + (a.value || 0), 0);
+      if (total <= 0) return { eq: 0, cash: 0 };
+      const cashFrac = accts.reduce((s, a) => {
+        const w = (a.value || 0) / total;
+        return s + w * ((a.alloc?.cashlike || 0) / 100);
+      }, 0);
+      return { eq: Math.round(total * (1 - cashFrac)), cash: Math.round(total * cashFrac) };
+    };
+    const p1giaSplit = giaSplit('p1');
+    const p2giaSplit = giaSplit('p2');
+    setHidden('p1GIAeq',   p1giaSplit.eq);
+    setHidden('p2GIAeq',   p2giaSplit.eq);
+    setHidden('p1GIAcash', p1giaSplit.cash);
+    setHidden('p2GIAcash', p2giaSplit.cash);
+
     const intAccts = state.portfolioAccounts.filter(isYieldAccount);
     const listEl = safeEl('int-accts-list');
     if (listEl) {
@@ -644,13 +667,18 @@
       dividendMode:      document.querySelector('input[name="dividendMode"]:checked')?.value ?? 'payout',
       withdrawalMode:    document.querySelector('input[name="withdrawalMode"]:checked')?.value || '50/50',
       p1Bal: {
-        Cash: gv('p1Cash'), GIA: gv('p1GIA'), SIPP: gv('p1SIPP'), ISA: gv('p1ISA'),
+        Cash:    gv('p1Cash'),
+        GIAeq:   gv('p1GIAeq'),
+        GIAcash: gv('p1GIAcash'),
+        SIPP:    gv('p1SIPP'),
+        ISA:     gv('p1ISA'),
       },
       p2Bal: {
-        Cash: state.p2enabled ? gv('p2Cash') : 0,
-        GIA:  state.p2enabled ? gv('p2GIA')  : 0,
-        SIPP: state.p2enabled ? gv('p2SIPP') : 0,
-        ISA:  state.p2enabled ? gv('p2ISA')  : 0,
+        Cash:    state.p2enabled ? gv('p2Cash')    : 0,
+        GIAeq:   state.p2enabled ? gv('p2GIAeq')   : 0,
+        GIAcash: state.p2enabled ? gv('p2GIAcash')  : 0,
+        SIPP:    state.p2enabled ? gv('p2SIPP')    : 0,
+        ISA:     state.p2enabled ? gv('p2ISA')     : 0,
       },
       p1Order: getOrder('p1', 3),
       p2Order: getOrder('p2', 3),
@@ -751,16 +779,6 @@
     }
 
     try {
-      // ── Diagnostic: log key inputs to verify SP is reaching the worker ──
-      console.log('[MC diagnostic]', {
-        p1SPAmt: inputs.p1SPAmt, p1SPAge: inputs.p1SPAge,
-        p2SPAmt: inputs.p2SPAmt, p2SPAge: inputs.p2SPAge,
-        spending: inputs.spending,
-        p1Bal: inputs.p1Bal, p2Bal: inputs.p2Bal,
-        p1DOB: inputs.p1DOB, p2DOB: inputs.p2DOB,
-        startYear: inputs.startYear,
-      });
-
       // ── Main run: 10,000 paths at current spending ─────────────────────
       const result = await MCE.run({
         inputs,
@@ -791,29 +809,23 @@
       let sustainableSpending = null;
       let sustainableIsFloor  = false; // true = "at least £X", false = exact estimate
 
-      // Linear interpolation: given two bracketing points (s1, r1) and (s2, r2)
-      // where r1 > TARGET_CONFIDENCE > r2 and s1 < s2, find spending at target.
-      function interpolateSpending(s1, r1, s2, r2) {
-        const denom = Math.abs(r1 - r2);
-        if (denom < 0.0001) return Math.round((s1 + s2) / 2);
-        return Math.round(s1 + (r1 - TARGET_CONFIDENCE) / (r1 - r2) * (s2 - s1));
-      }
-
       if (rH >= TARGET_CONFIDENCE) {
-        // All three points at or above 95% -- plan is very strong.
+        // All three points are above 95% — plan is very strong.
         // Report the high bracket as a lower-bound floor.
         sustainableSpending = Math.round(sH);
         sustainableIsFloor  = true;
-      } else if (rC >= TARGET_CONFIDENCE) {
-        // 95% threshold lies between current and high spending -- interpolate upward.
-        sustainableSpending = interpolateSpending(S, rC, sH, rH);
-      } else if (rL >= TARGET_CONFIDENCE) {
-        // 95% threshold lies between low and current spending -- interpolate downward.
-        sustainableSpending = interpolateSpending(sL, rL, S, rC);
+      } else if (rC >= TARGET_CONFIDENCE && rH < TARGET_CONFIDENCE) {
+        // Target straddles current and high — interpolate between them.
+        const t = (rC - TARGET_CONFIDENCE) / Math.max(rC - rH, 0.001);
+        sustainableSpending = Math.round(S + t * (sH - S));
+      } else if (rL >= TARGET_CONFIDENCE && rC < TARGET_CONFIDENCE) {
+        // Target straddles low and current — interpolate between them.
+        const t = (rL - TARGET_CONFIDENCE) / Math.max(rL - rC, 0.001);
+        sustainableSpending = Math.round(sL + t * (S - sL));
       } else {
-        // All three points below 95% -- plan is under stress.
-        // Extrapolate below sL using the slope of the low->current segment.
-        const slope = (rL - rC) / Math.max(S - sL, 1);
+        // All three points are below 95% — plan is under stress.
+        // Extrapolate below sL cautiously.
+        const slope = (rL - rH) / (sH - sL); // rate change per £ of spending (positive)
         if (slope > 0.0001) {
           sustainableSpending = Math.round(sL - (TARGET_CONFIDENCE - rL) / slope);
         }

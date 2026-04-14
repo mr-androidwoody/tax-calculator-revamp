@@ -69,12 +69,12 @@ const TAX_BANDS = [
  * Grow all wrapper balances by (1 + rate). Mutates bal in place.
  * Equivalent to C.growBalances in calculator.js.
  */
-function growBalances(bal, rate) {
-  const f = 1 + rate;
-  bal.Cash = (bal.Cash || 0) * f;
-  bal.GIA  = (bal.GIA  || 0) * f;
-  bal.ISA  = (bal.ISA  || 0) * f;
-  bal.SIPP = (bal.SIPP || 0) * f;
+function growBalances(bal, equityRate, inflationRate) {
+  bal.Cash    = (bal.Cash    || 0) * (1 + equityRate);   // Cash grows at equity rate (small, swept to GIA)
+  bal.GIAeq   = (bal.GIAeq   || 0) * (1 + equityRate);  // Equity portion of GIA
+  bal.GIAcash = (bal.GIAcash || 0) * (1 + inflationRate); // Cashlike portion — inflation rate, no vol
+  bal.ISA     = (bal.ISA     || 0) * (1 + equityRate);
+  bal.SIPP    = (bal.SIPP    || 0) * (1 + equityRate);
 }
 
 /**
@@ -82,7 +82,7 @@ function growBalances(bal, rate) {
  * Equivalent to C.totalBal in calculator.js.
  */
 function totalBal(bal) {
-  return (bal.Cash || 0) + (bal.GIA || 0) + (bal.ISA || 0) + (bal.SIPP || 0);
+  return (bal.Cash || 0) + (bal.GIAeq || 0) + (bal.GIAcash || 0) + (bal.ISA || 0) + (bal.SIPP || 0);
 }
 
 /**
@@ -98,14 +98,27 @@ function withdraw(bal, order, amount) {
 
   for (const wrapper of order) {
     if (remaining <= 0) break;
-    const available = bal[wrapper] || 0;
-    if (available <= 0) continue;
-    const take = Math.min(remaining, available);
-    bal[wrapper] -= take;
-    drawn[wrapper] += take;
-    remaining -= take;
-    if (wrapper === 'SIPP') {
-      drawn.sippTaxable += take * SIPP_TAXABLE_RATIO;
+    if (wrapper === 'GIA') {
+      // Draw from cashlike GIA first (capital preservation), then equity GIA.
+      for (const sub of ['GIAcash', 'GIAeq']) {
+        if (remaining <= 0) break;
+        const available = bal[sub] || 0;
+        if (available <= 0) continue;
+        const take = Math.min(remaining, available);
+        bal[sub]  -= take;
+        drawn.GIA += take;
+        remaining -= take;
+      }
+    } else {
+      const available = bal[wrapper] || 0;
+      if (available <= 0) continue;
+      const take = Math.min(remaining, available);
+      bal[wrapper] -= take;
+      drawn[wrapper] += take;
+      remaining -= take;
+      if (wrapper === 'SIPP') {
+        drawn.sippTaxable += take * SIPP_TAXABLE_RATIO;
+      }
     }
   }
 
@@ -360,12 +373,13 @@ function runPath(inputs, equityVol, inflationVol) {
     const p2SalInc = (p2enabled && p2SalaryStop && p2Age <= p2SalaryStop)
       ? p2Salary * cumInfl : 0;
 
-    // ── GIA dividends (payout mode — leaves GIA, taxable on arising) ───────
-    const p1Divs = (p1Bal.GIA || 0) * dividendYield;
-    const p2Divs = p2enabled ? (p2Bal.GIA || 0) * dividendYield : 0;
-    // Deduct from GIA pre-growth (ex-dividend balance grows)
-    p1Bal.GIA = Math.max(0, (p1Bal.GIA || 0) - p1Divs);
-    if (p2enabled) p2Bal.GIA = Math.max(0, (p2Bal.GIA || 0) - p2Divs);
+    // ── GIA dividends (payout mode — equity GIA only; cashlike GIA is income-generating
+    //    but modelled via low-vol growth rather than dividend yield) ──────────────────
+    const p1Divs = (p1Bal.GIAeq || 0) * dividendYield;
+    const p2Divs = p2enabled ? (p2Bal.GIAeq || 0) * dividendYield : 0;
+    // Deduct from GIAeq pre-growth (ex-dividend balance grows)
+    p1Bal.GIAeq = Math.max(0, (p1Bal.GIAeq || 0) - p1Divs);
+    if (p2enabled) p2Bal.GIAeq = Math.max(0, (p2Bal.GIAeq || 0) - p2Divs);
 
     // ── Spending target (nominal, with step-down) ──────────────────────────
     const target = spending * cumInfl * (
@@ -418,8 +432,8 @@ function runPath(inputs, equityVol, inflationVol) {
     });
 
     // ── Growth ────────────────────────────────────────────────────────────
-    growBalances(p1Bal, growthY);
-    if (p2enabled) growBalances(p2Bal, growthY);
+    growBalances(p1Bal, growthY, inflationY);
+    if (p2enabled) growBalances(p2Bal, growthY, inflationY);
 
     // ── Approximate tax ────────────────────────────────────────────────────
     const p1NonSavings = p1SP + p1SalInc + p1Drawn.sippTaxable;
