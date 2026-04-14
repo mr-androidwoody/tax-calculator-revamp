@@ -143,6 +143,12 @@ canvas { display: block; width: 100%; height: auto; }
 
 .tab-active:hover { color: #ffffff; }
 
+.tab-btn--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .btn-run {
   appearance: none;
   border: none;
