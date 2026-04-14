@@ -1,6 +1,7 @@
 (function () {
   const D = window.RetireData;
   const C = window.RetireCalc;
+  const T = window.RetireTax;
 
   // inputs  — plain object built by gatherInputs() in app.js
   // accounts — interest-bearing accounts array (may be empty)
@@ -122,7 +123,6 @@
       }
       const baseRules     = C.getTaxRulesForYear(year);
       const effThresholds = C.upratedTaxRules(baseRules, uprateFactor);
-      const effCGTExempt  = effThresholds.cgtExempt;
 
       // GIA dividends — always taxable on arising basis (HMRC), regardless of reinvest/payout.
       // p1Divs     = earned/taxable (always computed)
@@ -299,25 +299,34 @@
         );
       }
 
-      // Income tax first (required for CGT band stacking)
+      // Tax — all three components (income tax, CGT, NI) via single façade call per person.
+      // tax.js owns the CGT exemption, band-stacking, and NI SPA logic.
+      // Engine assembles the raw inputs; tax layer applies all rules.
       const p1NonSavings = p1SP + p1SalInc + p1Drawn.sippTaxable;
       const p2NonSavings = p2SP + p2SalInc + p2Drawn.sippTaxable;
 
-      // Named tax inputs — the boundary for Phase 1 tax extraction.
-      // Each field maps directly to a taxable income category per person.
-      const p1TaxInput = { nonSavings: p1NonSavings, interest: p1IntTaxable, dividends: p1Divs };
-      const p2TaxInput = { nonSavings: p2NonSavings, interest: p2IntTaxable, dividends: p2Divs };
+      const p1Income = T.calculateTax({
+        nonSavings:       p1NonSavings,
+        employmentIncome: p1SalInc,
+        interest:         p1IntTaxable,
+        dividends:        p1Divs,
+        annualGains:      p1AnnualGains,
+        atOrAboveSPA:     p1Age >= p1SPAge,
+      }, effThresholds, 'england');
 
-      const p1Income = C.calcIncomeTaxDetailed(p1TaxInput.nonSavings, p1TaxInput.interest, p1TaxInput.dividends, effThresholds);
-      const p2Income = C.calcIncomeTaxDetailed(p2TaxInput.nonSavings, p2TaxInput.interest, p2TaxInput.dividends, effThresholds);
+      const p2Income = T.calculateTax({
+        nonSavings:       p2NonSavings,
+        employmentIncome: p2SalInc,
+        interest:         p2IntTaxable,
+        dividends:        p2Divs,
+        annualGains:      p2AnnualGains,
+        atOrAboveSPA:     p2Age >= p2SPAge,
+      }, effThresholds, 'england');
 
-      // FIX 1: single CGT per person — one exemption applied to full annual gains
-      // taperedPA passed explicitly so calcCGT uses the correct effective basic band width,
-      // not the statutory TAX.PA (which is wrong if the person is in the £100k–£125k taper zone).
-      const p1TaxableGain = Math.max(0, p1AnnualGains - effCGTExempt);
-      const p2TaxableGain = Math.max(0, p2AnnualGains - effCGTExempt);
-      const p1CGT         = C.calcCGT(p1Income.taxableIncomeAfterPA, p1TaxableGain, effThresholds, p1Income.taperedPA);
-      const p2CGT         = C.calcCGT(p2Income.taxableIncomeAfterPA, p2TaxableGain, effThresholds, p2Income.taperedPA);
+      const p1CGT = p1Income.cgt;
+      const p2CGT = p2Income.cgt;
+      const p1NI  = p1Income.ni;
+      const p2NI  = p2Income.ni;
 
       // Pay CGT from cash where possible
       if (p1CGT > 0) {
@@ -328,9 +337,6 @@
         const f = Math.min(p2CGT, p2Bal.Cash || 0);
         p2Bal.Cash -= f;
       }
-
-      const p1NI = C.calcEmployeeNI(p1SalInc, effThresholds, p1Age >= p1SPAge);
-      const p2NI = C.calcEmployeeNI(p2SalInc, effThresholds, p2Age >= p2SPAge);
 
       // Depletion tracking — keys kept as "${name} Wrapper" (unchanged; rename deferred)
       const checkMap = {
@@ -376,8 +382,8 @@
         (p2Drawn.SIPP || 0) +
         (p2Drawn.ISA || 0);
 
-      const p1TaxTotal = p1Income.tax + p1CGT + p1NI;
-      const p2TaxTotal = p2Income.tax + p2CGT + p2NI;
+      const p1TaxTotal = p1Income.totalTax;
+      const p2TaxTotal = p2Income.totalTax;
 
       const householdGrossIncome = p1GrossIncome + p2GrossIncome;
       const householdTax         = p1TaxTotal + p2TaxTotal;
