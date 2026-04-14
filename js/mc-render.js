@@ -5,7 +5,7 @@
  * Registers window.RetireMCRender.
  *
  * Depends on:
- *   window.RetireData  — for D.formatMoney
+ *   window.RetireData  – for D.formatMoney
  *
  * Public API:
  *   RetireMCRender.setResults(result, meanInflation)
@@ -107,7 +107,7 @@
         <p>Your retirement plan has been stress-tested across 10,000 simulated
         futures, each with randomly varying investment returns and inflation.
         Unlike the single-path projection, this analysis shows the range of
-        outcomes your plan could face — from favourable markets to sustained
+        outcomes your plan could face – from favourable markets to sustained
         downturns. Use it to understand how resilient your plan is, where the
         risks concentrate, and whether you have enough buffer to weather a poor
         sequence of returns early in retirement.</p>
@@ -121,8 +121,8 @@
                               'mc-verdict--weak';
     const verdictLabel =
       r.successRate >= 0.90 ? 'This is a strong result.' :
-      r.successRate >= 0.75 ? 'This is a moderate result — some vulnerability to poor sequences.' :
-                              'This result warrants attention — a significant proportion of paths fail.';
+      r.successRate >= 0.75 ? 'This is a moderate result – some vulnerability to poor sequences.' :
+                              'This result warrants attention – a significant proportion of paths fail.';
 
     const verdictHTML = `
       <section class="mc-section mc-verdict ${verdictClass}">
@@ -154,19 +154,19 @@
 
       let sustainBody;
       if (sustainableIsFloor) {
-        // All three runs at or above 95% — plan is very strong
+        // All three runs at or above 95% – plan is very strong
         sustainBody = `Your plan succeeds in ${confPct}% or more of simulations even at
-          ${fmt(sustainableSpending)}/year — ${fmt(absDiff)}/year above your current target.
+          ${fmt(sustainableSpending)}/year – ${fmt(absDiff)}/year above your current target.
           Your plan is highly resilient; the true sustainable spending level is
           likely higher still.`;
       } else if (isAbove) {
         sustainBody = `Your current spending target of ${fmt(currentSpending)}/year is within
           the ${confPct}% confidence threshold. The estimated sustainable spending level is
-          ${floorPrefix}${fmt(sustainableSpending)}/year${portClause} —
+          ${floorPrefix}${fmt(sustainableSpending)}/year${portClause} –
           giving you headroom of approximately ${fmt(absDiff)}/year above your current target.`;
       } else {
         sustainBody = `To achieve ${confPct}% confidence of never running out, the estimated
-          sustainable spending level is ${fmt(sustainableSpending)}/year${portClause} —
+          sustainable spending level is ${fmt(sustainableSpending)}/year${portClause} –
           approximately ${fmt(absDiff)}/year below your current target of ${fmt(currentSpending)}/year.
           Consider reducing discretionary spending or building a larger portfolio before retiring.`;
       }
@@ -175,7 +175,7 @@
         <section class="mc-section mc-sustain ${sClass}">
           <h4 class="mc-section-heading">Sustainable spending estimate</h4>
           <p>${sustainBody}</p>
-          <p class="mc-sustain__note">Estimated via interpolation across three simulation runs. Accuracy ±5%.</p>
+          <p class="mc-sustain__note">All spending figures are in today's money (real, year-0 terms) and do not change with the Real/Nominal toggle above, which affects portfolio values only. Sustainable spending is estimated via interpolation across three simulation runs; accuracy ±5%.</p>
         </section>`;
     }
 
@@ -186,7 +186,7 @@
     if (p50Depletes) {
       const yearsEarly = lastYear - p50Depletes;
       medianBody = `In the median scenario, the portfolio is exhausted by
-        ${p50Depletes} — ${yearsEarly} year${yearsEarly !== 1 ? 's' : ''} before
+        ${p50Depletes} – ${yearsEarly} year${yearsEarly !== 1 ? 's' : ''} before
         the end of the projection.`;
     } else {
       medianBody = `In the median scenario, your portfolio peaks at
@@ -206,7 +206,7 @@
     if (p10Depletes) {
       const yearsEarly = lastYear - p10Depletes;
       stressBody = `In the bottom 10% of outcomes, the portfolio runs out by
-        ${p10Depletes} — ${yearsEarly} year${yearsEarly !== 1 ? 's' : ''} before
+        ${p10Depletes} – ${yearsEarly} year${yearsEarly !== 1 ? 's' : ''} before
         the end of the projection. This scenario typically reflects a combination
         of poor early returns and elevated inflation.`;
     } else {
@@ -218,7 +218,7 @@
 
     const stressHTML = `
       <section class="mc-section">
-        <h4 class="mc-section-heading">10th percentile — stress case</h4>
+        <h4 class="mc-section-heading">10th percentile – stress case</h4>
         <p>${stressBody}</p>
       </section>`;
 
@@ -230,7 +230,7 @@
 
     const optimisticHTML = `
       <section class="mc-section">
-        <h4 class="mc-section-heading">90th percentile — optimistic case</h4>
+        <h4 class="mc-section-heading">90th percentile – optimistic case</h4>
         <p>In a favourable environment (90th percentile), your portfolio reaches
         ${fmt(p90Final)} by ${lastYear} (${modeLabel} terms).${legacyNote}</p>
       </section>`;
@@ -247,7 +247,7 @@
         indicates lower dispersion risk; a wide range reflects sensitivity to
         return sequence.${
           (p75Final - p25Final) / Math.max(p50[lastIdx], 1) > 1.5
-            ? ' The spread here is wide — your outcome is highly sensitive to which sequence of returns materialises early in retirement.'
+            ? ' The spread here is wide – your outcome is highly sensitive to which sequence of returns materialises early in retirement.'
             : ''
         }</p>
       </section>`;
@@ -260,7 +260,7 @@
         <section class="mc-section">
           <h4 class="mc-section-heading">Earliest depletion</h4>
           <p>In the worst-case paths, funds could be exhausted as early as
-          ${r.earliestDepletion} — just ${yearsIn} year${yearsIn !== 1 ? 's' : ''}
+          ${r.earliestDepletion} – just ${yearsIn} year${yearsIn !== 1 ? 's' : ''}
           into the projection. This typically occurs when a severe market downturn
           coincides with high spending in the early years of retirement.</p>
         </section>`;
@@ -313,7 +313,7 @@
       <section class="mc-section mc-section--muted">
         <h4 class="mc-section-heading">Assumptions</h4>
         <p>This stress test uses ${eVol}% equity volatility and ${iVol}% inflation
-        volatility — ${volLabel}. Each of the
+        volatility – ${volLabel}. Each of the
         ${r.simCount.toLocaleString('en-GB')} paths independently samples annual
         returns and inflation, compounding uncertainty across the full
         ${r.years.length}-year projection.
