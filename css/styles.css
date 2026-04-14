@@ -2425,3 +2425,145 @@ input[type="radio"] { accent-color: var(--accent); }
   z-index: 300;             /* above header */
   box-shadow: 0 16px 48px rgba(18,30,52,0.22);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   MONTE CARLO — Risk Outcomes narrative
+   ═══════════════════════════════════════════════════════════════ */
+
+#mc-narrative {
+  margin: 0 0 20px;
+}
+
+.mc-section {
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm, 8px);
+  background: var(--surface-2, #f9fafb);
+  border: 1px solid var(--border, #e5e7eb);
+}
+
+.mc-section-heading {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted, #6b7280);
+}
+
+.mc-section p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text, #374151);
+}
+
+/* Verdict — strong (≥90%) */
+.mc-verdict.mc-verdict--strong {
+  background: #f0fdf4;
+  border-color: #86efac;
+  border-left: 4px solid #16a34a;
+}
+.mc-verdict.mc-verdict--strong .mc-section-heading { color: #15803d; }
+
+/* Verdict — moderate (75–90%) */
+.mc-verdict.mc-verdict--moderate {
+  background: #fffbeb;
+  border-color: #fde68a;
+  border-left: 4px solid #d97706;
+}
+.mc-verdict.mc-verdict--moderate .mc-section-heading { color: #b45309; }
+
+/* Verdict — weak (<75%) */
+.mc-verdict.mc-verdict--weak {
+  background: #fef2f2;
+  border-color: #fecaca;
+  border-left: 4px solid #dc2626;
+}
+.mc-verdict.mc-verdict--weak .mc-section-heading { color: #b91c1c; }
+
+/* Assumptions note — de-emphasised */
+.mc-section--muted {
+  background: transparent;
+  border-color: transparent;
+  padding-left: 0;
+  padding-right: 0;
+}
+.mc-section--muted .mc-section-heading {
+  color: var(--muted, #9ca3af);
+}
+.mc-section--muted p {
+  font-size: 13px;
+  color: var(--muted, #6b7280);
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESULTS HEADER — two-column layout for Run risk outcomes button
+   ═══════════════════════════════════════════════════════════════ */
+
+.results-intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.results-intro__left { flex: 1; }
+.results-intro__left h1  { margin: 0 0 6px; }
+.results-intro__left .results-projection { margin: 0; }
+.results-intro__right { flex-shrink: 0; padding-top: 4px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   RUN RISK OUTCOMES button
+   ═══════════════════════════════════════════════════════════════ */
+
+.btn-run-risk {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm, 8px);
+  border: 1.5px solid #dc2626;
+  background: transparent;
+  color: #dc2626;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 140ms ease, color 140ms ease, opacity 140ms ease;
+}
+
+.btn-run-risk:hover:not(:disabled) {
+  background: #dc2626;
+  color: #fff;
+}
+
+.btn-run-risk:disabled,
+.btn-run-risk.btn-run-risk--disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-run-risk.btn-loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RISK OUTCOMES sub-tab — red active state once MC is populated
+   ═══════════════════════════════════════════════════════════════ */
+
+.results-tab--risk-ready {
+  background: var(--panel-solid);
+  color: #dc2626;
+  font-weight: 700;
+  border-top: 3px solid #dc2626;
+  border-bottom: 1px solid var(--panel-solid);
+  margin-bottom: -5px;
+  padding-bottom: 12px;
+}
