@@ -2621,8 +2621,7 @@ input[type="radio"] { accent-color: var(--accent); }
 .mc-section--intro {
   background: transparent;
   border-color: transparent;
-  padding-left: 0;
-  padding-right: 0;
+  padding: 0;
   margin-bottom: 20px;
 }
 
