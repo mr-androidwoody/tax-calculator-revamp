@@ -222,8 +222,8 @@
   // New format uses fuzzy (normalised) label matching.
   // ─────────────────────────────────────────────
   function parseParams(wb) {
-    const sheet = wb.Sheets['Parameters'];
-    if (!sheet) throw new Error('No "Parameters" sheet found.');
+    const sheet = wb.Sheets['Personal details'] || wb.Sheets['Parameters'];
+    if (!sheet) throw new Error('No "Personal details" or "Parameters" sheet found.');
 
     const range = XLSX.utils.decode_range(sheet['!ref']);
     const maxRow = range.e.r;
