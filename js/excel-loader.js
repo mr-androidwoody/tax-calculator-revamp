@@ -464,7 +464,7 @@
 
     // Merge title row across all 11 cols (A1:K1)
     // Merge legend/footer row across all 11 cols
-    const acLastDataRow = 1 + exampleAccounts.length + 6; // 0-indexed row of legend
+    const acLastDataRow = 2 + exampleAccounts.length + 6; // 0-indexed: title(1) + header(1) + examples + blanks
     acSheet['!merges'] = [
       { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } },              // title
       { s: { r: acLastDataRow, c: 0 }, e: { r: acLastDataRow, c: 10 } }, // legend
