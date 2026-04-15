@@ -295,29 +295,90 @@
 
   // ─────────────────────────────────────────────
   // TEMPLATE DOWNLOAD
-  // Generates a formatted two-sheet .xlsx.
-  // SheetJS CE does not support cell styles via
-  // aoa_to_sheet, so we build styled HTML tables
-  // and parse them — the only CE-compatible way
-  // to get background colours into the workbook.
+  // Uses xlsx-js-style (drop-in SheetJS CE fork)
+  // for full cell-level formatting support.
   // ─────────────────────────────────────────────
   function downloadTemplate() {
 
-    // ── Style constants ──────────────────────────
-    const S = {
-      title:   'background:#1F3864;color:#ffffff;font-family:Arial;font-size:13pt;font-weight:bold;',
-      header:  'background:#2E75B6;color:#ffffff;font-family:Arial;font-size:9pt;font-weight:bold;text-align:center;',
-      section: 'background:#D6E4F0;color:#1F3864;font-family:Arial;font-size:9pt;font-weight:bold;',
-      input:   'background:#FFF2CC;font-family:Arial;font-size:9pt;',
-      body:    'background:#ffffff;font-family:Arial;font-size:9pt;',
-      note:    'background:#FAFAFA;color:#595959;font-family:Arial;font-size:8pt;font-style:italic;',
-      legend:  'background:#F2F2F2;color:#595959;font-family:Arial;font-size:8pt;font-style:italic;',
+    // ── Reusable style objects ───────────────────
+    const FONT  = { name: 'Arial' };
+    const THIN  = { style: 'thin', color: { rgb: 'BFBFBF' } };
+    const BORDER = { top: THIN, bottom: THIN, left: THIN, right: THIN };
+
+    const ST = {
+      title: {
+        font:      { name: 'Arial', bold: true, color: { rgb: 'FFFFFF' }, sz: 13 },
+        fill:      { fgColor: { rgb: '1F3864' } },
+        alignment: { horizontal: 'left', vertical: 'center' },
+      },
+      header: {
+        font:      { name: 'Arial', bold: true, color: { rgb: 'FFFFFF' }, sz: 9 },
+        fill:      { fgColor: { rgb: '2E75B6' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border:    BORDER,
+      },
+      section: {
+        font:      { name: 'Arial', bold: true, color: { rgb: '1F3864' }, sz: 9 },
+        fill:      { fgColor: { rgb: 'D6E4F0' } },
+        alignment: { horizontal: 'left', vertical: 'center' },
+        border:    BORDER,
+      },
+      input: {
+        font:      { name: 'Arial', sz: 9 },
+        fill:      { fgColor: { rgb: 'FFF2CC' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border:    BORDER,
+      },
+      inputLeft: {
+        font:      { name: 'Arial', sz: 9 },
+        fill:      { fgColor: { rgb: 'FFF2CC' } },
+        alignment: { horizontal: 'left', vertical: 'center' },
+        border:    BORDER,
+      },
+      body: {
+        font:      { name: 'Arial', sz: 9 },
+        fill:      { fgColor: { rgb: 'FFFFFF' } },
+        alignment: { horizontal: 'left', vertical: 'center' },
+        border:    BORDER,
+      },
+      note: {
+        font:      { name: 'Arial', italic: true, color: { rgb: '595959' }, sz: 8 },
+        fill:      { fgColor: { rgb: 'FAFAFA' } },
+        alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+        border:    BORDER,
+      },
+      legend: {
+        font:      { name: 'Arial', italic: true, color: { rgb: '595959' }, sz: 8 },
+        fill:      { fgColor: { rgb: 'F2F2F2' } },
+        alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+        border:    BORDER,
+      },
     };
 
-    // ── Helper: td/th element string ─────────────
-    function td(content, style, tag) {
-      tag = tag || 'td';
-      return `<${tag} style="${style}">${content}</${tag}>`;
+    // ── Cell factory ─────────────────────────────
+    function cell(v, style, numFmt) {
+      const t = (v === null || v === undefined || v === '') ? 'z' : (typeof v === 'number' ? 'n' : 's');
+      const c = { v: v === '' ? undefined : v, t, s: style };
+      if (numFmt) c.z = numFmt;
+      return c;
+    }
+
+    // ── Sheet builder ─────────────────────────────
+    // Takes a 2-D array of cell objects and builds a sheet with !ref and !cols
+    function buildSheet(rows, colWidths) {
+      const ws = {};
+      let maxC = 0;
+      rows.forEach((row, r) => {
+        row.forEach((c, col) => {
+          if (!c) return;
+          const addr = XLSX.utils.encode_cell({ r, c: col });
+          ws[addr] = c;
+          if (col > maxC) maxC = col;
+        });
+      });
+      ws['!ref']  = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rows.length - 1, c: maxC } });
+      ws['!cols'] = colWidths.map(w => ({ wch: w }));
+      return ws;
     }
 
     // ════════════════════════════════════════════
@@ -329,135 +390,123 @@
       'Interest rate %', 'Monthly draw (£)', 'Notes',
     ];
 
-    const acBlankRows = Array.from({ length: 10 }, () => `
-      <tr>
-        ${td('', S.input)}
-        ${td('', S.input)}
-        ${td('', S.input)}
-        ${td('', S.input)}
-        ${td('', S.input)}
-        ${td('', S.input)}
-        ${td('', S.input)}
-        ${td('', S.input)}
-        ${td('', S.input)}
-        ${td('', S.input)}
-        ${td('', S.body)}
-      </tr>`).join('');
-
     const acLegend =
       'Wrapper: ISA  |  SIPP (self-invested personal pension)  |  ' +
-      'SIPP/WP (workplace pension \u2014 same tax treatment)  |  GIA  |  Cash     ' +
+      'SIPP/WP (workplace pension — same tax treatment)  |  GIA  |  Cash     ' +
       'Owner: p1 or p2     ' +
-      'Allocation % columns must total 100 \u2014 leave ALL four blank for defaults ' +
+      'Allocation % columns must total 100 — leave ALL four blank for defaults ' +
       '(100% equities for ISA / SIPP / GIA; 100% cash for Cash)';
 
-    const acHtml = `<table>
-      <tr>${td('Accounts \u2014 UK Retirement Tax Planner', S.title, 'th')}${Array(10).fill(td('', S.title, 'th')).join('')}</tr>
-      <tr>${acHeaders.map(h => td(h, S.header, 'th')).join('')}</tr>
-      ${acBlankRows}
-      <tr>${td(acLegend, S.legend)}${Array(10).fill(td('', S.legend)).join('')}</tr>
-    </table>`;
+    // 10 blank input rows
+    const blankInputRows = Array.from({ length: 10 }, () => [
+      cell('', ST.inputLeft),       // name
+      cell('', ST.input),           // wrapper
+      cell('', ST.input),           // owner
+      cell('', ST.input, '#,##0'),  // value
+      cell('', ST.input),           // equities %
+      cell('', ST.input),           // bonds %
+      cell('', ST.input),           // cashlike %
+      cell('', ST.input),           // cash %
+      cell('', ST.input),           // rate %
+      cell('', ST.input, '#,##0'),  // monthly draw
+      cell('', ST.body),            // notes
+    ]);
+
+    const acRows = [
+      // Row 1: title (spans all 11 cols visually — first cell carries style, rest blank same style)
+      [cell('Accounts — UK Retirement Tax Planner', ST.title),
+        ...Array(10).fill(cell('', ST.title))],
+      // Row 2: headers
+      acHeaders.map(h => cell(h, ST.header)),
+      // 10 blank input rows
+      ...blankInputRows,
+      // Legend row
+      [cell(acLegend, ST.legend), ...Array(10).fill(cell('', ST.legend))],
+    ];
+
+    const acSheet = buildSheet(acRows, [28, 11, 7, 14, 10, 8, 11, 8, 14, 15, 72]);
+
+    // Row heights
+    acSheet['!rows'] = [
+      { hpt: 24 },  // title
+      { hpt: 30 },  // headers
+      ...Array(10).fill({ hpt: 18 }),
+      { hpt: 36 },  // legend
+    ];
+
+    // Freeze header rows
+    acSheet['!freeze'] = { xSplit: 0, ySplit: 2 };
 
     // ════════════════════════════════════════════
     // PARAMETERS SHEET
     // ════════════════════════════════════════════
-    function sectionRow(label) {
-      return `<tr>${td(label, S.section)}${td('', S.section)}${td('', S.section)}</tr>`;
+    function secRow(label) {
+      return [cell(label, ST.section), cell('', ST.section), cell('', ST.section)];
     }
     function paramRow(label, note, required) {
-      const labelText = required ? `${label} *` : label;
-      return `<tr>
-        ${td(labelText, S.body)}
-        ${td('', S.input)}
-        ${td(note, S.note)}
-      </tr>`;
+      return [
+        cell(required ? label + ' *' : label, ST.body),
+        cell('', ST.input),
+        cell(note, ST.note),
+      ];
     }
 
-    const paHtml = `<table>
-      <tr>${td('Parameters \u2014 UK Retirement Tax Planner', S.title, 'th')}${td('', S.title, 'th')}${td('', S.title, 'th')}</tr>
-      <tr>
-        ${td('Parameter', S.header, 'th')}
-        ${td('Value', S.header, 'th')}
-        ${td('Notes', S.header, 'th')}
-      </tr>
+    const paRows = [
+      [cell('Parameters — UK Retirement Tax Planner', ST.title), cell('', ST.title), cell('', ST.title)],
+      [cell('Parameter', ST.header), cell('Value', ST.header), cell('Notes', ST.header)],
 
-      ${sectionRow('People')}
-      ${paramRow('Person 1 name',                                  'First name or any label, e.g. Woody',                                false)}
-      ${paramRow('Person 2 name',                                  'First name or any label, e.g. Heidi',                                false)}
-      ${paramRow('Person 1 \u2013 birth year',                     'Required. Four-digit year, e.g. 1,967',                             true)}
-      ${paramRow('Person 2 \u2013 birth year',                     'Required. Four-digit year, e.g. 1,966',                             true)}
+      secRow('People'),
+      paramRow('Person 1 name',                              'First name or any label, e.g. Woody',                               false),
+      paramRow('Person 2 name',                              'First name or any label, e.g. Heidi',                               false),
+      paramRow('Person 1 \u2013 birth year',                 'Required. Four-digit year, e.g. 1,967',                             true),
+      paramRow('Person 2 \u2013 birth year',                 'Required. Four-digit year, e.g. 1,966',                             true),
 
-      ${sectionRow('Projection dates')}
-      ${paramRow('Start year',                                     'Required. First year of projection, e.g. 2,025',                    true)}
-      ${paramRow('End year',                                       'Required. Final year of projection, e.g. 2,055',                    true)}
+      secRow('Projection dates'),
+      paramRow('Start year',                                 'Required. First year of projection, e.g. 2,025',                   true),
+      paramRow('End year',                                   'Required. Final year of projection, e.g. 2,055',                   true),
 
-      ${sectionRow('Spending')}
-      ${paramRow('Annual household spending (\u00a3)',             'Required. Total net household spending per year, e.g. 45,000',      true)}
-      ${paramRow('Step-down at age 75 (%)',                        'Optional. % reduction in spending from age 75, e.g. 20',            false)}
+      secRow('Spending'),
+      paramRow('Annual household spending (\u00a3)',         'Required. Total net spending per year, e.g. 45,000',               true),
+      paramRow('Step-down at age 75 (%)',                    'Optional. % reduction in spending from age 75, e.g. 20',           false),
 
-      ${sectionRow('Salary')}
-      ${paramRow('Person 1 \u2013 gross annual salary (\u00a3)',   'Optional. Leave blank if not working',                              false)}
-      ${paramRow('Person 1 \u2013 salary stop age',                'Optional. Age at which Person 1 salary stops, e.g. 60',             false)}
-      ${paramRow('Gross annual salary (\u00a3)',                   'Optional. Person 2 gross salary, e.g. 15,000',                      false)}
-      ${paramRow('Stop age',                                       'Optional. Age at which Person 2 salary stops, e.g. 63',             false)}
+      secRow('Salary'),
+      paramRow('Person 1 \u2013 gross annual salary (\u00a3)', 'Optional. Leave blank if not working',                           false),
+      paramRow('Person 1 \u2013 salary stop age',            'Optional. Age at which Person 1 salary stops, e.g. 60',            false),
+      paramRow('Gross annual salary (\u00a3)',               'Optional. Person 2 gross salary, e.g. 15,000',                     false),
+      paramRow('Stop age',                                   'Optional. Age at which Person 2 salary stops, e.g. 63',            false),
 
-      ${sectionRow('State Pension')}
-      ${paramRow('Person 1 \u2013 start age',                      'State Pension start age for Person 1, e.g. 67',                     false)}
-      ${paramRow('Person 1 \u2013 annual amount (\u00a3)',          'Full new State Pension 2025/26 is \u00a311,502',                    false)}
-      ${paramRow('Person 2 \u2013 start age',                      'State Pension start age for Person 2, e.g. 67',                     false)}
-      ${paramRow('Person 2 \u2013 annual amount (\u00a3)',          'Full new State Pension 2025/26 is \u00a311,502',                    false)}
+      secRow('State Pension'),
+      paramRow('Person 1 \u2013 start age',                  'State Pension start age for Person 1, e.g. 67',                    false),
+      paramRow('Person 1 \u2013 annual amount (\u00a3)',      'Full new State Pension 2025/26 is \u00a311,502',                   false),
+      paramRow('Person 2 \u2013 start age',                  'State Pension start age for Person 2, e.g. 67',                    false),
+      paramRow('Person 2 \u2013 annual amount (\u00a3)',      'Full new State Pension 2025/26 is \u00a311,502',                   false),
 
-      ${sectionRow('Growth & inflation')}
-      ${paramRow('Portfolio growth (%/yr)',                        'Nominal annual portfolio growth rate, e.g. 5',                      false)}
-      ${paramRow('Inflation (%/yr)',                               'Annual inflation assumption, e.g. 2.5',                             false)}
-      ${paramRow('Threshold uprating mode',                        'How tax thresholds uprate: frozen, cpi, or wages',                  false)}
-      ${paramRow('Uprate from year',                               'Year from which uprating applies, e.g. 2,028',                      false)}
+      secRow('Growth & inflation'),
+      paramRow('Portfolio growth (%/yr)',                    'Nominal annual portfolio growth rate, e.g. 5',                     false),
+      paramRow('Inflation (%/yr)',                           'Annual inflation assumption, e.g. 2.5',                            false),
+      paramRow('Threshold uprating mode',                    'How tax thresholds uprate: frozen, cpi, or wages',                 false),
+      paramRow('Uprate from year',                           'Year from which uprating applies, e.g. 2,028',                    false),
 
-      ${sectionRow('Bed and ISA')}
-      ${paramRow('Enable bed-and-ISA',                            'yes or no \u2014 model annual GIA\u2192ISA transfers',              false)}
-      ${paramRow('Person 1 GIA\u2192ISA per year (\u00a3)',        'Annual GIA to ISA transfer for Person 1, e.g. 20,000',             false)}
-      ${paramRow('Person 2 GIA\u2192ISA per year (\u00a3)',        'Annual GIA to ISA transfer for Person 2, e.g. 20,000',             false)}
-    </table>`;
-
-    // ── Parse HTML tables into SheetJS sheets ────
-    const acWb = XLSX.read(acHtml,  { type: 'string' });
-    const paWb = XLSX.read(paHtml,  { type: 'string' });
-
-    const acSheet = acWb.Sheets[acWb.SheetNames[0]];
-    const paSheet = paWb.Sheets[paWb.SheetNames[0]];
-
-    // Column widths
-    acSheet['!cols'] = [
-      { wch: 28 }, { wch: 11 }, { wch: 7  }, { wch: 14 },
-      { wch: 10 }, { wch: 8  }, { wch: 11 }, { wch: 8  },
-      { wch: 14 }, { wch: 15 }, { wch: 72 },
-    ];
-    paSheet['!cols'] = [
-      { wch: 40 }, { wch: 18 }, { wch: 65 },
+      secRow('Bed and ISA'),
+      paramRow('Enable bed-and-ISA',                        'yes or no \u2014 model annual GIA\u2192ISA transfers',             false),
+      paramRow('Person 1 GIA\u2192ISA per year (\u00a3)',   'Annual GIA to ISA transfer for Person 1, e.g. 20,000',            false),
+      paramRow('Person 2 GIA\u2192ISA per year (\u00a3)',   'Annual GIA to ISA transfer for Person 2, e.g. 20,000',            false),
     ];
 
-    // Apply comma-separated number format to numeric input columns
-    // on Accounts sheet: Value (col D=3) and Monthly draw (col J=9)
-    const acRange = XLSX.utils.decode_range(acSheet['!ref']);
-    for (let r = 2; r <= acRange.e.r - 1; r++) {
-      const vCell = acSheet[XLSX.utils.encode_cell({ r, c: 3 })];
-      if (vCell) vCell.z = '#,##0';
-      const mCell = acSheet[XLSX.utils.encode_cell({ r, c: 9 })];
-      if (mCell) mCell.z = '#,##0';
-    }
+    const paSheet = buildSheet(paRows, [40, 18, 65]);
 
-    // Apply comma-separated number format to Value column on Parameters sheet
-    const paRange = XLSX.utils.decode_range(paSheet['!ref']);
-    for (let r = 2; r <= paRange.e.r; r++) {
-      const cell = paSheet[XLSX.utils.encode_cell({ r, c: 1 })];
-      if (cell && cell.t === 'n') cell.z = '#,##0';
-    }
+    paSheet['!rows'] = [
+      { hpt: 24 },  // title
+      { hpt: 22 },  // headers
+      ...Array(paRows.length - 2).fill({ hpt: 18 }),
+    ];
 
-    // Build final workbook
+    paSheet['!freeze'] = { xSplit: 0, ySplit: 2 };
+
+    // ── Assemble and write ───────────────────────
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, acSheet, 'Accounts');
     XLSX.utils.book_append_sheet(wb, paSheet, 'Parameters');
-
     XLSX.writeFile(wb, 'retirement-planner-template.xlsx');
   }
 
