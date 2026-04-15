@@ -82,6 +82,18 @@
     return trimmed;
   }
 
+  // ─────────────────────────────────────────────
+  // OWNER NORMALISATION
+  // Accept 'Person 1' / 'Person 2' as synonyms
+  // for 'p1' / 'p2'.
+  // ─────────────────────────────────────────────
+  function normaliseOwner(raw) {
+    const s = String(raw || '').trim().toLowerCase();
+    if (s === 'p1' || s === 'person 1' || s === 'person1') return 'p1';
+    if (s === 'p2' || s === 'person 2' || s === 'person2') return 'p2';
+    return String(raw || '').trim();
+  }
+
   // Allocation defaults by wrapper
   const ALLOC_DEFAULTS = {
     ISA:  { equities: 100, bonds: 0, cashlike: 0, cash: 0 },
@@ -169,7 +181,7 @@
       if (!name || (!VALID_WRAPPERS.has(wrapper) && wrapper === String(row[1] || '').trim())) {
         // If name is present but wrapper is unrecognisable, still push so validate() can report it
         if (name) {
-          accounts.push({ name, wrapper, owner: String(row[2] || 'p1').trim(),
+          accounts.push({ name, wrapper, owner: normaliseOwner(row[2] || 'p1'),
             value: parseNum(row[3]),
             alloc: { equities: 0, bonds: 0, cashlike: 0, cash: 0 },
             rate: null, monthlyDraw: null, _rawWrapper: String(row[1] || '').trim() });
@@ -178,7 +190,7 @@
       }
       if (!name) return;
 
-      const owner       = String(row[2] || 'p1').trim();
+      const owner       = normaliseOwner(row[2] || 'p1');
       const value       = parseNum(row[3]);
       const equities    = parseNum(row[4]);
       const bonds       = parseNum(row[5]);
@@ -295,14 +307,14 @@
 
   // ─────────────────────────────────────────────
   // TEMPLATE DOWNLOAD
-  // Uses xlsx-js-style (drop-in SheetJS CE fork)
-  // for full cell-level formatting support.
+  // Uses xlsx-js-style for full cell formatting.
+  // Pre-populated with Harry/Sally example data.
+  // Dropdown validation on Wrapper and Owner cols.
   // ─────────────────────────────────────────────
   function downloadTemplate() {
 
     // ── Reusable style objects ───────────────────
-    const FONT  = { name: 'Arial' };
-    const THIN  = { style: 'thin', color: { rgb: 'BFBFBF' } };
+    const THIN   = { style: 'thin', color: { rgb: 'BFBFBF' } };
     const BORDER = { top: THIN, bottom: THIN, left: THIN, right: THIN };
 
     const ST = {
@@ -323,16 +335,18 @@
         alignment: { horizontal: 'left', vertical: 'center' },
         border:    BORDER,
       },
-      input: {
-        font:      { name: 'Arial', sz: 9 },
-        fill:      { fgColor: { rgb: 'FFF2CC' } },
-        alignment: { horizontal: 'center', vertical: 'center' },
-        border:    BORDER,
-      },
+      // Yellow editable cell — left-aligned (name column)
       inputLeft: {
         font:      { name: 'Arial', sz: 9 },
         fill:      { fgColor: { rgb: 'FFF2CC' } },
         alignment: { horizontal: 'left', vertical: 'center' },
+        border:    BORDER,
+      },
+      // Yellow editable cell — centre-aligned (numeric/dropdown columns)
+      input: {
+        font:      { name: 'Arial', sz: 9 },
+        fill:      { fgColor: { rgb: 'FFF2CC' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
         border:    BORDER,
       },
       body: {
@@ -357,14 +371,14 @@
 
     // ── Cell factory ─────────────────────────────
     function cell(v, style, numFmt) {
-      const t = (v === null || v === undefined || v === '') ? 'z' : (typeof v === 'number' ? 'n' : 's');
-      const c = { v: v === '' ? undefined : v, t, s: style };
+      const isEmpty = (v === null || v === undefined || v === '');
+      const t = isEmpty ? 'z' : (typeof v === 'number' ? 'n' : 's');
+      const c = { v: isEmpty ? undefined : v, t, s: style };
       if (numFmt) c.z = numFmt;
       return c;
     }
 
     // ── Sheet builder ─────────────────────────────
-    // Takes a 2-D array of cell objects and builds a sheet with !ref and !cols
     function buildSheet(rows, colWidths) {
       const ws = {};
       let maxC = 0;
@@ -392,50 +406,87 @@
 
     const acLegend =
       'Wrapper: ISA  |  SIPP (self-invested personal pension)  |  ' +
-      'SIPP/WP (workplace pension — same tax treatment)  |  GIA  |  Cash     ' +
-      'Owner: p1 or p2     ' +
-      'Allocation % columns must total 100 — leave ALL four blank for defaults ' +
-      '(100% equities for ISA / SIPP / GIA; 100% cash for Cash)';
+      'SIPP/WP (workplace pension \u2014 same tax treatment as SIPP)  |  GIA (general investment account)  |  Cash     ' +
+      'Owner: Person 1 or Person 2     ' +
+      'Allocation % columns must total 100 \u2014 leave ALL four blank to apply defaults ' +
+      '(100% equities for ISA / SIPP / GIA; 100% cash for Cash)     ' +
+      'Yellow rows = cells to fill in';
 
-    // 10 blank input rows
-    const blankInputRows = Array.from({ length: 10 }, () => [
-      cell('', ST.inputLeft),       // name
-      cell('', ST.input),           // wrapper
-      cell('', ST.input),           // owner
-      cell('', ST.input, '#,##0'),  // value
-      cell('', ST.input),           // equities %
-      cell('', ST.input),           // bonds %
-      cell('', ST.input),           // cashlike %
-      cell('', ST.input),           // cash %
-      cell('', ST.input),           // rate %
-      cell('', ST.input, '#,##0'),  // monthly draw
-      cell('', ST.body),            // notes
+    // Example rows matching the screenshots
+    const exampleAccounts = [
+      ['Harry SIPP',          'SIPP',    'Person 1', 300000, 100, 0, 0, 0,   null, null, ''],
+      ['Harry ISA',           'ISA',     'Person 1', 150000, 100, 0, 0, 0,   null, null, ''],
+      ['Sally WP',            'SIPP/WP', 'Person 2', 150000, 100, 0, 0, 0,   null, null, 'SIPP/WP = Workplace Pension'],
+      ['Harry GIA',           'GIA',     'Person 1', 200000, 100, 0, 0, 0,   null, null, ''],
+      ['Harry Cash savings',  'Cash',    'Person 1',  50000,   0, 0, 0, 100, 3.8,  null, 'Set interest rate for savings accounts'],
+      ['Sally ISA',           'ISA',     'Person 2', 150000, 100, 0, 0, 0,   null, null, ''],
+    ];
+
+    const acExampleRows = exampleAccounts.map(r => [
+      cell(r[0],  ST.inputLeft),
+      cell(r[1],  ST.input),
+      cell(r[2],  ST.input),
+      cell(r[3],  ST.input, '#,##0'),
+      cell(r[4],  ST.input),
+      cell(r[5],  ST.input),
+      cell(r[6],  ST.input),
+      cell(r[7],  ST.input),
+      r[8]  !== null ? cell(r[8],  ST.input, '0.0%') : cell('', ST.input),
+      r[9]  !== null ? cell(r[9],  ST.input, '#,##0') : cell('', ST.input),
+      cell(r[10], ST.note),
+    ]);
+
+    // 6 blank input rows below examples
+    const acBlankRows = Array.from({ length: 6 }, () => [
+      cell('', ST.inputLeft),
+      cell('', ST.input),
+      cell('', ST.input),
+      cell('', ST.input, '#,##0'),
+      cell('', ST.input),
+      cell('', ST.input),
+      cell('', ST.input),
+      cell('', ST.input),
+      cell('', ST.input),
+      cell('', ST.input, '#,##0'),
+      cell('', ST.body),
     ]);
 
     const acRows = [
-      // Row 1: title (spans all 11 cols visually — first cell carries style, rest blank same style)
-      [cell('Accounts — UK Retirement Tax Planner', ST.title),
-        ...Array(10).fill(cell('', ST.title))],
-      // Row 2: headers
+      [cell('Accounts \u2014 UK Retirement Tax Planner', ST.title), ...Array(10).fill(cell('', ST.title))],
       acHeaders.map(h => cell(h, ST.header)),
-      // 10 blank input rows
-      ...blankInputRows,
-      // Legend row
+      ...acExampleRows,
+      ...acBlankRows,
       [cell(acLegend, ST.legend), ...Array(10).fill(cell('', ST.legend))],
     ];
 
-    const acSheet = buildSheet(acRows, [28, 11, 7, 14, 10, 8, 11, 8, 14, 15, 72]);
+    const acSheet = buildSheet(acRows, [24, 11, 12, 14, 10, 8, 11, 8, 14, 15, 52]);
 
-    // Row heights
     acSheet['!rows'] = [
-      { hpt: 24 },  // title
-      { hpt: 30 },  // headers
-      ...Array(10).fill({ hpt: 18 }),
-      { hpt: 36 },  // legend
+      { hpt: 24 },
+      { hpt: 30 },
+      ...Array(exampleAccounts.length + 6).fill({ hpt: 18 }),
+      { hpt: 42 },
     ];
 
-    // Freeze header rows
     acSheet['!freeze'] = { xSplit: 0, ySplit: 2 };
+
+    // Dropdown validation: Wrapper (col B=1) and Owner (col C=2)
+    // rows 3 to 3+examples+blanks (0-indexed rows 2 to 2+11)
+    const acDataRows = exampleAccounts.length + 6;
+    const acValidations = [];
+    for (let r = 2; r < 2 + acDataRows; r++) {
+      acValidations.push({
+        type: 'list', operator: 'between', showDropDown: false,
+        sqref: XLSX.utils.encode_cell({ r, c: 1 }),
+        formula1: '"ISA,SIPP,SIPP/WP,GIA,Cash"',
+      });
+      acValidations.push({
+        type: 'list', operator: 'between', showDropDown: false,
+        sqref: XLSX.utils.encode_cell({ r, c: 2 }),
+        formula1: '"Person 1,Person 2"',
+      });
+    }
+    acSheet['!dataValidation'] = acValidations;
 
     // ════════════════════════════════════════════
     // PARAMETERS SHEET
@@ -443,61 +494,64 @@
     function secRow(label) {
       return [cell(label, ST.section), cell('', ST.section), cell('', ST.section)];
     }
-    function paramRow(label, note, required) {
+    function paramRow(label, value, note, required, numFmt) {
+      const c = numFmt
+        ? cell(value, ST.input, numFmt)
+        : cell(value, ST.input);
       return [
         cell(required ? label + ' *' : label, ST.body),
-        cell('', ST.input),
+        c,
         cell(note, ST.note),
       ];
     }
 
     const paRows = [
-      [cell('Parameters — UK Retirement Tax Planner', ST.title), cell('', ST.title), cell('', ST.title)],
+      [cell('Parameters \u2014 UK Retirement Tax Planner', ST.title), cell('', ST.title), cell('', ST.title)],
       [cell('Parameter', ST.header), cell('Value', ST.header), cell('Notes', ST.header)],
 
       secRow('People'),
-      paramRow('Person 1 name',                              'First name or any label, e.g. Woody',                               false),
-      paramRow('Person 2 name',                              'First name or any label, e.g. Heidi',                               false),
-      paramRow('Person 1 \u2013 birth year',                 'Required. Four-digit year, e.g. 1,967',                             true),
-      paramRow('Person 2 \u2013 birth year',                 'Required. Four-digit year, e.g. 1,966',                             true),
+      paramRow('Person 1 name',                                'Harry',   'First name or any label',                                                    false),
+      paramRow('Person 2 name',                                'Sally',   'First name or any label',                                                    false),
+      paramRow('Person 1 \u2013 birth year',                   1970,      'Required. Four-digit year',                                                  true,  '0'),
+      paramRow('Person 2 \u2013 birth year',                   1970,      'Required. Four-digit year',                                                  true,  '0'),
 
       secRow('Projection dates'),
-      paramRow('Start year',                                 'Required. First year of projection, e.g. 2,025',                   true),
-      paramRow('End year',                                   'Required. Final year of projection, e.g. 2,055',                   true),
+      paramRow('Start year',                                   2026,      'Required. First year of projection',                                         true,  '0'),
+      paramRow('End year',                                     2060,      'Required. Final year of projection',                                         true,  '0'),
 
       secRow('Spending'),
-      paramRow('Annual household spending (\u00a3)',         'Required. Total net spending per year, e.g. 45,000',               true),
-      paramRow('Step-down at age 75 (%)',                    'Optional. % reduction in spending from age 75, e.g. 20',           false),
+      paramRow('Annual household spending (\u00a3)',           45000,     'Required. Total net household spending target per year',                     true,  '#,##0'),
+      paramRow('Step-down at age 75 (%)',                      20,        'Optional. % reduction in spending from age 75',                              false, '0'),
 
       secRow('Salary'),
-      paramRow('Person 1 \u2013 gross annual salary (\u00a3)', 'Optional. Leave blank if not working',                           false),
-      paramRow('Person 1 \u2013 salary stop age',            'Optional. Age at which Person 1 salary stops, e.g. 60',            false),
-      paramRow('Gross annual salary (\u00a3)',               'Optional. Person 2 gross salary, e.g. 15,000',                     false),
-      paramRow('Stop age',                                   'Optional. Age at which Person 2 salary stops, e.g. 63',            false),
+      paramRow('Person 1 \u2013 gross annual salary (\u00a3)', '',        'Optional. Leave blank if not working',                                       false, '#,##0'),
+      paramRow('Person 1 \u2013 salary stop age',              '',        'Optional. Age at which Person 1 salary stops',                               false),
+      paramRow('Gross annual salary (\u00a3)',                 15000,     'Optional. Person 2 gross salary',                                            false, '#,##0'),
+      paramRow('Stop age',                                     63,        'Optional. Age at which Person 2 salary stops',                               false),
 
       secRow('State Pension'),
-      paramRow('Person 1 \u2013 start age',                  'State Pension start age for Person 1, e.g. 67',                    false),
-      paramRow('Person 1 \u2013 annual amount (\u00a3)',      'Full new State Pension 2025/26 is \u00a311,502',                   false),
-      paramRow('Person 2 \u2013 start age',                  'State Pension start age for Person 2, e.g. 67',                    false),
-      paramRow('Person 2 \u2013 annual amount (\u00a3)',      'Full new State Pension 2025/26 is \u00a311,502',                   false),
+      paramRow('Person 1 \u2013 start age',                    67,        'State Pension start age for Person 1',                                       false),
+      paramRow('Person 1 \u2013 annual amount (\u00a3)',        12547,     'Full new State Pension 2025/26 is \u00a311,502',                             false, '#,##0'),
+      paramRow('Person 2 \u2013 start age',                    67,        'State Pension start age for Person 2',                                       false),
+      paramRow('Person 2 \u2013 annual amount (\u00a3)',        12547,     'Full new State Pension 2025/26 is \u00a311,502',                             false, '#,##0'),
 
       secRow('Growth & inflation'),
-      paramRow('Portfolio growth (%/yr)',                    'Nominal annual portfolio growth rate, e.g. 5',                     false),
-      paramRow('Inflation (%/yr)',                           'Annual inflation assumption, e.g. 2.5',                            false),
-      paramRow('Threshold uprating mode',                    'How tax thresholds uprate: frozen, cpi, or wages',                 false),
-      paramRow('Uprate from year',                           'Year from which uprating applies, e.g. 2,028',                    false),
+      paramRow('Portfolio growth (%/yr)',                      4,         'Nominal annual portfolio growth rate',                                       false, '0.0'),
+      paramRow('Inflation (%/yr)',                             2.5,       'Annual inflation assumption',                                                false, '0.0'),
+      paramRow('Threshold uprating mode',                      'frozen',  'How tax thresholds uprate: frozen, cpi, or wages',                          false),
+      paramRow('Uprate from year',                             2031,      'Year from which uprating applies',                                           false, '0'),
 
       secRow('Bed and ISA'),
-      paramRow('Enable bed-and-ISA',                        'yes or no \u2014 model annual GIA\u2192ISA transfers',             false),
-      paramRow('Person 1 GIA\u2192ISA per year (\u00a3)',   'Annual GIA to ISA transfer for Person 1, e.g. 20,000',            false),
-      paramRow('Person 2 GIA\u2192ISA per year (\u00a3)',   'Annual GIA to ISA transfer for Person 2, e.g. 20,000',            false),
+      paramRow('Enable bed-and-ISA',                          'no',      'yes or no \u2014 model annual GIA\u2192ISA transfers',                       false),
+      paramRow('Person 1 GIA\u2192ISA per year (\u00a3)',     20000,     'Annual GIA to ISA transfer for Person 1',                                    false, '#,##0'),
+      paramRow('Person 2 GIA\u2192ISA per year (\u00a3)',     10000,     'Annual GIA to ISA transfer for Person 2',                                    false, '#,##0'),
     ];
 
     const paSheet = buildSheet(paRows, [40, 18, 65]);
 
     paSheet['!rows'] = [
-      { hpt: 24 },  // title
-      { hpt: 22 },  // headers
+      { hpt: 24 },
+      { hpt: 22 },
       ...Array(paRows.length - 2).fill({ hpt: 18 }),
     ];
 
