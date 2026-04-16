@@ -544,9 +544,9 @@
               <tr>
                 <td class="wiz-label">Enable</td>
                 <td class="wiz-val" style="text-align:right">
-                  <div class="assump-radio-group" style="max-width:50%;margin-left:auto">
-                    <label class="assump-radio-label"><input type="radio" name="stepDown2Enabled" value="true" disabled> Enabled</label>
-                    <label class="assump-radio-label"><input type="radio" name="stepDown2Enabled" value="false" checked disabled> Disabled</label>
+                  <div class="wiz-seg wiz-seg--disabled">
+                    <label class="wiz-seg__btn"><input type="radio" name="stepDown2Enabled" value="true" disabled> Enabled</label>
+                    <label class="wiz-seg__btn"><input type="radio" name="stepDown2Enabled" value="false" checked disabled> Disabled</label>
                   </div>
                 </td>
               </tr>
@@ -623,15 +623,21 @@
             <div class="wiz-col-heading wiz-col-heading--sub">
               <span class="assump-tooltip-anchor">Presets<span class="assump-tooltip">Sets the nominal portfolio growth rate. Real return equals growth minus inflation.</span></span>
             </div>
-            <div class="assump-radio-group">
-              <label class="assump-radio-label">
-                <input type="radio" name="growthPreset" value="3" onchange="document.getElementById('growth').value='3'"> <strong>Conservative</strong> <span class="assump-inline-field__hint">3%, ~0.5% real return</span>
+            <div class="wiz-cards">
+              <label class="wiz-card">
+                <input type="radio" name="growthPreset" value="3" onchange="document.getElementById('growth').value='3'">
+                <span class="wiz-card__title">Conservative</span>
+                <span class="wiz-card__hint">3% nominal — roughly 0.5% real return after inflation.</span>
               </label>
-              <label class="assump-radio-label">
-                <input type="radio" name="growthPreset" value="4" onchange="document.getElementById('growth').value='4'"> <strong>Moderate</strong> <span class="assump-inline-field__hint">4%, ~1.5% real return</span>
+              <label class="wiz-card">
+                <input type="radio" name="growthPreset" value="4" onchange="document.getElementById('growth').value='4'">
+                <span class="wiz-card__title">Moderate</span>
+                <span class="wiz-card__hint">4% nominal — roughly 1.5% real return after inflation.</span>
               </label>
-              <label class="assump-radio-label">
-                <input type="radio" name="growthPreset" value="5" onchange="document.getElementById('growth').value='5'"> <strong>Optimistic</strong> <span class="assump-inline-field__hint">5%, ~2.5% real return</span>
+              <label class="wiz-card">
+                <input type="radio" name="growthPreset" value="5" onchange="document.getElementById('growth').value='5'">
+                <span class="wiz-card__title">Optimistic</span>
+                <span class="wiz-card__hint">5% nominal — roughly 2.5% real return after inflation.</span>
               </label>
             </div>
           </div>
@@ -664,18 +670,21 @@
           <div class="wiz-col">
             <div class="wiz-col-heading">Withdrawal strategy</div>
             <p class="wiz-body-text">Choose how investments are drawn down each year. Run the projection with each option to compare lifetime tax and final portfolio value.</p>
-            <div class="assump-radio-group">
-              <label class="assump-radio-label">
+            <div class="wiz-cards">
+              <label class="wiz-card">
                 <input type="radio" name="withdrawalStrategy" value="balanced" checked>
-                <span><strong>Blended</strong> <span class="assump-inline-field__hint">Draws pension to fill tax-free allowances; balances GIA and ISA in the basic-rate band.</span></span>
+                <span class="wiz-card__title">Blended</span>
+                <span class="wiz-card__hint">Draws pension to fill tax-free allowances; balances GIA and ISA in the basic-rate band.</span>
               </label>
-              <label class="assump-radio-label">
+              <label class="wiz-card">
                 <input type="radio" name="withdrawalStrategy" value="isaFirst">
-                <span><strong>ISA Shield</strong> <span class="assump-inline-field__hint">Spends ISA and GIA first; preserves pension for IHT or when State Pension fills your allowance.</span></span>
+                <span class="wiz-card__title">ISA Shield</span>
+                <span class="wiz-card__hint">Spends ISA and GIA first; preserves pension for IHT or when State Pension fills your allowance.</span>
               </label>
-              <label class="assump-radio-label">
+              <label class="wiz-card">
                 <input type="radio" name="withdrawalStrategy" value="sippFirst">
-                <span><strong>Pension Drain</strong> <span class="assump-inline-field__hint">Maximises pension draw each year; surplus recycled into ISA. Best pre-State Pension.</span></span>
+                <span class="wiz-card__title">Pension Drain</span>
+                <span class="wiz-card__hint">Maximises pension draw each year; surplus recycled into ISA. Best pre-State Pension.</span>
               </label>
             </div>
           </div>
@@ -686,16 +695,22 @@
               <span class="assump-tooltip-anchor">Tax<span class="assump-tooltip">Controls how UK tax thresholds are uprated over the projection. Frozen means fiscal drag erodes real allowances each year; uprating preserves them in line with inflation.</span></span>
             </div>
             <p class="wiz-body-text">Controls tax drag by setting whether allowances grow with inflation or stay frozen.</p>
-            <div class="assump-radio-group" style="margin-bottom:16px">
-              <label class="assump-radio-label">
-                <input type="radio" name="thresholdMode" id="thresholdFrozen" value="frozen" checked> <strong>Frozen</strong> <span class="assump-inline-field__hint">fiscal drag applies</span>
+            <div class="wiz-cards" style="margin-bottom:16px">
+              <label class="wiz-card">
+                <input type="radio" name="thresholdMode" id="thresholdFrozen" value="frozen" checked>
+                <span class="wiz-card__title">Frozen</span>
+                <span class="wiz-card__hint">Allowances stay fixed in nominal terms — fiscal drag erodes their real value each year.</span>
               </label>
-              <label class="assump-radio-label">
-                <input type="radio" name="thresholdMode" id="thresholdFromYear" value="fromYear"> <strong>Uprated from year</strong>
-                <input type="number" id="thresholdFromYearVal" value="2028" min="2026" max="2060" onfocus="document.getElementById('thresholdFromYear').checked=true">
+              <label class="wiz-card">
+                <input type="radio" name="thresholdMode" id="thresholdFromYear" value="fromYear">
+                <span class="wiz-card__title">Uprated from year</span>
+                <span class="wiz-card__hint">Allowances grow with inflation from the year you choose.</span>
+                <input type="number" id="thresholdFromYearVal" class="wiz-card__inline-input" value="2028" min="2026" max="2060" onfocus="document.getElementById('thresholdFromYear').checked=true">
               </label>
-              <label class="assump-radio-label">
-                <input type="radio" name="thresholdMode" id="thresholdAlways" value="always"> <strong>Always uprated</strong> <span class="assump-inline-field__hint">with inflation</span>
+              <label class="wiz-card">
+                <input type="radio" name="thresholdMode" id="thresholdAlways" value="always">
+                <span class="wiz-card__title">Always uprated</span>
+                <span class="wiz-card__hint">Allowances grow with inflation throughout the entire projection.</span>
               </label>
             </div>
             <div class="wiz-section-divider"></div>
@@ -714,13 +729,9 @@
                 </td>
               </tr>
             </table>
-            <div class="assump-radio-group" style="margin-top:8px">
-              <label class="assump-radio-label">
-                <input type="radio" name="dividendMode" id="dividendPayout" value="payout" checked> <strong>Pay out</strong> <span class="assump-inline-field__hint">taxable income each year</span>
-              </label>
-              <label class="assump-radio-label">
-                <input type="radio" name="dividendMode" id="dividendReinvest" value="reinvest"> <strong>Reinvest</strong> <span class="assump-inline-field__hint">compound inside GIA</span>
-              </label>
+            <div class="wiz-seg" style="margin-top:8px">
+              <label class="wiz-seg__btn"><input type="radio" name="dividendMode" id="dividendPayout" value="payout" checked> Pay out</label>
+              <label class="wiz-seg__btn"><input type="radio" name="dividendMode" id="dividendReinvest" value="reinvest"> Reinvest</label>
             </div>
           </div>
 
@@ -732,9 +743,9 @@
               <tr>
                 <td class="wiz-label">Strategy</td>
                 <td class="wiz-val">
-                  <div class="assump-radio-group">
-                    <label class="assump-radio-label"><input type="radio" name="bniEnabled" id="bniEnabled" value="true"> Enabled <span class="assump-inline-field__hint">Transfer GIA to ISA</span></label>
-                    <label class="assump-radio-label"><input type="radio" name="bniEnabled" id="bniDisabled" value="false" checked> Disabled</label>
+                  <div class="wiz-seg">
+                    <label class="wiz-seg__btn"><input type="radio" name="bniEnabled" id="bniEnabled" value="true"> Enabled</label>
+                    <label class="wiz-seg__btn"><input type="radio" name="bniEnabled" id="bniDisabled" value="false" checked> Disabled</label>
                   </div>
                 </td>
               </tr>
@@ -825,9 +836,9 @@
               <tr>
                 <td class="wiz-label">Enable</td>
                 <td class="wiz-val">
-                  <div class="assump-radio-group">
-                    <label class="assump-radio-label"><input type="radio" name="stepDown2Enabled" value="true" disabled> Enabled</label>
-                    <label class="assump-radio-label"><input type="radio" name="stepDown2Enabled" value="false" checked disabled> Disabled</label>
+                  <div class="wiz-seg wiz-seg--disabled">
+                    <label class="wiz-seg__btn"><input type="radio" name="stepDown2Enabled" value="true" disabled> Enabled</label>
+                    <label class="wiz-seg__btn"><input type="radio" name="stepDown2Enabled" value="false" checked disabled> Disabled</label>
                   </div>
                 </td>
               </tr>
