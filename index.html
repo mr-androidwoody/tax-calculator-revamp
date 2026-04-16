@@ -613,37 +613,31 @@
             </div>
           </div>
 
-          <!-- Withdrawal Split Mode -->
+          <!-- Withdrawal Strategy -->
           <div class="assump-card">
             <div class="assump-card-title">
-              <span class="assump-tooltip-anchor">Withdrawal Split Mode<span class="assump-tooltip">Controls how withdrawals are split between people. Tax-aware mode optimises each person's allowances before drawing; 50/50 splits the target mechanically regardless of tax position.</span></span>
+              <span class="assump-tooltip-anchor">Withdrawal Strategy<span class="assump-tooltip">Controls how the engine draws from GIA, SIPP, and ISA each year. All strategies use GIA → SIPP → ISA as the default order, then apply tax-aware logic on top. The choice affects pension depletion speed and lifetime tax paid.</span></span>
             </div>
             <div class="assump-section">
-              <p class="assump-section__label">Split mode</p>
               <div class="assump-radio-group">
                 <label class="assump-radio-label">
-                  <input type="radio" name="withdrawalMode" value="tax-aware" checked> <strong>Tax-aware</strong> <span class="assump-inline-field__hint">Automatically optimises withdrawals</span>
+                  <input type="radio" name="withdrawalStrategy" value="balanced" checked>
+                  <span>
+                    <strong>Balanced</strong> <span class="assump-inline-field__hint">Recommended — draws SIPP steadily to fill tax-free allowances each year, switches GIA to ISA before higher-rate tax</span>
+                  </span>
                 </label>
                 <label class="assump-radio-label">
-                  <input type="radio" name="withdrawalMode" value="50/50"> <strong>50/50 split</strong> <span class="assump-inline-field__hint">Wrapper order only, no tax consideration</span>
+                  <input type="radio" name="withdrawalStrategy" value="isaFirst">
+                  <span>
+                    <strong>ISA-first</strong> <span class="assump-inline-field__hint">Preserves pension as long as possible — draws ISA and GIA preferentially, defers SIPP to fill PA only</span>
+                  </span>
                 </label>
-              </div>
-            </div>
-            <div class="assump-section">
-              <p class="assump-section__label"><span class="assump-tooltip-anchor">Drawdown order<span class="assump-tooltip">Sets the sequence each person draws from their wrappers. Interest-bearing accounts and Cash are always drawn first. The order below applies to remaining wrappers.</span></span></p>
-              <div class="assump-section__body">
-                <p class="assump-section__label" data-p1 style="margin-bottom:4px">Person 1</p>
-                <div class="order-row">
-                  <select id="p1Order1"><option value="GIA">GIA</option><option value="SIPP">SIPP/WP</option><option value="ISA">ISA</option></select>
-                  <select id="p1Order2"><option value="SIPP">SIPP/WP</option><option value="GIA">GIA</option><option value="ISA">ISA</option></select>
-                  <select id="p1Order3"><option value="ISA">ISA</option><option value="GIA">GIA</option><option value="SIPP">SIPP/WP</option></select>
-                </div>
-                <p class="assump-section__label p2-field" data-p2 style="margin-top:8px;margin-bottom:4px">Person 2</p>
-                <div class="order-row p2-field">
-                  <select id="p2Order1"><option value="GIA">GIA</option><option value="SIPP">SIPP/WP</option><option value="ISA">ISA</option></select>
-                  <select id="p2Order2"><option value="SIPP">SIPP/WP</option><option value="GIA">GIA</option><option value="ISA">ISA</option></select>
-                  <select id="p2Order3"><option value="ISA">ISA</option><option value="GIA">GIA</option><option value="SIPP">SIPP/WP</option></select>
-                </div>
+                <label class="assump-radio-label">
+                  <input type="radio" name="withdrawalStrategy" value="sippFirst">
+                  <span>
+                    <strong>SIPP-first</strong> <span class="assump-inline-field__hint">Accelerates pension depletion — maximises SIPP draw within the basic-rate band, useful pre-State Pension</span>
+                  </span>
+                </label>
               </div>
             </div>
           </div>
@@ -922,6 +916,7 @@
 <script src="js/data.js"></script>
 <script src="js/calculator.js"></script>
 <script src="js/tax.js"></script>
+<script src="js/ledger.js"></script>
 <script src="js/render.js"></script>
 <script src="js/withdrawal-strategy.js"></script>
 <script src="js/engine.js"></script>
