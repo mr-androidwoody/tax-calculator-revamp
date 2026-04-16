@@ -3023,8 +3023,24 @@ input[type="radio"] { accent-color: var(--accent); }
 /* ── Column grid ── */
 .wiz-grid {
   display: grid;
-  gap: 32px;
+  gap: 0;
   align-items: stretch;
+}
+
+.wiz-col {
+  padding: 0 28px 0 0;
+  margin-right: 28px;
+  border-right: 1px solid var(--border);
+}
+
+.wiz-col:last-child {
+  padding-right: 0;
+  margin-right: 0;
+  border-right: none;
+}
+
+.wiz-col:first-child {
+  padding-left: 0;
 }
 
 .wiz-grid--2 {
