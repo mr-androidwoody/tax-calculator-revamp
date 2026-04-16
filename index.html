@@ -610,10 +610,10 @@
       <div class="wiz-panel" id="wiz-panel-2">
         <div class="wiz-grid wiz-grid--2">
 
-          <!-- Rates + presets -->
+          <!-- Rates -->
           <div class="wiz-col">
             <div class="wiz-col-heading">Rates</div>
-            <p class="wiz-col-intro">Set the annual nominal growth rate for your portfolio and your expected inflation rate.<br><br>Growth is before inflation — your real return is the difference between the two. Use the presets on the right as a starting point, then adjust to match your own view.</p>
+            <p class="wiz-col-intro">Set the expected annual return for your portfolio and your inflation assumption. Both are in nominal terms, meaning in cash, not adjusted for purchasing power.<br><br>Your real return is the difference between the two. Use the presets on the right as a starting point, then fine-tune to match your own view.</p>
             <table class="wiz-table">
               <tr>
                 <td class="wiz-label">Investments (%/yr)</td>
@@ -636,36 +636,31 @@
                 </td>
               </tr>
             </table>
-            <div class="wiz-section-divider"></div>
-            <div class="wiz-col-heading wiz-col-heading--sub">
-              <span class="assump-tooltip-anchor">Presets<span class="assump-tooltip">Sets the nominal portfolio growth rate. Real return equals growth minus inflation.</span></span>
-            </div>
+          </div>
+
+          <!-- Presets + explainer -->
+          <div class="wiz-col">
+            <div class="wiz-col-heading">Presets</div>
+            <p class="wiz-col-intro">Select a preset to set both growth and inflation together, or enter your own values on the left. Selecting a preset updates the growth rate only — adjust inflation separately if needed.</p>
             <div class="wiz-cards">
               <label class="wiz-card">
                 <input type="radio" name="growthPreset" value="3" onchange="document.getElementById('growth').value='3'">
                 <span class="wiz-card__title">Conservative</span>
-                <span class="wiz-card__hint">3% nominal — roughly 0.5% real return after inflation.</span>
+                <span class="wiz-card__hint">3% nominal, roughly 0.5% real return after inflation.</span>
               </label>
               <label class="wiz-card">
                 <input type="radio" name="growthPreset" value="4" onchange="document.getElementById('growth').value='4'">
                 <span class="wiz-card__title">Moderate</span>
-                <span class="wiz-card__hint">4% nominal — roughly 1.5% real return after inflation.</span>
+                <span class="wiz-card__hint">4% nominal, roughly 1.5% real return after inflation.</span>
               </label>
               <label class="wiz-card">
                 <input type="radio" name="growthPreset" value="5" onchange="document.getElementById('growth').value='5'">
                 <span class="wiz-card__title">Optimistic</span>
-                <span class="wiz-card__hint">5% nominal — roughly 2.5% real return after inflation.</span>
+                <span class="wiz-card__hint">5% nominal, roughly 2.5% real return after inflation.</span>
               </label>
             </div>
-          </div>
-
-          <!-- Real return explainer -->
-          <div class="wiz-col">
-            <div class="wiz-col-heading">What this means</div>
-            <p class="wiz-body-text">Growth is nominal — it includes inflation. Your money's real purchasing power grows at the difference between these two rates.</p>
-            <p class="wiz-body-text">At 4% growth and 2.5% inflation, your portfolio grows at roughly <strong>1.5% per year in real terms</strong>.</p>
-            <p class="wiz-body-text">A conservative assumption protects against disappointment; an optimistic one may leave the plan short if markets underperform.</p>
-            <div class="hint" style="margin-top:8px">Growth is nominal. Real return ≈ growth − inflation.</div>
+            <div class="wiz-section-divider"></div>
+            <p class="wiz-body-text">Set growth too high and the plan may look stronger than it will be. Set it conservatively and you protect against markets underperforming. At 4% growth and 2.5% inflation, your portfolio grows at roughly <strong>1.5% per year in real terms</strong>.</p>
           </div>
 
         </div><!-- /.wiz-grid -->
