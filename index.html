@@ -420,11 +420,12 @@
           <!-- Projection range column -->
           <div class="wiz-col">
             <div class="wiz-col-heading">Projection range</div>
+            <p class="wiz-col-intro">The projection runs from your start year to your chosen end year, stepping through each calendar year in between. Set the start year to the first year you want to model — typically the current year. Set the end year to the point you want your plan to reach: for a two-person household this is usually the year the younger person reaches their late 80s or 90s, giving you confidence the money lasts. The longer the range, the more years of compounding, inflation, and tax are modelled.</p>
             <table class="wiz-table">
               <tr>
                 <td class="wiz-label">Start year</td>
                 <td class="wiz-val">
-                  <div class="stepper-input">
+                  <div class="stepper-input" style="max-width:50%">
                     <input data-action="setup-summary-input" id="sp-startYear" type="number" placeholder="e.g. 2026"/>
                     <button class="stepper-btn" data-step-for="sp-startYear" data-step-direction="1" type="button">&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="sp-startYear" data-step-direction="-1" type="button">&#x25BC;</button>
@@ -434,7 +435,7 @@
               <tr>
                 <td class="wiz-label">End year</td>
                 <td class="wiz-val">
-                  <div class="stepper-input">
+                  <div class="stepper-input" style="max-width:50%">
                     <input data-action="setup-summary-input" id="sp-endYear" type="number" placeholder="e.g. 2060"/>
                     <button class="stepper-btn" data-step-for="sp-endYear" data-step-direction="1" type="button">&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="sp-endYear" data-step-direction="-1" type="button">&#x25BC;</button>
