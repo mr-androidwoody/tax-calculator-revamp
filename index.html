@@ -513,8 +513,8 @@
             <table class="wiz-table">
               <tr>
                 <td class="wiz-label"><span class="assump-tooltip-anchor">Annual income (£)<span class="assump-tooltip">The gross household income you need each year, before tax. The engine works backwards from this to determine how much to withdraw from each wrapper.</span></span></td>
-                <td class="wiz-val">
-                  <div class="currency-stepper">
+                <td class="wiz-val" style="text-align:right">
+                  <div class="currency-stepper" style="max-width:50%;margin-left:auto">
                     <input type="text" id="spending" class="currency-input" placeholder="e.g. 45,000">
                     <button class="stepper-btn" data-step-for="spending" data-step-direction="1" data-step-amount="1000" type="button">&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="spending" data-step-direction="-1" data-step-amount="1000" type="button">&#x25BC;</button>
@@ -523,8 +523,8 @@
               </tr>
               <tr>
                 <td class="wiz-label" data-p1-stepdown>Reduced spending at 75</td>
-                <td class="wiz-val">
-                  <select id="stepDownPct">
+                <td class="wiz-val" style="text-align:right">
+                  <select id="stepDownPct" style="max-width:50%;margin-left:auto;display:block">
                     <option value="0">No step-down</option>
                     <option value="5">5%</option>
                     <option value="10">10%</option>
@@ -543,8 +543,8 @@
             <table class="wiz-table">
               <tr>
                 <td class="wiz-label">Enable</td>
-                <td class="wiz-val">
-                  <div class="assump-radio-group">
+                <td class="wiz-val" style="text-align:right">
+                  <div class="assump-radio-group" style="max-width:50%;margin-left:auto">
                     <label class="assump-radio-label"><input type="radio" name="stepDown2Enabled" value="true" disabled> Enabled</label>
                     <label class="assump-radio-label"><input type="radio" name="stepDown2Enabled" value="false" checked disabled> Disabled</label>
                   </div>
@@ -552,8 +552,8 @@
               </tr>
               <tr>
                 <td class="wiz-label">Age</td>
-                <td class="wiz-val">
-                  <div class="stepper-input">
+                <td class="wiz-val" style="text-align:right">
+                  <div class="stepper-input" style="max-width:50%;margin-left:auto">
                     <input type="number" id="stepDown2Age" value="80" min="75" max="95" disabled>
                     <button class="stepper-btn" data-step-for="stepDown2Age" data-step-direction="1" type="button" disabled>&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="stepDown2Age" data-step-direction="-1" type="button" disabled>&#x25BC;</button>
@@ -562,8 +562,8 @@
               </tr>
               <tr>
                 <td class="wiz-label">Reduction (%)</td>
-                <td class="wiz-val">
-                  <div class="stepper-input">
+                <td class="wiz-val" style="text-align:right">
+                  <div class="stepper-input" style="max-width:50%;margin-left:auto">
                     <input type="number" id="stepDown2Pct" value="10" min="1" max="50" disabled>
                     <button class="stepper-btn" data-step-for="stepDown2Pct" data-step-direction="1" type="button" disabled>&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="stepDown2Pct" data-step-direction="-1" type="button" disabled>&#x25BC;</button>
