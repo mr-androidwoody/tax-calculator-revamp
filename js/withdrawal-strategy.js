@@ -178,6 +178,13 @@
     p1Ledger, p2Ledger,
     p1GainRatio, p2GainRatio,
   }) {
+    console.log('[isaFirst]', {
+      shortfall,
+      p1ISA: p1Bal.ISA, p1GIA: p1Bal.GIA, p1SIPP: p1Bal.SIPP,
+      p2ISA: p2Bal.ISA, p2GIA: p2Bal.GIA, p2SIPP: p2Bal.SIPP,
+      p1SIPPLocked, p2SIPPLocked,
+      p1paRemaining: p1Ledger.paRemaining, p2paRemaining: p2Ledger.paRemaining,
+    });
     if (shortfall <= 0) return { p1Drawn: zero(), p2Drawn: zero() };
 
     // SIPP only to fill remaining PA headroom (often 0 once SP/salary consumed it)
