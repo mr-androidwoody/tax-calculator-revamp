@@ -433,7 +433,7 @@
               <tr>
                 <td class="wiz-label">Start year</td>
                 <td class="wiz-val" style="text-align:right">
-                  <div class="stepper-input" style="max-width:50%;margin-left:auto">
+                  <div class="stepper-input" >
                     <input data-action="setup-summary-input" id="sp-startYear" type="number" placeholder="e.g. 2026"/>
                     <button class="stepper-btn" data-step-for="sp-startYear" data-step-direction="1" type="button">&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="sp-startYear" data-step-direction="-1" type="button">&#x25BC;</button>
@@ -443,7 +443,7 @@
               <tr>
                 <td class="wiz-label">End year</td>
                 <td class="wiz-val" style="text-align:right">
-                  <div class="stepper-input" style="max-width:50%;margin-left:auto">
+                  <div class="stepper-input" >
                     <input data-action="setup-summary-input" id="sp-endYear" type="number" placeholder="e.g. 2060"/>
                     <button class="stepper-btn" data-step-for="sp-endYear" data-step-direction="1" type="button">&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="sp-endYear" data-step-direction="-1" type="button">&#x25BC;</button>
@@ -531,7 +531,7 @@
               <tr>
                 <td class="wiz-label"><span class="assump-tooltip-anchor">Annual income (£)<span class="assump-tooltip">The gross household income you need each year, before tax. The engine works backwards from this to determine how much to withdraw from each wrapper.</span></span></td>
                 <td class="wiz-val" style="text-align:right">
-                  <div class="currency-stepper" style="max-width:50%;margin-left:auto">
+                  <div class="currency-stepper" >
                     <input type="text" id="spending" class="currency-input" placeholder="e.g. 45,000">
                     <button class="stepper-btn" data-step-for="spending" data-step-direction="1" data-step-amount="1000" type="button">&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="spending" data-step-direction="-1" data-step-amount="1000" type="button">&#x25BC;</button>
@@ -541,7 +541,7 @@
               <tr>
                 <td class="wiz-label" data-p1-stepdown>Reduced spending at 75</td>
                 <td class="wiz-val" style="text-align:right">
-                  <select id="stepDownPct" style="max-width:50%;margin-left:auto;display:block">
+                  <select id="stepDownPct" >
                     <option value="0">No step-down</option>
                     <option value="5">5%</option>
                     <option value="10">10%</option>
@@ -570,7 +570,7 @@
               <tr>
                 <td class="wiz-label">Age</td>
                 <td class="wiz-val" style="text-align:right">
-                  <div class="stepper-input" style="max-width:50%;margin-left:auto">
+                  <div class="stepper-input" >
                     <input type="number" id="stepDown2Age" value="80" min="75" max="95" disabled>
                     <button class="stepper-btn" data-step-for="stepDown2Age" data-step-direction="1" type="button" disabled>&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="stepDown2Age" data-step-direction="-1" type="button" disabled>&#x25BC;</button>
@@ -580,7 +580,7 @@
               <tr>
                 <td class="wiz-label">Reduction (%)</td>
                 <td class="wiz-val" style="text-align:right">
-                  <div class="stepper-input" style="max-width:50%;margin-left:auto">
+                  <div class="stepper-input" >
                     <input type="number" id="stepDown2Pct" value="10" min="1" max="50" disabled>
                     <button class="stepper-btn" data-step-for="stepDown2Pct" data-step-direction="1" type="button" disabled>&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="stepDown2Pct" data-step-direction="-1" type="button" disabled>&#x25BC;</button>
@@ -618,7 +618,7 @@
               <tr>
                 <td class="wiz-label">Investments (%/yr)</td>
                 <td class="wiz-val" style="text-align:right">
-                  <div class="stepper-input" style="max-width:50%;margin-left:auto">
+                  <div class="stepper-input" >
                     <input type="number" id="growth" step="0.1" placeholder="e.g. 4">
                     <button class="stepper-btn" data-step-for="growth" data-step-direction="1" type="button">&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="growth" data-step-direction="-1" type="button">&#x25BC;</button>
@@ -628,7 +628,7 @@
               <tr>
                 <td class="wiz-label">Inflation (%/yr)</td>
                 <td class="wiz-val" style="text-align:right">
-                  <div class="stepper-input" style="max-width:50%;margin-left:auto">
+                  <div class="stepper-input" >
                     <input type="number" id="inflation" step="0.1" placeholder="e.g. 2.5">
                     <button class="stepper-btn" data-step-for="inflation" data-step-direction="1" type="button">&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="inflation" data-step-direction="-1" type="button">&#x25BC;</button>
@@ -736,7 +736,7 @@
               <tr>
                 <td class="wiz-label">Expected dividend yield (%/yr)</td>
                 <td class="wiz-val" style="text-align:right">
-                  <div class="stepper-input" style="max-width:50%;margin-left:auto">
+                  <div class="stepper-input" >
                     <input type="number" id="dividendYield" value="1.5" min="0" max="10" step="0.1">
                     <button class="stepper-btn" data-step-for="dividendYield" data-step-direction="1" type="button">&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="dividendYield" data-step-direction="-1" type="button">&#x25BC;</button>
@@ -771,7 +771,7 @@
               <tr>
                 <td class="wiz-label" data-p1>Person 1</td>
                 <td class="wiz-val" style="text-align:right">
-                  <div class="currency-stepper bni-field" style="max-width:50%;margin-left:auto">
+                  <div class="currency-stepper bni-field" >
                     <input type="text" id="bniP1GIA" class="currency-input" placeholder="e.g. 20,000">
                     <button class="stepper-btn" data-step-for="bniP1GIA" data-step-direction="1" data-step-amount="1000" type="button">&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="bniP1GIA" data-step-direction="-1" data-step-amount="1000" type="button">&#x25BC;</button>
@@ -781,7 +781,7 @@
               <tr class="p2-field">
                 <td class="wiz-label" data-p2>Person 2</td>
                 <td class="wiz-val" style="text-align:right">
-                  <div class="currency-stepper bni-field" style="max-width:50%;margin-left:auto">
+                  <div class="currency-stepper bni-field" >
                     <input type="text" id="bniP2GIA" class="currency-input" placeholder="e.g. 5,000">
                     <button class="stepper-btn" data-step-for="bniP2GIA" data-step-direction="1" data-step-amount="1000" type="button">&#x25B2;</button>
                     <button class="stepper-btn" data-step-for="bniP2GIA" data-step-direction="-1" data-step-amount="1000" type="button">&#x25BC;</button>
@@ -812,14 +812,14 @@
             <p class="wiz-col-intro">Model lump-sum outflows — for example, a house deposit contribution for a child.<br><br>The amount is deducted from the portfolio in the year it occurs, reducing the balance available for drawdown from that point forward.</p>
             <div class="wiz-col-heading wiz-col-heading--sub">Gift 1</div>
             <table class="wiz-table">
-              <tr><td class="wiz-label">Year</td><td class="wiz-val" style="text-align:right"><input type="number" id="gift1Year" placeholder="e.g. 2027" min="2025" max="2060" disabled style="max-width:50%;margin-left:auto;display:block"></td></tr>
-              <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val" style="text-align:right"><input type="text" id="gift1Amount" class="currency-input" placeholder="e.g. 250,000" disabled style="max-width:50%;margin-left:auto;display:block"></td></tr>
+              <tr><td class="wiz-label">Year</td><td class="wiz-val" style="text-align:right"><input type="number" id="gift1Year" placeholder="e.g. 2027" min="2025" max="2060" disabled ></td></tr>
+              <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val" style="text-align:right"><input type="text" id="gift1Amount" class="currency-input" placeholder="e.g. 250,000" disabled ></td></tr>
             </table>
             <div class="wiz-section-divider"></div>
             <div class="wiz-col-heading wiz-col-heading--sub">Gift 2</div>
             <table class="wiz-table">
-              <tr><td class="wiz-label">Year</td><td class="wiz-val" style="text-align:right"><input type="number" id="gift2Year" placeholder="e.g. 2030" min="2025" max="2060" disabled style="max-width:50%;margin-left:auto;display:block"></td></tr>
-              <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val" style="text-align:right"><input type="text" id="gift2Amount" class="currency-input" placeholder="e.g. 250,000" disabled style="max-width:50%;margin-left:auto;display:block"></td></tr>
+              <tr><td class="wiz-label">Year</td><td class="wiz-val" style="text-align:right"><input type="number" id="gift2Year" placeholder="e.g. 2030" min="2025" max="2060" disabled ></td></tr>
+              <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val" style="text-align:right"><input type="text" id="gift2Amount" class="currency-input" placeholder="e.g. 250,000" disabled ></td></tr>
             </table>
           </div>
 
@@ -828,12 +828,12 @@
             <div class="wiz-col-heading">Inheritance windfall <span class="wiz-badge-soon">coming soon</span></div>
             <p class="wiz-col-intro">Model a one-off lump-sum inflow — for example, an expected inheritance.<br><br>The amount is added to the portfolio in the year it occurs, and you can choose which wrapper it lands in.</p>
             <table class="wiz-table">
-              <tr><td class="wiz-label">Year</td><td class="wiz-val" style="text-align:right"><input type="number" id="windfall1Year" placeholder="e.g. 2032" min="2025" max="2060" disabled style="max-width:50%;margin-left:auto;display:block"></td></tr>
-              <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val" style="text-align:right"><input type="text" id="windfall1Amount" class="currency-input" placeholder="e.g. 400,000" disabled style="max-width:50%;margin-left:auto;display:block"></td></tr>
+              <tr><td class="wiz-label">Year</td><td class="wiz-val" style="text-align:right"><input type="number" id="windfall1Year" placeholder="e.g. 2032" min="2025" max="2060" disabled ></td></tr>
+              <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val" style="text-align:right"><input type="text" id="windfall1Amount" class="currency-input" placeholder="e.g. 400,000" disabled ></td></tr>
               <tr>
                 <td class="wiz-label">Added to wrapper</td>
                 <td class="wiz-val" style="text-align:right">
-                  <select id="windfall1Wrapper" disabled style="max-width:50%;margin-left:auto;display:block">
+                  <select id="windfall1Wrapper" disabled >
                     <option value="Cash">Cash</option>
                     <option value="ISA">ISA</option>
                     <option value="GIA" selected>GIA</option>
@@ -860,7 +860,7 @@
               <tr>
                 <td class="wiz-label">Age</td>
                 <td class="wiz-val" style="text-align:right">
-                  <div class="stepper-input" style="max-width:50%;margin-left:auto">
+                  <div class="stepper-input" >
                     <input type="number" value="80" min="75" max="95" disabled>
                     <button class="stepper-btn" data-step-direction="1" type="button" disabled>&#x25B2;</button>
                     <button class="stepper-btn" data-step-direction="-1" type="button" disabled>&#x25BC;</button>
@@ -870,7 +870,7 @@
               <tr>
                 <td class="wiz-label">Reduction (%)</td>
                 <td class="wiz-val" style="text-align:right">
-                  <div class="stepper-input" style="max-width:50%;margin-left:auto">
+                  <div class="stepper-input" >
                     <input type="number" value="10" min="1" max="50" disabled>
                     <button class="stepper-btn" data-step-direction="1" type="button" disabled>&#x25B2;</button>
                     <button class="stepper-btn" data-step-direction="-1" type="button" disabled>&#x25BC;</button>
