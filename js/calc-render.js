@@ -3,6 +3,7 @@
 
   // State shared within this module
   let _rows       = [];
+  let _strategy   = 'balanced';
   let _annotations = [];
   let _depletions  = {};
   let _viewPerson = 'both';
@@ -30,10 +31,11 @@
   // ─────────────────────────────────────────────
   // PUBLIC: receive new projection results
   // ─────────────────────────────────────────────
-  function setResults(result) {
+  function setResults(result, strategy) {
     _rows        = result.rows || result; // backwards-compat if bare array passed
     _annotations = result.annotations || [];
     _depletions  = result.depletions  || {};
+    if (strategy) _strategy = strategy;
   }
 
   // ─────────────────────────────────────────────
@@ -805,6 +807,12 @@
       console.error('[RetireCalcRender] Schema validation failed — rendering aborted.', e);
       return;
     }
+
+    // Update Sources of income chart title with active strategy
+    const strategyLabels = { balanced: 'Balanced', isaFirst: 'ISA-first', sippFirst: 'SIPP-first' };
+    const titleEl = document.getElementById('income-chart-title');
+    if (titleEl) titleEl.textContent = 'Sources of income: ' + (strategyLabels[_strategy] || _strategy);
+
     const labels = _rows.map(r => r.year);
     const { p1, p2 } = getNames();
 
