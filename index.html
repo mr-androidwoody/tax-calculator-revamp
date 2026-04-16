@@ -387,34 +387,42 @@
 
       <!-- ══ PANEL 0 — Who & When ══ -->
       <div class="wiz-panel wiz-panel--active" id="wiz-panel-0">
-        <div class="wiz-grid wiz-grid--3">
+        <div class="wiz-grid wiz-grid--2-1">
 
-          <!-- Person 1 column -->
-          <div class="wiz-col">
-            <div class="wiz-col-heading" data-p1>Person 1</div>
-            <table class="wiz-table">
-              <tr><td class="wiz-label">Name</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p1name">–</span></td></tr>
-              <tr><td class="wiz-label">Birth year</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p1dob">–</span></td></tr>
-              <tr><td class="wiz-label">State pension age</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p1spage">–</span></td></tr>
-              <tr><td class="wiz-label">State pension (£/yr)</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p1sp">–</span></td></tr>
-              <tr><td class="wiz-label">Salary (£/yr)</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p1salary">–</span></td></tr>
-              <tr><td class="wiz-label">Salary stops age</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p1salarystop">–</span></td></tr>
-            </table>
-            <p class="wiz-hint">Edit in <a class="wiz-link" data-action="switch-tab" data-tab="setup">Your assets →</a></p>
-          </div>
+          <!-- Paired person columns with spanning intro -->
+          <div class="wiz-col-pair">
+            <div class="wiz-col-pair__header">
+              <div class="wiz-col-heading">Your details</div>
+              <p class="wiz-col-pair__intro">These details are pulled from Your assets and set the timeline for the projection. Check the ages and State Pension figures look right. They drive when income starts and when pension access unlocks.</p>
+            </div>
 
-          <!-- Person 2 column -->
-          <div class="wiz-col p2-field">
-            <div class="wiz-col-heading" data-p2>Person 2</div>
-            <table class="wiz-table">
-              <tr><td class="wiz-label">Name</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p2name">–</span></td></tr>
-              <tr><td class="wiz-label">Birth year</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p2dob">–</span></td></tr>
-              <tr><td class="wiz-label">State pension age</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p2spage">–</span></td></tr>
-              <tr><td class="wiz-label">State pension (£/yr)</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p2sp">–</span></td></tr>
-              <tr><td class="wiz-label">Salary (£/yr)</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p2salary">–</span></td></tr>
-              <tr><td class="wiz-label">Salary stops age</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p2salarystop">–</span></td></tr>
-            </table>
-            <p class="wiz-hint">Edit in <a class="wiz-link" data-action="switch-tab" data-tab="setup">Your assets →</a></p>
+            <!-- Person 1 column -->
+            <div class="wiz-col">
+              <div class="wiz-col-heading" data-p1>Person 1</div>
+              <table class="wiz-table">
+                <tr><td class="wiz-label">Name</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p1name">–</span></td></tr>
+                <tr><td class="wiz-label">Birth year</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p1dob">–</span></td></tr>
+                <tr><td class="wiz-label">State pension age</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p1spage">–</span></td></tr>
+                <tr><td class="wiz-label">State pension (£/yr)</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p1sp">–</span></td></tr>
+                <tr><td class="wiz-label">Salary (£/yr)</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p1salary">–</span></td></tr>
+                <tr><td class="wiz-label">Salary stops age</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p1salarystop">–</span></td></tr>
+              </table>
+              <p class="wiz-hint">Edit in <a class="wiz-link" data-action="switch-tab" data-tab="setup">Your assets →</a></p>
+            </div>
+
+            <!-- Person 2 column -->
+            <div class="wiz-col p2-field">
+              <div class="wiz-col-heading" data-p2>Person 2</div>
+              <table class="wiz-table">
+                <tr><td class="wiz-label">Name</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p2name">–</span></td></tr>
+                <tr><td class="wiz-label">Birth year</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p2dob">–</span></td></tr>
+                <tr><td class="wiz-label">State pension age</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p2spage">–</span></td></tr>
+                <tr><td class="wiz-label">State pension (£/yr)</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p2sp">–</span></td></tr>
+                <tr><td class="wiz-label">Salary (£/yr)</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p2salary">–</span></td></tr>
+                <tr><td class="wiz-label">Salary stops age</td><td class="wiz-val"><span class="wiz-readonly" id="ai-p2salarystop">–</span></td></tr>
+              </table>
+              <p class="wiz-hint">Edit in <a class="wiz-link" data-action="switch-tab" data-tab="setup">Your assets →</a></p>
+            </div>
           </div>
 
           <!-- Projection range column -->
