@@ -3592,14 +3592,9 @@ input[type="radio"] { accent-color: var(--accent); }
    MC LOADING STATE
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── Legacy mc-loading (kept for safety, superseded by mc-loader-wrap) ── */
-.mc-loading { display: none; }
+/* ── MC full-panel loader ─────────────────────────────────────────────── */
 
-/* ══════════════════════════════════════════════════════════════════════
-   MONTE CARLO — full-panel loader
-   ══════════════════════════════════════════════════════════════════════ */
-
-.mc-loader-wrap {
+.mc-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3607,78 +3602,73 @@ input[type="radio"] { accent-color: var(--accent); }
   gap: 28px;
   min-height: calc(100vh - var(--header-height, 130px) - 80px);
   padding: 40px 24px;
-  opacity: 1;
-  transition: opacity 300ms ease;
+  animation: mc-fadein 0.3s ease;
 }
 
-.mc-loader-wrap--fade-out {
-  opacity: 0;
-  pointer-events: none;
+@keyframes mc-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* Sine wave SVG */
-.mc-loader-wave {
-  width: min(400px, 90%);
-  height: 60px;
+.mc-loading__wave {
+  width: 260px;
+  height: 50px;
   overflow: visible;
+  flex-shrink: 0;
 }
 
-.mc-loader-wave__path {
-  stroke-dasharray: 800;
-  stroke-dashoffset: 800;
-  animation: mc-wave-travel 4s linear forwards, mc-wave-shimmer 1.8s ease-in-out infinite;
+.mc-loading__wave-path {
+  fill: none;
+  stroke-linecap: round;
 }
 
-@keyframes mc-wave-travel {
-  to { stroke-dashoffset: 0; }
+.mc-loading__wave-path--back {
+  stroke: var(--accent, #185FA5);
+  stroke-width: 2;
+  opacity: 0.18;
+  animation: mc-wave-scroll 2.8s linear infinite;
 }
 
-@keyframes mc-wave-shimmer {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.45; }
+.mc-loading__wave-path--front {
+  stroke: var(--accent, #185FA5);
+  stroke-width: 2.5;
+  opacity: 0.7;
+  animation: mc-wave-scroll 1.9s linear infinite;
 }
 
-/* Cycling message */
-.mc-loader-msg {
-  font-size: 14px;
-  color: var(--muted);
-  letter-spacing: 0.01em;
+@keyframes mc-wave-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(200px); }
+}
+
+/* Message text */
+.mc-loading__phase {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text, #162033);
   margin: 0;
-  min-height: 1.5em;
   text-align: center;
-  opacity: 0;
-  transition: opacity 150ms ease;
-}
-
-.mc-loader-msg--visible {
-  opacity: 1;
+  max-width: 340px;
+  line-height: 1.5;
+  transition: opacity 0.2s ease;
 }
 
 /* Progress bar */
-.mc-loader-bar-wrap {
-  width: min(320px, 80%);
-  height: 3px;
-  background: var(--border);
+.mc-loading__bar-wrap {
+  width: 260px;
+  height: 4px;
+  background: var(--border, #e5e7eb);
   border-radius: 99px;
   overflow: hidden;
 }
 
-.mc-loader-bar-fill {
+.mc-loading__bar-fill {
   height: 100%;
   width: 0%;
-  background: var(--accent);
+  background: var(--accent, #185FA5);
   border-radius: 99px;
-  transition: width 50ms linear;
-}
-
-/* Narrative fade-in after loader */
-#mc-narrative.mc-narrative--fade-in {
-  opacity: 0;
-  transition: opacity 400ms ease;
-}
-
-#mc-narrative.mc-narrative--fade-in.mc-narrative--visible {
-  opacity: 1;
+  transition: width 400ms ease;
 }
 
 .results-tab--outlook.results-tab--simulating::after {
