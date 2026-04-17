@@ -912,6 +912,25 @@
         sustainableSpending = Math.round((lo + hi) / 2);
       }
 
+      // ── Delay perturbations: 1 / 2 / 3 years, 2,000 paths each ───────────
+      // deferYears suppresses portfolio draws for the first N years while
+      // the portfolio compounds normally. SP / salary timing is age-based
+      // and therefore unaffected. startYear and endYear are unchanged.
+      const DELAY_SIMS = 2_000;
+      const [delay1, delay2, delay3] = await Promise.all([1, 2, 3].map(n =>
+        MCE.run({
+          inputs:       { ...inputs, deferYears: n },
+          simCount:     DELAY_SIMS,
+          equityVol:    0.16,
+          inflationVol: 0.015,
+        })
+      ));
+      const delayPerturbations = [
+        { yearsDelay: 1, successRate: delay1.successRate },
+        { yearsDelay: 2, successRate: delay2.successRate },
+        { yearsDelay: 3, successRate: delay3.successRate },
+      ];
+
       // Disable until next projection run.
       if (riskRunBtn) {
         riskRunBtn.textContent = originalLabel;
@@ -929,6 +948,7 @@
         targetConfidence:    TARGET_CONFIDENCE,
         openingPortfolio:    Object.values(inputs.p1Bal).reduce((s, v) => s + v, 0) +
                              Object.values(inputs.p2Bal).reduce((s, v) => s + v, 0),
+        delayPerturbations,
       });
       MCR.render();
 

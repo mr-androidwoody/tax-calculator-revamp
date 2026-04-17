@@ -78,342 +78,277 @@
 
     const r         = _result;
     const lastIdx   = r.years.length - 1;
-    const lastYear  = r.years[lastIdx];
     const firstYear = r.years[0];
-    const modeLabel = _useReal ? 'real' : 'nominal';
+    const lastYear  = r.years[lastIdx];
 
-    const p10 = _deflateArr(r.p10Portfolio);
     const p25 = _deflateArr(r.p25Portfolio);
     const p50 = _deflateArr(r.p50Portfolio);
     const p75 = _deflateArr(r.p75Portfolio);
-    const p90 = _deflateArr(r.p90Portfolio);
-
-    // Opening portfolio (real, year-0)
-    const openingPortfolio = (_spendingContext && _spendingContext.openingPortfolio)
-      ? _spendingContext.openingPortfolio
-      : p50[0];
 
     // Update sim count in subtitle
     const simCountEl = document.getElementById('mc-sim-count');
     if (simCountEl) simCountEl.textContent = r.simCount.toLocaleString('en-GB');
 
-    // ── Helpers ───────────────────────────────────────────────────────────
-    function depletionYear(arr) {
-      for (let i = 0; i < arr.length; i++) {
-        if (arr[i] <= 0) return r.years[i];
-      }
-      return null;
-    }
+    // ── Spending context ──────────────────────────────────────────────────
+    const sc = _spendingContext || {};
+    const currentSpending     = sc.currentSpending     ?? 0;
+    const sustainableSpending = sc.sustainableSpending ?? null;
+    const sustainableIsFloor  = !!sc.sustainableIsFloor;
+    const targetConfidence    = sc.targetConfidence    ?? 0.90;
+    const delayPerturbations  = sc.delayPerturbations  || [];
+    const confPct             = Math.round(targetConfidence * 100);
 
-    function peak(arr) {
-      let maxVal = -Infinity, maxIdx = 0;
-      arr.forEach((v, i) => { if (v > maxVal) { maxVal = v; maxIdx = i; } });
-      return { value: maxVal, year: r.years[maxIdx] };
-    }
+    // ── Verdict band ──────────────────────────────────────────────────────
+    const rate = r.successRate;
+    const verdictWord =
+      rate >= 0.95 ? 'Strong'    :
+      rate >= 0.90 ? 'Good'      :
+      rate >= 0.80 ? 'Borderline': 'At risk';
+    const verdictDotColour =
+      rate >= 0.95 ? 'var(--mc-dot-strong,#3B6D11)' :
+      rate >= 0.90 ? 'var(--mc-dot-good,  #185FA5)' :
+      rate >= 0.80 ? 'var(--mc-dot-warn,  #BA7517)' :
+                     'var(--mc-dot-risk,  #A32D2D)';
+    const verdictWordColour =
+      rate >= 0.95 ? 'color:var(--mc-dot-strong,#3B6D11)' :
+      rate >= 0.90 ? 'color:var(--mc-dot-good,  #185FA5)' :
+      rate >= 0.80 ? 'color:var(--mc-dot-warn,  #BA7517)' :
+                     'color:var(--mc-dot-risk,  #A32D2D)';
+    const verdictSentence =
+      rate >= 0.95 ? 'Your plan is on track to support your lifestyle throughout retirement, with room to absorb a sustained run of poor returns.' :
+      rate >= 0.90 ? 'Your plan looks well-founded — it succeeds in the large majority of scenarios, with only modest vulnerability at the edges.' :
+      rate >= 0.80 ? 'Your plan needs a modest adjustment — it succeeds in most scenarios but is exposed to a meaningful minority of poor outcomes.' :
+                     'Your plan requires attention — a significant share of simulated paths end in depletion before the end of retirement.';
 
-    // ── INTRO ─────────────────────────────────────────────────────────────
-    const introHTML = `
-      <section class="mc-section mc-section--intro">
-        <p>Your retirement plan has been stress-tested across ${r.simCount.toLocaleString('en-GB')} simulated
-        futures, each with randomly varying investment returns and inflation.
-        Unlike the single-path projection, this analysis shows the range of
-        outcomes your plan could face – from favourable markets to sustained
-        downturns. Use it to understand how resilient your plan is, where the
-        risks concentrate, and whether you have enough buffer to weather a poor
-        sequence of returns early in retirement.</p>
-      </section>`;
-
-    // ── DEPLETION (used by stress case and actions) ───────────────────────
-    const p10Depletes = depletionYear(p10);
-
-    // ── 1. VERDICT ────────────────────────────────────────────────────────
-    const successPaths = Math.round(r.successRate * r.simCount);
-    const verdictClass =
-      r.successRate >= 0.95 ? 'mc-verdict--strong' :
-      r.successRate >= 0.90 ? 'mc-verdict--good' :
-      r.successRate >= 0.80 ? 'mc-verdict--moderate' :
-                              'mc-verdict--weak';
-    const verdictLabel =
-      r.successRate >= 0.95 ? 'This is a strong result.' :
-      r.successRate >= 0.90 ? 'This is a good result – well within acceptable confidence bounds.' :
-      r.successRate >= 0.80 ? 'This is a moderate result – some vulnerability to poor sequences.' :
-                              'This result warrants attention – a significant proportion of paths fail.';
-
-    const verdictHTML = `
-      <section class="mc-section mc-verdict ${verdictClass}">
-        <h4 class="mc-section-heading">Will your plan last?</h4>
-        <p>Your plan succeeds in <strong>${successPaths.toLocaleString('en-GB')}</strong> of
-        ${r.simCount.toLocaleString('en-GB')} simulations
-        (<strong>${fmtPct(r.successRate)}</strong>). ${verdictLabel}</p>
-      </section>`;
-
-    // ── 2. SUSTAINABLE SPENDING ───────────────────────────────────────────
-    let sustainHTML = '';
-    let headroom    = null;
-
-    if (_spendingContext && _spendingContext.sustainableSpending != null) {
-      const { currentSpending, sustainableSpending, sustainableIsFloor, targetConfidence, openingPortfolio: op } = _spendingContext;
-      headroom              = sustainableSpending - currentSpending;
-      const isAbove         = headroom >= 0;
-      const absDiff         = Math.abs(Math.round(headroom));
-      const pctOfPort       = op > 0
-        ? ((sustainableSpending / op) * 100).toFixed(1)
-        : null;
-      const confPct         = (targetConfidence * 100).toFixed(0);
-
-      const overBy  = isAbove ? 0 : Math.abs(headroom) / currentSpending;
-      const sClass  = isAbove        ? 'mc-sustain--safe' :
-                      overBy <= 0.15 ? 'mc-sustain--warn' :
-                                       'mc-sustain--danger';
-
-      const portClause  = pctOfPort ? ` (${pctOfPort}% of your opening portfolio)` : '';
-      const floorPrefix = sustainableIsFloor ? 'at least ' : '';
-
-      let sustainBody;
+    // ── Headroom / gap ────────────────────────────────────────────────────
+    let headroomHTML = '';
+    let headroom     = null;
+    if (sustainableSpending !== null) {
+      headroom = sustainableSpending - currentSpending;
       if (sustainableIsFloor) {
-        sustainBody = `Your plan succeeds in <strong>${confPct}%</strong> or more of simulations even at
-          <strong>${fmt(sustainableSpending)}</strong>/year – <strong>${fmt(absDiff)}</strong>/year above your current target.
-          Your plan is highly resilient; the true sustainable spending level is likely higher still.`;
-      } else if (isAbove) {
-        sustainBody = `Your current spending target of <strong>${fmt(currentSpending)}</strong>/year is within
-          the <strong>${confPct}%</strong> confidence threshold. The estimated sustainable spending level is
-          ${floorPrefix}<strong>${fmt(sustainableSpending)}</strong>/year${portClause} –
-          giving you headroom of approximately <strong>${fmt(absDiff)}</strong>/year above your current target.`;
+        headroomHTML = `
+          <div class="mc-stat-cell">
+            <div class="mc-stat-label">Spending headroom</div>
+            <div class="mc-stat-value" style="color:var(--mc-dot-strong,#3B6D11);font-size:13px;padding-top:3px">
+              Substantial — sustainable at all tested levels
+            </div>
+          </div>`;
+      } else if (headroom >= 0) {
+        const hr = roundToNearest(headroom, 500);
+        headroomHTML = `
+          <div class="mc-stat-cell">
+            <div class="mc-stat-label">Annual headroom</div>
+            <div class="mc-stat-value" style="color:var(--mc-dot-strong,#3B6D11)">+${fmt(hr)} / yr</div>
+          </div>`;
       } else {
-        sustainBody = `To achieve <strong>${confPct}%</strong> confidence of never running out, the estimated
-          sustainable spending level is <strong>${fmt(sustainableSpending)}</strong>/year${portClause} –
-          approximately <strong>${fmt(absDiff)}</strong>/year below your current target of <strong>${fmt(currentSpending)}</strong>/year.
-          Consider reducing discretionary spending or building a larger portfolio before retiring.`;
+        const gap = roundToNearest(Math.abs(headroom), 500);
+        const gapColour = Math.abs(headroom) / currentSpending <= 0.15
+          ? 'var(--mc-dot-warn,#BA7517)'
+          : 'var(--mc-dot-risk,#A32D2D)';
+        headroomHTML = `
+          <div class="mc-stat-cell">
+            <div class="mc-stat-label">Annual gap</div>
+            <div class="mc-stat-value" style="color:${gapColour}">−${fmt(gap)} / yr</div>
+          </div>`;
       }
-
-      sustainHTML = `
-        <section class="mc-section mc-sustain ${sClass}">
-          <h4 class="mc-section-heading">How much can you safely spend?</h4>
-          <p>${sustainBody}</p>
-          <p class="mc-sustain__note">All spending figures are in today's money (real, year-0 terms) and do not change with the Real/Nominal toggle above, which affects portfolio values only. Sustainable spending is estimated via bisection across 12 simulation runs; accuracy ±1%.</p>
-        </section>`;
     }
 
-    // ── 3. MEDIAN OUTCOME ─────────────────────────────────────────────────
-    const p50Peak     = peak(p50);
-    const p50Depletes = depletionYear(p50);
-    let medianBody;
-    if (p50Depletes) {
-      const yearsEarly = lastYear - p50Depletes;
-      medianBody = `In the median scenario, the portfolio is exhausted by
-        <strong>${p50Depletes}</strong> – ${yearsEarly} year${yearsEarly !== 1 ? 's' : ''} before
-        the end of the projection.`;
-    } else {
-      medianBody = `In the median scenario, your portfolio peaks at
-        <strong>${fmt(p50Peak.value)}</strong> around ${p50Peak.year} and finishes at
-        <strong>${fmt(p50[lastIdx])}</strong> in ${lastYear} (${modeLabel} terms).`;
-    }
-
-    const medianHTML = `
-      <section class="mc-section">
-        <h4 class="mc-section-heading">What typically happens</h4>
-        <p>${medianBody}</p>
+    // ── Section 1: RETIREMENT OUTLOOK ─────────────────────────────────────
+    const s1 = `
+      <section class="mc-section mc-outlook-card">
+        <div class="mc-section-label">Retirement outlook</div>
+        <div class="mc-verdict-row">
+          <span class="mc-outlook-dot" style="background:${verdictDotColour}"></span>
+          <span class="mc-outlook-verdict" style="${verdictWordColour}">${verdictWord}</span>
+        </div>
+        <p class="mc-outlook-sentence">${verdictSentence}</p>
+        <div class="mc-stat-row">
+          <div class="mc-stat-cell">
+            <div class="mc-stat-label">Success rate</div>
+            <div class="mc-stat-value" style="${verdictWordColour}">${fmtPct(rate)}</div>
+          </div>
+          ${headroomHTML}
+        </div>
       </section>`;
 
-    // ── 4. STRESS CASE (10th percentile) ──────────────────────────────────
-    // Colour the stress card based on severity
-    const p10FinalRatio  = openingPortfolio > 0 ? p10[lastIdx] / openingPortfolio : 1;
-    const stressClass    = p10Depletes          ? 'mc-sustain--danger' :
-                           p10FinalRatio < 0.20 ? 'mc-sustain--warn'   : '';
+    // ── Section 2: WHEN PRESSURE OCCURS ───────────────────────────────────
+    const p1StartAge = r.p1StartAge ?? null;
 
-    let stressBody;
-    if (p10Depletes) {
-      const yearsEarly = lastYear - p10Depletes;
-      // Estimate rough onset: find when p10 first dips below 50% of opening
-      let onsetYear = null;
-      for (let i = 0; i < p10.length; i++) {
-        if (openingPortfolio > 0 && p10[i] < openingPortfolio * 0.5) {
-          onsetYear = r.years[i];
-          break;
-        }
+    function decadeAgeLabel(decadeYear) {
+      if (p1StartAge !== null) {
+        return `Age ${p1StartAge + (decadeYear - firstYear)}`;
       }
-      const onsetClause = onsetYear && onsetYear < p10Depletes
-        ? ` Spending pressure typically emerges around <strong>${onsetYear}</strong> as the portfolio falls below half its starting value.`
-        : '';
-      stressBody = `In the bottom 10% of outcomes, the portfolio runs out by
-        <strong>${p10Depletes}</strong> – ${yearsEarly} year${yearsEarly !== 1 ? 's' : ''} before
-        the end of the projection.${onsetClause} This scenario typically reflects a combination
-        of poor early returns and elevated inflation (sequence risk).`;
+      return String(decadeYear);
+    }
+
+    // Scan raw (pre-deflate) p10 — we only need to know if it hits zero.
+    let p10DepletesAtYi = null;
+    for (let i = 0; i < r.p10Portfolio.length; i++) {
+      if (r.p10Portfolio[i] <= 0) { p10DepletesAtYi = i; break; }
+    }
+
+    let pressureSentence;
+    if (p10DepletesAtYi !== null) {
+      const depAge = p1StartAge !== null ? p1StartAge + p10DepletesAtYi : null;
+      const lifeStage =
+        depAge === null ? 'later in retirement' :
+        depAge < 70    ? 'your late 60s'        :
+        depAge < 80    ? 'your 70s'             :
+        depAge < 90    ? 'your 80s'             : 'your 90s';
+      pressureSentence = `In a poor sequence of returns, funds would begin to deplete in ${lifeStage} — meaning you may need to reduce spending or draw on reserves at a point when flexibility is limited.`;
     } else {
-      stressBody = `In a poor returns environment (10th percentile), your portfolio
-        retains <strong>${fmt(p10[lastIdx])}</strong> by ${lastYear} (${modeLabel} terms). While
-        significantly below the median, the plan remains solvent throughout the
-        projection even under this stress scenario.`;
+      pressureSentence = `Even in a poor sequence of returns, the portfolio survives through the end of the projection in 9 out of 10 simulated paths — no critical pressure point emerges.`;
     }
 
-    const stressHTML = `
-      <section class="mc-section${stressClass ? ' mc-sustain ' + stressClass : ''}">
-        <h4 class="mc-section-heading">Worst-case scenario – 1 in 10 outcomes</h4>
-        <p>${stressBody}</p>
-      </section>`;
-
-    // ── 5. OPTIMISTIC CASE (90th percentile) ──────────────────────────────
-    const p90Final      = p90[lastIdx];
-    const isStrongUpside = p90Final > openingPortfolio * 2;
-    const legacyNote    = p90Final > 500_000
-      ? ' This would leave meaningful wealth to pass on or deploy in later life.'
-      : '';
-    const optimisticHeadingStyle = isStrongUpside
-      ? ' style="color:var(--green-2, #16a34a)"'
-      : '';
-
-    const optimisticHTML = `
-      <section class="mc-section">
-        <h4 class="mc-section-heading"${optimisticHeadingStyle}>Best-case scenario – 1 in 10 outcomes</h4>
-        <p>In a favourable environment (90th percentile), your portfolio reaches
-        <strong>${fmt(p90Final)}</strong> by ${lastYear} (${modeLabel} terms).${legacyNote}</p>
-      </section>`;
-
-    // ── 6. INTERQUARTILE RANGE ────────────────────────────────────────────
-    const p25Final = p25[lastIdx];
-    const p75Final = p75[lastIdx];
-    const iqrWide  = (p75Final - p25Final) / Math.max(p50[lastIdx], 1) > 1.5;
-    const iqrHTML = `
-      <section class="mc-section">
-        <h4 class="mc-section-heading">Likely range of outcomes</h4>
-        <p>In the central half of all simulated paths, your portfolio finishes
-        between <strong>${fmt(p25Final)}</strong> (25th percentile) and <strong>${fmt(p75Final)}</strong>
-        (75th percentile) by ${lastYear} (${modeLabel} terms). A tight range
-        indicates lower dispersion risk; a wide range reflects sensitivity to
-        return sequence.${
-          iqrWide
-            ? ' The spread here is wide – your outcome is highly sensitive to which sequence of returns materialises early in retirement.'
-            : ''
-        }</p>
-      </section>`;
-
-    // ── 7. EARLIEST DEPLETION ─────────────────────────────────────────────
-    let earliestHTML = '';
-    if (r.earliestDepletion) {
-      const yearsIn = r.earliestDepletion - firstYear;
-      earliestHTML = `
-        <section class="mc-section">
-          <h4 class="mc-section-heading">When could money run out?</h4>
-          <p>In the worst-case paths, funds could be exhausted as early as
-          <strong>${r.earliestDepletion}</strong> – just ${yearsIn} year${yearsIn !== 1 ? 's' : ''}
-          into the projection. This typically occurs when a severe market downturn
-          coincides with high spending in the early years of retirement.</p>
-        </section>`;
-    }
-
-    // ── 8. RUIN PROBABILITY BY DECADE ─────────────────────────────────────
-    let decadeRows = '';
+    let decadeRowsHTML = '';
     if (r.survivalByYear && r.years) {
-      const decades = [2030, 2040, 2050, 2060, 2070].filter(
+      const decadeYrs = [2030, 2040, 2050, 2060, 2070].filter(
         y => y >= firstYear && y <= lastYear
       );
-      decadeRows = decades.map(decadeYear => {
-        const yi = r.years.indexOf(decadeYear);
+      decadeRowsHTML = decadeYrs.map(dy => {
+        const yi = r.years.indexOf(dy);
         if (yi === -1) return '';
-        const survivalRate = r.survivalByYear[yi] / r.simCount;
-        const colour =
-          survivalRate >= 0.95 ? 'var(--color-success, #16a34a)' :
-          survivalRate >= 0.80 ? 'var(--color-warn,    #d97706)' :
-                                 'var(--color-danger,  #dc2626)';
-        return `<div class="mc-decade-row">
-          <span class="mc-decade-row__year">${decadeYear}</span>
-          <span class="mc-decade-row__bar-wrap">
-            <span class="mc-decade-row__bar" style="width:${(survivalRate * 100).toFixed(1)}%;background:${colour}"></span>
-          </span>
-          <span class="mc-decade-row__pct" style="color:${colour}">${fmtPct(survivalRate)}</span>
-        </div>`;
+        const survRate  = r.survivalByYear[yi] / r.simCount;
+        const barColour =
+          survRate >= 0.95 ? 'var(--mc-dot-strong,#3B6D11)' :
+          survRate >= 0.80 ? 'var(--mc-dot-warn,  #BA7517)' :
+                             'var(--mc-dot-risk,  #A32D2D)';
+        return `
+          <div class="mc-decade-row">
+            <span class="mc-decade-row__year">${decadeAgeLabel(dy)}</span>
+            <span class="mc-decade-row__bar-wrap">
+              <span class="mc-decade-row__bar" style="width:${(survRate * 100).toFixed(1)}%;background:${barColour}"></span>
+            </span>
+            <span class="mc-decade-row__pct" style="color:${barColour}">${fmtPct(survRate)}</span>
+          </div>`;
       }).join('');
     }
 
-    const ruinHTML = decadeRows ? `
+    const s2 = `
       <section class="mc-section">
-        <h4 class="mc-section-heading">How risk builds over time</h4>
-        <p style="margin-bottom:12px">Percentage of the ${r.simCount.toLocaleString('en-GB')} simulated paths
-        where the portfolio remains above zero at each point in time.</p>
-        <div class="mc-decade-chart">${decadeRows}</div>
-      </section>` : '';
-
-    // ── 9. ACTIONS ────────────────────────────────────────────────────────
-    const actionItems = [];
-
-    if (_spendingContext && _spendingContext.sustainableSpending != null) {
-      const { currentSpending, sustainableSpending, sustainableIsFloor } = _spendingContext;
-      const gap = sustainableSpending - currentSpending;
-
-      if (!sustainableIsFloor && gap < 0) {
-        // Spending exceeds sustainable — compute rounded reduction needed
-        const reduction = roundToNearest(Math.abs(gap), 500);
-        actionItems.push(`Reduce spending by approximately <strong>${fmt(reduction)}/year</strong> to reach the 90% confidence threshold — bringing your target to around <strong>${fmt(currentSpending - reduction)}/year</strong>.`);
-      } else if (gap > 0 && !sustainableIsFloor) {
-        // There's headroom — note it as a positive option
-        const headroomRounded = roundToNearest(gap, 500);
-        actionItems.push(`You have approximately <strong>${fmt(headroomRounded)}/year</strong> of headroom — modest spending increases remain within the 90% confidence band.`);
-      }
-    }
-
-    // Sequence risk / early depletion warning → suggest cash buffer
-    if (r.earliestDepletion) {
-      const yearsIn = r.earliestDepletion - firstYear;
-      if (yearsIn <= 15) {
-        actionItems.push(`The earliest stress-case depletion is <strong>${r.earliestDepletion}</strong> (${yearsIn} years in) — maintaining a 2–3 year cash buffer would reduce sequence-of-returns risk in early retirement.`);
-      }
-    }
-
-    // Sub-95% success rate: suggest short withdrawal delay
-    if (r.successRate >= 0.80 && r.successRate < 0.95) {
-      actionItems.push(`Delaying withdrawals by 1–2 years would allow the portfolio to compound further and meaningfully improve survival odds across the distribution.`);
-    }
-
-    // Wide IQR: note diversification or flexibility value
-    if (iqrWide) {
-      actionItems.push(`The wide spread between the 25th and 75th percentile outcomes suggests a flexible spending strategy — reducing withdrawals by 10–15% in years with negative real returns — would materially improve the downside.`);
-    }
-
-    let actionsHTML = '';
-    if (actionItems.length === 0) {
-      // Strong plan — no material actions needed
-      actionsHTML = `
-        <section class="mc-section mc-sustain mc-sustain--safe">
-          <h4 class="mc-section-heading">Your plan looks solid</h4>
-          <p>No material changes needed. Your plan is resilient across the full range of simulated scenarios — success rate, sustainable spending, and stress-case outcomes are all within strong bounds.</p>
-        </section>`;
-    } else {
-      const liItems = actionItems.map(item => `<li>${item}</li>`).join('');
-      const isWarn  = r.successRate < 0.95 || (headroom !== null && headroom < 0);
-      const aClass  = isWarn ? 'mc-sustain--warn' : 'mc-sustain--safe';
-      actionsHTML = `
-        <section class="mc-section mc-sustain ${aClass}">
-          <h4 class="mc-section-heading">What you could do differently</h4>
-          <ul style="margin:6px 0 0;padding-left:18px;font-size:14px;line-height:1.7;color:var(--text,#374151)">${liItems}</ul>
-        </section>`;
-    }
-
-    // ── 10. ASSUMPTIONS NOTE ──────────────────────────────────────────────
-    const eVolRaw  = r.equityVol    != null ? r.equityVol    : 0.16;
-    const iVolRaw  = r.inflationVol != null ? r.inflationVol : 0.015;
-    const eVol     = (eVolRaw * 100).toFixed(0);
-    const iVol     = (iVolRaw * 100).toFixed(1);
-    const volLabel =
-      eVolRaw >= 0.18 ? 'an aggressive set of assumptions reflecting very high uncertainty' :
-      eVolRaw >= 0.14 ? 'a cautious set of assumptions reflecting elevated uncertainty in both markets and inflation' :
-                        'a moderate set of assumptions broadly consistent with long-run historical ranges';
-
-    const assumHTML = `
-      <section class="mc-section mc-section--muted">
-        <h4 class="mc-section-heading">How this was calculated</h4>
-        <p>This stress test uses <strong>${eVol}%</strong> equity volatility and <strong>${iVol}%</strong> inflation
-        volatility – ${volLabel}. Each of the
-        ${r.simCount.toLocaleString('en-GB')} paths independently samples annual
-        returns and inflation, compounding uncertainty across the full
-        ${r.years.length}-year projection.
-        All values shown in ${modeLabel} terms.</p>
+        <div class="mc-section-label">When pressure occurs</div>
+        <p class="mc-outlook-sentence" style="margin-bottom:14px">${pressureSentence}</p>
+        ${decadeRowsHTML ? `<div class="mc-decade-chart">${decadeRowsHTML}</div>` : ''}
       </section>`;
 
-    el.innerHTML = introHTML + verdictHTML + sustainHTML +
-                   medianHTML + stressHTML + optimisticHTML + iqrHTML +
-                   earliestHTML + ruinHTML + actionsHTML + assumHTML;
-  }
+    // ── Section 3: WHAT IF YOU CHANGE SOMETHING? ──────────────────────────
 
+    // Lever 1 — Spend less
+    let l1Pill, l1PillClass, l1Outcome;
+    if (sustainableSpending === null) {
+      l1Pill      = 'No data';
+      l1PillClass = 'mc-lever-pill--neutral';
+      l1Outcome   = 'Spending analysis was not available for this run.';
+    } else if (sustainableIsFloor) {
+      l1Pill      = 'No cut needed';
+      l1PillClass = 'mc-lever-pill--safe';
+      l1Outcome   = `Your plan remains sustainable well above your current spending — no reduction is required.`;
+    } else if (headroom >= 0) {
+      const hr = roundToNearest(headroom, 500);
+      l1Pill      = 'No cut needed';
+      l1PillClass = 'mc-lever-pill--safe';
+      l1Outcome   = `You have around ${fmt(hr)} per year of headroom — you're already within the ${confPct}% confidence band.`;
+    } else {
+      const gap       = roundToNearest(Math.abs(headroom), 500);
+      const newTarget = roundToNearest(currentSpending - gap, 500);
+      const isSmall   = Math.abs(headroom) / currentSpending <= 0.15;
+      l1Pill      = isSmall ? 'Modest cut' : 'Cut needed';
+      l1PillClass = isSmall ? 'mc-lever-pill--warn' : 'mc-lever-pill--risk';
+      l1Outcome   = `Reducing spending by around ${fmt(gap)} per year — to ${fmt(newTarget)} — would bring your plan to the ${confPct}% confidence threshold.`;
+    }
+
+    // Lever 2 — Delay withdrawals (dynamic from perturbations)
+    let l2Pill, l2PillClass, l2Outcome;
+    if (delayPerturbations.length === 0) {
+      l2Pill      = 'Not modelled';
+      l2PillClass = 'mc-lever-pill--neutral';
+      l2Outcome   = 'Delay perturbations were not computed for this run.';
+    } else {
+      const effective = delayPerturbations.filter(p => p.successRate >= targetConfidence);
+      if (rate >= targetConfidence && effective.length > 0) {
+        const d     = effective[0];
+        l2Pill      = 'Reinforces';
+        l2PillClass = 'mc-lever-pill--safe';
+        l2Outcome   = `Your plan is already sustainable. Delaying by ${d.yearsDelay} year${d.yearsDelay > 1 ? 's' : ''} would push your success rate to ${fmtPct(d.successRate)}.`;
+      } else if (effective.length > 0) {
+        const d     = effective[0];
+        l2Pill      = `+${d.yearsDelay} yr fixes it`;
+        l2PillClass = 'mc-lever-pill--safe';
+        l2Outcome   = `Delaying withdrawals by ${d.yearsDelay} year${d.yearsDelay > 1 ? 's' : ''} makes the plan sustainable at ${fmtPct(d.successRate)} success.`;
+      } else {
+        const best  = delayPerturbations.reduce((a, b) => b.successRate > a.successRate ? b : a);
+        l2Pill      = 'Helps but not enough';
+        l2PillClass = 'mc-lever-pill--warn';
+        l2Outcome   = `Even delaying by 3 years does not fully remove shortfall risk — the best result is ${fmtPct(best.successRate)} success, still below the ${confPct}% threshold.`;
+      }
+    }
+
+    // Lever 3 — Flexible spending
+    const iqrWide = (p75[lastIdx] - p25[lastIdx]) / Math.max(p50[lastIdx], 1) > 1.5;
+    let l3Pill, l3PillClass, l3Outcome;
+    if (iqrWide) {
+      l3Pill      = 'Material gain';
+      l3PillClass = 'mc-lever-pill--safe';
+      l3Outcome   = 'Your outcomes are widely dispersed. Cutting spending by 10–15% in years with negative real returns would meaningfully improve the downside position.';
+    } else {
+      l3Pill      = 'Small gain';
+      l3PillClass = 'mc-lever-pill--warn';
+      l3Outcome   = 'Flexible spending in down years would be a modest incremental improvement — your plan does not depend on it.';
+    }
+
+    function leverRow(name, pill, pillClass, outcome) {
+      return `
+        <div class="mc-lever-row">
+          <span class="mc-lever-name">${name}</span>
+          <span class="mc-lever-pill ${pillClass}">${pill}</span>
+          <span class="mc-lever-outcome">${outcome}</span>
+        </div>`;
+    }
+
+    const s3 = `
+      <section class="mc-section">
+        <div class="mc-section-label">What if you change something?</div>
+        <div class="mc-lever-table">
+          ${leverRow('Spend less',        l1Pill, l1PillClass, l1Outcome)}
+          ${leverRow('Delay withdrawals', l2Pill, l2PillClass, l2Outcome)}
+          ${leverRow('Flexible spending', l3Pill, l3PillClass, l3Outcome)}
+        </div>
+      </section>`;
+
+    // ── Section 4: PRIMARY ACTION ──────────────────────────────────────────
+    // Priority order: spending gap → delay → flexibility → all clear.
+    let actionText, actionBorderColour;
+
+    const hasGap         = sustainableSpending !== null && !sustainableIsFloor && headroom < 0;
+    const delayMin       = delayPerturbations.find(p => p.successRate >= targetConfidence);
+    const delayEffective = !!delayMin;
+
+    if (hasGap) {
+      const gap       = roundToNearest(Math.abs(headroom), 500);
+      const newTarget = roundToNearest(currentSpending - gap, 500);
+      actionText         = `Reduce annual spending by around ${fmt(gap)} to ${fmt(newTarget)} — this single change brings your plan to the ${confPct}% confidence threshold and is the highest-impact move available.`;
+      actionBorderColour = Math.abs(headroom) / currentSpending <= 0.15
+        ? 'var(--mc-dot-warn,#BA7517)'
+        : 'var(--mc-dot-risk,#A32D2D)';
+    } else if (rate < targetConfidence && delayEffective) {
+      actionText         = `Delay drawing from your portfolio by ${delayMin.yearsDelay} year${delayMin.yearsDelay > 1 ? 's' : ''} — this allows the portfolio to compound without draws and lifts your success rate to ${fmtPct(delayMin.successRate)}.`;
+      actionBorderColour = 'var(--mc-dot-warn,#BA7517)';
+    } else if (rate < targetConfidence && iqrWide) {
+      actionText         = `Adopt a flexible spending rule — reduce withdrawals by 10–15% in years when your portfolio has fallen in real terms. This is the most practical lever available given your current spending level.`;
+      actionBorderColour = 'var(--mc-dot-warn,#BA7517)';
+    } else {
+      actionText         = `No changes needed — your plan is resilient across all tested scenarios. Review again if your spending target changes materially or markets deliver a sustained poor sequence early in retirement.`;
+      actionBorderColour = 'var(--mc-dot-strong,#3B6D11)';
+    }
+
+    const s4 = `
+      <section class="mc-primary-action" style="border-left-color:${actionBorderColour}">
+        <div class="mc-section-label" style="margin-bottom:6px">Primary action</div>
+        <p class="mc-outlook-sentence" style="margin:0">${actionText}</p>
+      </section>`;
+
+    el.innerHTML = s1 + s2 + s3 + s4;
+  }
   window.RetireMCRender = { setResults, render, setReal };
 
 })();

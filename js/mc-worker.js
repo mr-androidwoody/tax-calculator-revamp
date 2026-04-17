@@ -340,6 +340,7 @@ function runPath(inputs, equityVol, inflationVol) {
     p1Order, p2Order,
     dividendYield,
     p2enabled,
+    deferYears,
   } = inputs;
 
   const numYears = endYear - startYear + 1;
@@ -397,6 +398,9 @@ function runPath(inputs, equityVol, inflationVol) {
     if (surplus > 0) p1Bal.Cash = (p1Bal.Cash || 0) + surplus;
 
     let shortfall = Math.max(0, target - guaranteed);
+
+    // ── Deferral: suppress all portfolio draws during delay period ────────
+    if (deferYears && yi < deferYears) shortfall = 0;
 
     // ── Priority 1: cash ───────────────────────────────────────────────────
     if (shortfall > 0) {
