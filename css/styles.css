@@ -3465,3 +3465,41 @@ input[type="radio"] { accent-color: var(--accent); }
     padding: 20px 16px 16px;
   }
 }
+
+/* ── Event column: add / remove slot buttons ── */
+.wiz-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 14px;
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+.wiz-add-btn:hover { opacity: 1; }
+.wiz-add-btn:disabled { opacity: 0.35; cursor: default; }
+
+.wiz-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  float: right;
+  margin-top: 2px;
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s, color 0.15s;
+}
+.wiz-remove-btn:hover { opacity: 1; color: #c0392b; }
