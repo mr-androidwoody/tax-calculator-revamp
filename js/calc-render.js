@@ -8,6 +8,7 @@
   let _depletions  = {};
   let _viewPerson = 'both';
   let _useReal    = true;
+  let _p2enabled  = true;
   let _activeResultsTab = 'income';
   let _incomeChart     = null;
   let _taxChart        = null;
@@ -31,11 +32,12 @@
   // ─────────────────────────────────────────────
   // PUBLIC: receive new projection results
   // ─────────────────────────────────────────────
-  function setResults(result, strategy) {
+  function setResults(result, strategy, p2enabled) {
     _rows        = result.rows || result; // backwards-compat if bare array passed
     _annotations = result.annotations || [];
     _depletions  = result.depletions  || {};
     if (strategy) _strategy = strategy;
+    _p2enabled = (p2enabled !== false);
 
     // Update the Results page h1 to show active strategy
     const strategyLabels = { balanced: 'Blended', isaFirst: 'ISA Shield', sippFirst: 'Pension Drain' };
@@ -44,6 +46,23 @@
         el.textContent = 'Projection: ' + (strategyLabels[_strategy] || _strategy);
       }
     });
+
+    // Single-person mode: force view to p1, hide Both and P2 toggle buttons.
+    // Two-person mode: restore all toggle buttons.
+    const bothBtns = document.querySelectorAll('[data-action="view-both"]');
+    const p2Btns   = document.querySelectorAll('[data-action="view-p2"]');
+    if (!_p2enabled) {
+      _viewPerson = 'p1';
+      document.querySelectorAll('[data-action="view-both"],[data-action="view-p1"],[data-action="view-p2"]')
+        .forEach(b => b.classList.remove('is-active'));
+      document.querySelectorAll('[data-action="view-p1"]')
+        .forEach(b => b.classList.add('is-active'));
+      bothBtns.forEach(b => { b.style.display = 'none'; });
+      p2Btns.forEach(b =>   { b.style.display = 'none'; });
+    } else {
+      bothBtns.forEach(b => { b.style.display = ''; });
+      p2Btns.forEach(b =>   { b.style.display = ''; });
+    }
   }
 
   // ─────────────────────────────────────────────
@@ -1124,12 +1143,16 @@
       const TCOL = {
         meta:  { bg: '#F2F2F2', hdr: '#444444', txt: '#222' },
         p1:    { bg: '#FEF3EC', hdr: '#ED7D31', txt: '#7e3a0a' },
-        p2:    { bg: '#EBF5FB', hdr: '#2E86C1', txt: '#1a4a6e' },
+        p2:    _p2enabled
+               ? { bg: '#EBF5FB', hdr: '#2E86C1', txt: '#1a4a6e' }
+               : { bg: '#F5F5F5', hdr: '#AAAAAA', txt: '#AAAAAA' },
         total: { bg: '#F8F9FA', hdr: '#555555', txt: '#222'    },
       };
       const tcs  = col => `style="background:${col.bg};color:${col.txt}"`;
       const tth  = (col, content, extra = '') =>
         `<th ${extra} style="background:${col.hdr};color:#fff;border-color:${col.hdr}">${content}</th>`;
+      // In single-person mode, P2 cells show — instead of values
+      const tp2  = val => _p2enabled ? f(val) : '—';
 
       let body = '<tbody>';
       taxRows.forEach(row => {
@@ -1139,7 +1162,7 @@
         body += `<tr>
           <td>${year}</td><td>${p1Age}</td><td>${p2Age}</td>
           <td ${tcs(TCOL.p1)}>${f(wi)}</td><td ${tcs(TCOL.p1)}>${f(wc)}</td><td ${tcs(TCOL.p1)}>${f(wn)}</td><td ${tcs(TCOL.p1)}><strong>${f(wt)}</strong></td>
-          <td ${tcs(TCOL.p2)}>${f(hi)}</td><td ${tcs(TCOL.p2)}>${f(hc)}</td><td ${tcs(TCOL.p2)}>${f(hn)}</td><td ${tcs(TCOL.p2)}><strong>${f(ht)}</strong></td>
+          <td ${tcs(TCOL.p2)}>${tp2(hi)}</td><td ${tcs(TCOL.p2)}>${tp2(hc)}</td><td ${tcs(TCOL.p2)}>${tp2(hn)}</td><td ${tcs(TCOL.p2)}><strong>${tp2(ht)}</strong></td>
           <td ${tcs(TCOL.total)}><strong>${f(hh)}</strong></td><td ${tcs(TCOL.total)}>${f(cumTax)}</td>
         </tr>`;
       });
@@ -1147,7 +1170,7 @@
       body += `<tr class="total-row">
         <td colspan="3">Total</td>
         <td ${tcs(TCOL.p1)}>${f(grandWI)}</td><td ${tcs(TCOL.p1)}>${f(grandWC)}</td><td ${tcs(TCOL.p1)}>${f(grandWN)}</td><td ${tcs(TCOL.p1)}><strong>${f(grandWI+grandWC+grandWN)}</strong></td>
-        <td ${tcs(TCOL.p2)}>${f(grandHI)}</td><td ${tcs(TCOL.p2)}>${f(grandHC)}</td><td ${tcs(TCOL.p2)}>${f(grandHN)}</td><td ${tcs(TCOL.p2)}><strong>${f(grandHI+grandHC+grandHN)}</strong></td>
+        <td ${tcs(TCOL.p2)}>${tp2(grandHI)}</td><td ${tcs(TCOL.p2)}>${tp2(grandHC)}</td><td ${tcs(TCOL.p2)}>${tp2(grandHN)}</td><td ${tcs(TCOL.p2)}><strong>${tp2(grandHI+grandHC+grandHN)}</strong></td>
         <td ${tcs(TCOL.total)}><strong>${f(grand)}</strong></td><td ${tcs(TCOL.total)}>${f(grand)}</td>
       </tr></tbody>`;
       taxTbl.innerHTML = `<thead>
@@ -1176,12 +1199,15 @@
       const WCOL = {
         meta:  { bg: '#F2F2F2', hdr: '#444444', txt: '#222' },
         p1:    { bg: '#FEF3EC', hdr: '#ED7D31', txt: '#7e3a0a' },
-        p2:    { bg: '#EBF5FB', hdr: '#2E86C1', txt: '#1a4a6e' },
+        p2:    _p2enabled
+               ? { bg: '#EBF5FB', hdr: '#2E86C1', txt: '#1a4a6e' }
+               : { bg: '#F5F5F5', hdr: '#AAAAAA', txt: '#AAAAAA' },
         total: { bg: '#F8F9FA', hdr: '#555555', txt: '#222'    },
       };
       const wcs  = col => `style="background:${col.bg};color:${col.txt}"`;
       const wth  = (col, content, extra = '') =>
         `<th ${extra} style="background:${col.hdr};color:#fff;border-color:${col.hdr}">${content}</th>`;
+      const wp2  = val => _p2enabled ? f(val) : '—';
 
       let body = '<tbody>';
       wealthRows.forEach(row => {
@@ -1190,8 +1216,10 @@
                 p2Cash, p2IntBal, p2GIA, p2SIPP, p2ISA, total } = row;
         const rawRow = rowByYear[year];
         const s = rawRow?.snap ?? {};
-        const cell = (col, adjVal, snapVal) =>
-          `<td ${wcs(col)}${adjVal < 1 && snapVal > 0 ? ' class="depleted"' : ''}>${f(adjVal)}</td>`;
+        const cell = (col, adjVal, snapVal) => {
+          if (!_p2enabled && col === WCOL.p2) return `<td ${wcs(col)}>—</td>`;
+          return `<td ${wcs(col)}${adjVal < 1 && snapVal > 0 ? ' class="depleted"' : ''}>${f(adjVal)}</td>`;
+        };
         body += `<tr>
           <td>${year}</td><td>${p1Age}</td><td>${p2Age}</td>
           ${cell(WCOL.p1, p1Cash,   s.p1Cash   ?? 0)}${cell(WCOL.p1, p1IntBal, s.p1IntBal ?? 0)}${cell(WCOL.p1, p1GIA,   s.p1GIA   ?? 0)}${cell(WCOL.p1, p1SIPP, s.p1SIPP ?? 0)}${cell(WCOL.p1, p1ISA, s.p1ISA ?? 0)}
@@ -1233,13 +1261,17 @@
         int:   { bg: '#F5EEF8', hdr: '#9B59B6', txt: '#4a235a' },
         div:   { bg: '#EAFAF1', hdr: '#27AE60', txt: '#145a32' },
         p1:    { bg: '#FEF3EC', hdr: '#ED7D31', txt: '#7e3a0a' },
-        p2:    { bg: '#EBF5FB', hdr: '#2E86C1', txt: '#1a4a6e' },
+        p2:    _p2enabled
+               ? { bg: '#EBF5FB', hdr: '#2E86C1', txt: '#1a4a6e' }
+               : { bg: '#F5F5F5', hdr: '#AAAAAA', txt: '#AAAAAA' },
         total: { bg: '#F8F9FA', hdr: '#555',    txt: '#222'    },
         sf:    { bg: '#FEF2F2', hdr: '#DC2626', txt: '#7f1d1d' },
       };
       const cs  = (col) => `style="background:${col.bg};color:${col.txt}"`;
       const th  = (col, content, extra = '') =>
         `<th ${extra} style="background:${col.hdr};color:#fff;border-color:${col.hdr}">${content}</th>`;
+      // In single-person mode, P2 cells show — instead of values
+      const dp2 = val => _p2enabled ? f(val) : '—';
 
       drawRows.forEach(row => {
         const { year, p1Age, p2Age,
@@ -1259,12 +1291,12 @@
 
         body += `<tr>
           <td>${year}</td><td>${p1Age}</td><td>${p2Age}</td>
-          <td ${cs(COL.sp)}>${f(p1SP)}</td><td ${cs(COL.sp)}>${f(p2SP)}</td>
-          <td ${cs(COL.sal)}>${f(p1Sal)}</td><td ${cs(COL.sal)}>${f(p2Sal)}</td>
-          <td ${cs(COL.int)}>${f(p1Int)}</td><td ${cs(COL.int)}>${f(p2Int)}</td>
-          <td ${cs(COL.div)}>${f(p1Divs)}</td><td ${cs(COL.div)}>${f(p2Divs)}</td>
+          <td ${cs(COL.sp)}>${f(p1SP)}</td><td ${cs(COL.sp)}>${dp2(p2SP)}</td>
+          <td ${cs(COL.sal)}>${f(p1Sal)}</td><td ${cs(COL.sal)}>${dp2(p2Sal)}</td>
+          <td ${cs(COL.int)}>${f(p1Int)}</td><td ${cs(COL.int)}>${dp2(p2Int)}</td>
+          <td ${cs(COL.div)}>${f(p1Divs)}</td><td ${cs(COL.div)}>${dp2(p2Divs)}</td>
           <td ${cs(COL.p1)}>${f(p1Cash)}</td><td ${cs(COL.p1)}>${f(p1GIA)}</td><td ${cs(COL.p1)}>${f(p1SIPP)}</td><td ${cs(COL.p1)}>${f(p1ISA)}</td>
-          <td ${cs(COL.p2)}>${f(p2Cash)}</td><td ${cs(COL.p2)}>${f(p2GIA)}</td><td ${cs(COL.p2)}>${f(p2SIPP)}</td><td ${cs(COL.p2)}>${f(p2ISA)}</td>
+          <td ${cs(COL.p2)}>${dp2(p2Cash)}</td><td ${cs(COL.p2)}>${dp2(p2GIA)}</td><td ${cs(COL.p2)}>${dp2(p2SIPP)}</td><td ${cs(COL.p2)}>${dp2(p2ISA)}</td>
           <td ${cs(COL.total)}><strong>${f(rowTotal)}</strong></td>${sfCell}
         </tr>`;
       });
@@ -1274,12 +1306,12 @@
                        + grandP2Cash + grandP2GIA + grandP2SIPP + grandP2ISA;
       body += `<tr class="total-row">
         <td colspan="3">Total</td>
-        <td ${cs(COL.sp)}>${f(grandP1SP)}</td><td ${cs(COL.sp)}>${f(grandP2SP)}</td>
-        <td ${cs(COL.sal)}>${f(grandP1Sal)}</td><td ${cs(COL.sal)}>${f(grandP2Sal)}</td>
-        <td ${cs(COL.int)}>${f(grandP1Int)}</td><td ${cs(COL.int)}>${f(grandP2Int)}</td>
-        <td ${cs(COL.div)}>${f(grandP1Divs)}</td><td ${cs(COL.div)}>${f(grandP2Divs)}</td>
+        <td ${cs(COL.sp)}>${f(grandP1SP)}</td><td ${cs(COL.sp)}>${dp2(grandP2SP)}</td>
+        <td ${cs(COL.sal)}>${f(grandP1Sal)}</td><td ${cs(COL.sal)}>${dp2(grandP2Sal)}</td>
+        <td ${cs(COL.int)}>${f(grandP1Int)}</td><td ${cs(COL.int)}>${dp2(grandP2Int)}</td>
+        <td ${cs(COL.div)}>${f(grandP1Divs)}</td><td ${cs(COL.div)}>${dp2(grandP2Divs)}</td>
         <td ${cs(COL.p1)}>${f(grandP1Cash)}</td><td ${cs(COL.p1)}>${f(grandP1GIA)}</td><td ${cs(COL.p1)}>${f(grandP1SIPP)}</td><td ${cs(COL.p1)}>${f(grandP1ISA)}</td>
-        <td ${cs(COL.p2)}>${f(grandP2Cash)}</td><td ${cs(COL.p2)}>${f(grandP2GIA)}</td><td ${cs(COL.p2)}>${f(grandP2SIPP)}</td><td ${cs(COL.p2)}>${f(grandP2ISA)}</td>
+        <td ${cs(COL.p2)}>${dp2(grandP2Cash)}</td><td ${cs(COL.p2)}>${dp2(grandP2GIA)}</td><td ${cs(COL.p2)}>${dp2(grandP2SIPP)}</td><td ${cs(COL.p2)}>${dp2(grandP2ISA)}</td>
         <td ${cs(COL.total)}><strong>${f(grandTotal)}</strong></td><td ${cs(COL.total)}>—</td>
       </tr></tbody>`;
 

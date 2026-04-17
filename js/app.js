@@ -785,7 +785,7 @@
 
       state.projectionRun = true;
       refreshTabGating(_isPortfolioValid());
-      CR.setResults(result, inputs.strategy);
+      CR.setResults(result, inputs.strategy, inputs.p2enabled);
       CR.renderMetrics();
       CR.renderCharts();
       RetireTabs.switchTab('results');
