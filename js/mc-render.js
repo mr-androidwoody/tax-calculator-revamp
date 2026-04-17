@@ -105,10 +105,10 @@
       rate >= 0.80 ? 'Borderline' : 'At risk';
 
     const verdictColour =
-      rate >= 0.95 ? { main:'#3B6D11', bg:'rgba(59,109,17,0.06)',  border:'#3B6D11', statBorder:'rgba(59,109,17,0.25)',  statDiv:'rgba(59,109,17,0.2)',  eyebrow:'#27500A', text:'#173404' } :
-      rate >= 0.90 ? { main:'#185FA5', bg:'rgba(24,95,165,0.06)',  border:'#185FA5', statBorder:'rgba(24,95,165,0.25)',  statDiv:'rgba(24,95,165,0.2)',  eyebrow:'#0C447C', text:'#042C53' } :
-      rate >= 0.80 ? { main:'#BA7517', bg:'rgba(186,117,23,0.06)', border:'#BA7517', statBorder:'rgba(186,117,23,0.25)', statDiv:'rgba(186,117,23,0.2)', eyebrow:'#854F0B', text:'#412402' } :
-                     { main:'#A32D2D', bg:'rgba(163,45,45,0.06)',  border:'#A32D2D', statBorder:'rgba(163,45,45,0.25)',  statDiv:'rgba(163,45,45,0.2)',  eyebrow:'#791F1F', text:'#501313' };
+      rate >= 0.95 ? { main:'#27500A', bg:'rgba(59,109,17,0.09)',  border:'#3B6D11', eyebrow:'#173404', text:'#173404' } :
+      rate >= 0.90 ? { main:'#0C447C', bg:'rgba(24,95,165,0.09)',  border:'#185FA5', eyebrow:'#042C53', text:'#042C53' } :
+      rate >= 0.80 ? { main:'#854F0B', bg:'rgba(186,117,23,0.09)', border:'#BA7517', eyebrow:'#412402', text:'#412402' } :
+                     { main:'#791F1F', bg:'rgba(163,45,45,0.09)',  border:'#A32D2D', eyebrow:'#501313', text:'#501313' };
 
     const verdictSentence =
       rate >= 0.95 ? 'Your plan is on track throughout retirement, with room to absorb a sustained run of poor returns.' :
@@ -125,21 +125,21 @@
         shortfallHTML = `
           <div class="mc-vstat">
             <div class="mc-vstat-label">Spending headroom</div>
-            <div class="mc-vstat-secondary">Substantial</div>
+            <div class="mc-vstat-secondary" style="color:${verdictColour.main}">Substantial</div>
           </div>`;
       } else if (headroom >= 0) {
         const hr = roundToNearest(headroom, 500);
         shortfallHTML = `
           <div class="mc-vstat">
             <div class="mc-vstat-label">Typical headroom</div>
-            <div class="mc-vstat-secondary">+${fmt(hr)} / yr</div>
+            <div class="mc-vstat-secondary" style="color:${verdictColour.main}">+${fmt(hr)} / yr</div>
           </div>`;
       } else {
         const gap = roundToNearest(Math.abs(headroom), 500);
         shortfallHTML = `
           <div class="mc-vstat">
             <div class="mc-vstat-label">Typical shortfall</div>
-            <div class="mc-vstat-secondary">−${fmt(gap)} / yr</div>
+            <div class="mc-vstat-secondary" style="color:${verdictColour.main}">−${fmt(gap)} / yr</div>
           </div>`;
       }
     // shortfallHTML is empty string if no spending context — right column shows only success rate
@@ -203,7 +203,7 @@
         if (yi === -1) return '';
         const survRate  = r.survivalByYear[yi] / r.simCount;
         if (survRate < minSurv) minSurv = survRate;
-        const barColour = survRate >= 0.95 ? '#3B6D11' : survRate >= 0.80 ? '#BA7517' : '#A32D2D';
+        const barColour = survRate >= 0.95 ? '#2D5F0F' : survRate >= 0.80 ? '#9A5E00' : '#8B1F1F';
         const isRising  = !risingMarked && survRate < 0.95;
         if (isRising) risingMarked = true;
         const rowClass  = isRising ? 'mc-decade-row mc-decade-row--rising' : 'mc-decade-row';
@@ -287,14 +287,22 @@
       l3Outcome = 'Flexible spending in down years adds a modest incremental improvement.';
     }
 
-    // Primary lever index
-    const _primary =
+    // Is the plan already strong (no action needed)?
+    const planIsStrong = rate >= targetConfidence &&
+      (sustainableSpending === null || sustainableIsFloor || headroom >= 0);
+
+    // Primary lever index (-1 = strong plan, no primary)
+    const _primary = planIsStrong ? -1 :
       (sustainableSpending !== null && !sustainableIsFloor && headroom < 0) ? 0 :
       (rate < targetConfidence && delayPerturbations.some(p => p.successRate >= targetConfidence)) ? 1 :
       (rate < targetConfidence && iqrWide) ? 2 : 0;
 
     function leverRow(name, pill, pillClass, outcome, isPrimary) {
-      const cls = isPrimary ? 'mc-lever-row mc-lever-row--primary' : 'mc-lever-row mc-lever-row--secondary';
+      const cls = isPrimary
+        ? 'mc-lever-row mc-lever-row--primary'
+        : planIsStrong
+          ? 'mc-lever-row'
+          : 'mc-lever-row mc-lever-row--secondary';
       return `
         <div class="${cls}">
           <span class="mc-lever-name">${name}</span>
@@ -303,15 +311,44 @@
         </div>`;
     }
 
-    const s3 = `
-      <section class="mc-section">
-        <div class="mc-section-label">What if you change something?</div>
-        <div class="mc-lever-table">
-          ${leverRow('Spend less',        l1Pill, l1PillClass, l1Outcome, _primary === 0)}
-          ${leverRow('Delay withdrawals', l2Pill, l2PillClass, l2Outcome, _primary === 1)}
-          ${leverRow('Flexible spending', l3Pill, l3PillClass, l3Outcome, _primary === 2)}
-        </div>
-      </section>`;
+    // Strong plan: reassurance block instead of lever table
+    let s3;
+    if (planIsStrong) {
+      const items = [];
+      if (sustainableSpending !== null) {
+        if (sustainableIsFloor) {
+          items.push(`Your plan remains sustainable well above your current spending — substantial headroom exists.`);
+        } else {
+          const hr = roundToNearest(headroom, 500);
+          items.push(`You have around ${fmt(hr)} per year of headroom before reaching the ${confPct}% confidence threshold.`);
+        }
+      }
+      const effectiveDelay = delayPerturbations.find(p => p.successRate >= targetConfidence);
+      if (effectiveDelay) {
+        items.push(`Delaying withdrawals by ${effectiveDelay.yearsDelay} year${effectiveDelay.yearsDelay > 1 ? 's' : ''} would push your success rate to ${fmtPct(effectiveDelay.successRate)}.`);
+      }
+      items.push(iqrWide
+        ? `Flexible spending in weak years would further improve your downside position.`
+        : `Flexible spending in weak years adds a modest incremental margin.`
+      );
+      s3 = `
+        <section class="mc-section">
+          <div class="mc-section-label">Your plan has room to breathe</div>
+          <div class="mc-reassurance">
+            ${items.map(t => `<div class="mc-reassurance-item">${t}</div>`).join('')}
+          </div>
+        </section>`;
+    } else {
+      s3 = `
+        <section class="mc-section">
+          <div class="mc-section-label">What if you change something?</div>
+          <div class="mc-lever-table">
+            ${leverRow('Spend less',        l1Pill, l1PillClass, l1Outcome, _primary === 0)}
+            ${leverRow('Delay withdrawals', l2Pill, l2PillClass, l2Outcome, _primary === 1)}
+            ${leverRow('Flexible spending', l3Pill, l3PillClass, l3Outcome, _primary === 2)}
+          </div>
+        </section>`;
+    }
 
     // ── Section 4: PRIMARY ACTION ─────────────────────────────────────
     let actionLine, actionImpact, actionBorderColour, actionBg, actionLabelColour, actionTextColour, actionImpactColour;
@@ -354,7 +391,7 @@
         <p class="mc-primary-action__text" style="color:${actionTextColour}">${actionLine}</p>
         <p class="mc-primary-action__impact" style="color:${actionImpactColour}">${actionImpact}</p>
       </div>
-      <p class="mc-bridge-note">The charts below show your expected baseline plan. Actual outcomes may vary as modelled above.</p>`;
+      <p class="mc-bridge-note">Use the tabs at the top to explore charts and tables of your expected plan under fixed assumptions. They show how your plan unfolds over time, while this outcome summary reflects how results may vary across different market conditions.</p>`;
 
     el.innerHTML = s1 + s2 + s3 + s4;
   }
