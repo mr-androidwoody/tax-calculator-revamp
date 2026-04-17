@@ -272,12 +272,198 @@
     return { p1Drawn, p2Drawn };
   }
 
+  // ── Strategy: taxMin ──────────────────────────────────────────────────────
+  //
+  // Draws from whichever wrapper produces the lowest marginal tax on each
+  // pound, consulting the ledger in real time. Steps in priority order:
+  //
+  //   1. SIPP to remaining PA headroom          — 0% effective (25% TFLS covers)
+  //   2. GIA/Cash interest to SRS + PSA          — already consumed by engine;
+  //                                                nothing discretionary here
+  //   3. GIA capital to remaining CGT allowance  — 0% CGT
+  //   4. ISA for remaining shortfall             — always 0% (exact need only)
+  //   5. Taxable SIPP into basic-rate band       — 20% income tax
+  //   6. GIA at basic-rate CGT                   — 18% CGT
+  //   7. Fallback                                — applyFallback (higher-rate)
+  //
+  // Two-person split: proportional by each person's headroom for that step.
+  // Scotland is a known gap — band rates scoped to England only.
+
+  function strategyTaxMin({
+    shortfall, p1Bal, p2Bal,
+    p1WrapperOrder, p2WrapperOrder,
+    p1SIPPLocked, p2SIPPLocked,
+    p1Ledger, p2Ledger,
+    p1GainRatio, p2GainRatio,
+  }) {
+    if (shortfall <= 0) return { p1Drawn: zero(), p2Drawn: zero() };
+
+    const p1Drawn = zero();
+    const p2Drawn = zero();
+    let rem = shortfall;   // running remaining shortfall
+
+    // ── Step 1: SIPP to PA headroom (tax-free effective rate) ──────────────
+    {
+      const p1Cap = !p1SIPPLocked ? sippPACap(p1Ledger, p1Bal.SIPP) : 0;
+      const p2Cap = !p2SIPPLocked ? sippPACap(p2Ledger, p2Bal.SIPP) : 0;
+      const total = p1Cap + p2Cap;
+      const draw  = Math.min(total, rem);
+
+      if (draw > 0 && total > 0) {
+        const p1Share = draw * (p1Cap / total);
+        const p2Share = draw * (p2Cap / total);
+
+        const d1 = C.withdraw(p1Bal, ['SIPP'], p1Share);
+        const d2 = C.withdraw(p2Bal, ['SIPP'], p2Share);
+        L.consumeNonSavings(p1Ledger, d1.sippTaxable);
+        L.consumeNonSavings(p2Ledger, d2.sippTaxable);
+        mergeDraw(p1Drawn, d1);
+        mergeDraw(p2Drawn, d2);
+        rem -= (d1.SIPP || 0) + (d2.SIPP || 0);
+      }
+    }
+
+    // ── Step 2: GIA/Cash interest within SRS + PSA ────────────────────────
+    // Interest accrual is non-discretionary — already consumed by the engine
+    // before withdrawalStrategy runs. The ledger's srsRemaining / psaRemaining
+    // already reflect any interest. Nothing to draw here.
+
+    // ── Step 3: GIA capital within CGT allowance (0% CGT) ─────────────────
+    if (rem > 0) {
+      const p1Exempt = p1Ledger.cgtAllowRemaining;
+      const p2Exempt = p2Ledger.cgtAllowRemaining;
+      const totalEx  = p1Exempt + p2Exempt;
+
+      if (totalEx > 0) {
+        // Max GIA we can draw per person without exceeding their CGT exemption.
+        // If gainRatio is 0 (pure return of capital) the full draw is tax-free;
+        // guard against division by zero with a cap at the GIA balance.
+        const p1MaxGIA = p1GainRatio > 0
+          ? Math.min(p1Exempt / p1GainRatio, p1Bal.GIA || 0)
+          : (p1Bal.GIA || 0);
+        const p2MaxGIA = p2GainRatio > 0
+          ? Math.min(p2Exempt / p2GainRatio, p2Bal.GIA || 0)
+          : (p2Bal.GIA || 0);
+
+        const available = p1MaxGIA + p2MaxGIA;
+        const draw      = Math.min(available, rem);
+
+        if (draw > 0 && available > 0) {
+          const p1Share = draw * (p1MaxGIA / available);
+          const p2Share = draw * (p2MaxGIA / available);
+
+          const p1GIADraw = Math.min(p1Share, p1Bal.GIA || 0);
+          const p2GIADraw = Math.min(p2Share, p2Bal.GIA || 0);
+
+          p1Bal.GIA -= p1GIADraw;
+          p2Bal.GIA -= p2GIADraw;
+          p1Drawn.GIA += p1GIADraw;
+          p2Drawn.GIA += p2GIADraw;
+
+          L.consumeGains(p1Ledger, p1GIADraw * p1GainRatio);
+          L.consumeGains(p2Ledger, p2GIADraw * p2GainRatio);
+
+          rem -= p1GIADraw + p2GIADraw;
+        }
+      }
+    }
+
+    // ── Step 4: ISA for remaining shortfall (exact, no surplus) ───────────
+    if (rem > 0) {
+      const p1ISA = p1Bal.ISA || 0;
+      const p2ISA = p2Bal.ISA || 0;
+      const totalISA = p1ISA + p2ISA;
+      const draw     = Math.min(totalISA, rem);
+
+      if (draw > 0 && totalISA > 0) {
+        const p1Share = draw * (p1ISA / totalISA);
+        const p2Share = draw * (p2ISA / totalISA);
+
+        const d1 = C.withdraw(p1Bal, ['ISA'], p1Share);
+        const d2 = C.withdraw(p2Bal, ['ISA'], p2Share);
+        mergeDraw(p1Drawn, d1);
+        mergeDraw(p2Drawn, d2);
+        rem -= (d1.ISA || 0) + (d2.ISA || 0);
+      }
+    }
+
+    // ── Step 5: Taxable SIPP into basic-rate band only (20% IT) ───────────
+    // Only as much as covers the remaining shortfall — not topped to ceiling.
+    if (rem > 0) {
+      const p1Cap = !p1SIPPLocked ? Math.min(sippBasicRateCap(p1Ledger, p1Bal.SIPP), rem / 2) : 0;
+      const p2Cap = !p2SIPPLocked ? Math.min(sippBasicRateCap(p2Ledger, p2Bal.SIPP), rem / 2) : 0;
+
+      // Split by band room, not cap, so the person with more band absorbs more
+      const p1Band = p1Ledger.basicBandRemaining;
+      const p2Band = p2Ledger.basicBandRemaining;
+      const totalBand = p1Band + p2Band;
+      const draw      = Math.min((p1Cap + p2Cap), rem);
+
+      if (draw > 0 && totalBand > 0) {
+        const p1Share = Math.min(draw * (p1Band / totalBand), p1Cap);
+        const p2Share = Math.min(draw * (p2Band / totalBand), p2Cap);
+
+        const d1 = !p1SIPPLocked ? C.withdraw(p1Bal, ['SIPP'], p1Share) : zero();
+        const d2 = !p2SIPPLocked ? C.withdraw(p2Bal, ['SIPP'], p2Share) : zero();
+        L.consumeNonSavings(p1Ledger, d1.sippTaxable);
+        L.consumeNonSavings(p2Ledger, d2.sippTaxable);
+        mergeDraw(p1Drawn, d1);
+        mergeDraw(p2Drawn, d2);
+        rem -= (d1.SIPP || 0) + (d2.SIPP || 0);
+      }
+    }
+
+    // ── Step 6: GIA at basic-rate CGT (18%) ───────────────────────────────
+    if (rem > 0) {
+      const p1Band = p1Ledger.basicBandRemaining;
+      const p2Band = p2Ledger.basicBandRemaining;
+      const totalBand = p1Band + p2Band;
+
+      const p1GIA = p1Bal.GIA || 0;
+      const p2GIA = p2Bal.GIA || 0;
+      const totalGIA = p1GIA + p2GIA;
+      const draw     = Math.min(totalGIA, rem);
+
+      if (draw > 0 && totalGIA > 0) {
+        // Weight by band room where available, fall back to GIA balance weight
+        const p1Weight = totalBand > 0 ? (p1Band / totalBand) : (p1GIA / totalGIA);
+        const p2Weight = totalBand > 0 ? (p2Band / totalBand) : (p2GIA / totalGIA);
+        const p1Share  = Math.min(draw * p1Weight, p1GIA);
+        const p2Share  = Math.min(draw * p2Weight, p2GIA);
+
+        p1Bal.GIA -= p1Share;
+        p2Bal.GIA -= p2Share;
+        p1Drawn.GIA += p1Share;
+        p2Drawn.GIA += p2Share;
+
+        L.consumeGains(p1Ledger, p1Share * p1GainRatio);
+        L.consumeGains(p2Ledger, p2Share * p2GainRatio);
+
+        rem -= p1Share + p2Share;
+      }
+    }
+
+    // ── Step 7: Fallback (higher-rate band / whatever remains) ────────────
+    if (rem > 0) {
+      const p1Target = rem / 2;
+      const p2Target = rem / 2;
+      applyFallback(
+        shortfall, p1Drawn, p2Drawn, p1Bal, p2Bal,
+        p1WrapperOrder, p2WrapperOrder, p1SIPPLocked, p2SIPPLocked,
+        p1Target, p2Target,
+      );
+    }
+
+    return { p1Drawn, p2Drawn };
+  }
+
   // ── Main entry point ──────────────────────────────────────────────────────
 
   function withdrawalStrategy(params) {
     switch (params.strategy) {
       case 'isaFirst':  return strategyISAFirst(params);
       case 'sippFirst': return strategySIPPFirst(params);
+      case 'taxMin':    return strategyTaxMin(params);
       case 'balanced':
       default:          return strategyBalanced(params);
     }
