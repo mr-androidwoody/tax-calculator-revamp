@@ -790,17 +790,10 @@
       CR.renderCharts();
       RetireTabs.switchTab('results');
       state.activeTab = 'results';
-      // Always land on Sources of income sub-tab
-      const incomeBtn = document.querySelector('.results-tab[data-results-tab="income"]');
-      if (incomeBtn) incomeBtn.click();
-
-      // Mark Risk Outcomes stale and re-enable the Run risk outcomes button.
-      _setRiskReady(false);
-      const riskRunBtn = safeEl('runRiskBtn');
-      if (riskRunBtn) {
-        riskRunBtn.disabled = false;
-        riskRunBtn.classList.remove('btn-run-risk--disabled');
-      }
+      // Land on Your outlook tab and kick off MC run immediately
+      const outlookBtn = document.querySelector('.results-tab[data-results-tab="outlook"]');
+      if (outlookBtn) outlookBtn.click();
+      runRisk();
 
     } catch (err) {
       resetBtn();
@@ -813,17 +806,39 @@
   // RUN RISK (Monte Carlo)
   // ─────────────────────────────
   function _setRiskReady(ready) {
-    const tabBtn = document.querySelector('.results-tab[data-results-tab="risk"]');
+    const tabBtn = document.querySelector('.results-tab[data-results-tab="outlook"]');
     if (!tabBtn) return;
     tabBtn.classList.toggle('results-tab--risk-ready', ready);
   }
 
+  function _setLoadingPhase(text) {
+    const el = safeEl('mc-loading-phase');
+    if (el) el.textContent = text;
+  }
+
+  function _setLoadingProgress(pct) {
+    const bar = safeEl('mc-loading-bar-fill');
+    if (bar) bar.style.width = pct + '%';
+    const label = safeEl('mc-loading-bar-pct');
+    if (label) label.textContent = Math.round(pct) + '%';
+  }
+
+  function _showLoadingState() {
+    const el = safeEl('mc-narrative');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="mc-loading">
+        <p class="mc-loading__phase" id="mc-loading-phase">Simulating 10,000 futures…</p>
+        <div class="mc-loading__bar-wrap">
+          <div class="mc-loading__bar-fill" id="mc-loading-bar-fill"></div>
+        </div>
+        <span class="mc-loading__pct" id="mc-loading-bar-pct">0%</span>
+      </div>`;
+  }
+
   async function runRisk() {
     const inputs = state.lastInputs;
-    if (!inputs) {
-      showToast('Run a projection first', true);
-      return;
-    }
+    if (!inputs) return;
 
     const MCE = window.RetireMCEngine;
     if (!MCE) {
@@ -831,20 +846,10 @@
       return;
     }
 
-    const riskRunBtn = safeEl('runRiskBtn');
-    const originalLabel = riskRunBtn ? riskRunBtn.textContent : 'Run risk outcomes';
-    if (riskRunBtn) {
-      riskRunBtn.textContent = 'Simulating…';
-      riskRunBtn.classList.add('btn-loading');
-      riskRunBtn.disabled = true;
-    }
-
-    function resetBtn() {
-      if (!riskRunBtn) return;
-      riskRunBtn.textContent = originalLabel;
-      riskRunBtn.classList.remove('btn-loading');
-      riskRunBtn.disabled = false;
-    }
+    _showLoadingState();
+    _setRiskReady(false);
+    const _outlookTab = document.querySelector('.results-tab[data-results-tab="outlook"]');
+    if (_outlookTab) _outlookTab.classList.add('results-tab--simulating');
 
     try {
       // ── Main run: 10,000 paths at current spending ─────────────────────
@@ -853,6 +858,7 @@
         simCount:     10_000,
         equityVol:    0.16,
         inflationVol: 0.015,
+        onProgress:   (pct) => _setLoadingProgress(pct),
       });
 
       // ── Bisection: find spending level at TARGET_CONFIDENCE ─────────────
@@ -884,6 +890,9 @@
         // Otherwise fall through to bisection with lo = current spending.
       }
 
+      _setLoadingPhase('Finding sustainable spending level…');
+      _setLoadingProgress(0);
+
       if (!sustainableIsFloor) {
         // Bisect between lo (40% of spending, expected high success) and
         // hi (150% of spending, expected low success — or current if above target).
@@ -908,6 +917,7 @@
           } else {
             hi = mid;
           }
+          _setLoadingProgress(Math.round(((i + 1) / BISECT_ITERS) * 100));
         }
         sustainableSpending = Math.round((lo + hi) / 2);
       }
@@ -926,13 +936,9 @@
         { yearsDelay: 3, successRate: delay3.successRate },
       ];
 
-      // Disable until next projection run.
-      if (riskRunBtn) {
-        riskRunBtn.textContent = originalLabel;
-        riskRunBtn.classList.remove('btn-loading');
-        riskRunBtn.disabled = true;
-        riskRunBtn.classList.add('btn-run-risk--disabled');
-      }
+      // ── Loading: switch phase label before delay perturbations ──────────
+      _setLoadingPhase('Stress-testing delay scenarios…');
+      _setLoadingProgress(0);
 
       const MCR = window.RetireMCRender;
       if (!MCR) throw new Error('RetireMCRender not loaded');
@@ -946,20 +952,12 @@
         delayPerturbations,
       });
       MCR.render();
-
-      // Reveal the Risk Outcomes tab now that results are available
-      const _riskTab = document.querySelector('.results-tab[data-results-tab="risk"]');
-      if (_riskTab) _riskTab.style.display = '';
-
-      // Switch to Results → Risk Outcomes sub-tab and mark ready (red).
-      RetireTabs.switchTab('results');
-      state.activeTab = 'results';
-      const riskTabBtn = document.querySelector('.results-tab[data-results-tab="risk"]');
-      if (riskTabBtn) riskTabBtn.click();
       _setRiskReady(true);
+      if (_outlookTab) _outlookTab.classList.remove('results-tab--simulating');
 
     } catch (err) {
-      resetBtn();
+      if (_outlookTab) _outlookTab.classList.remove('results-tab--simulating');
+      _setLoadingPhase('Simulation failed — please try running the projection again.');
       console.error('runRisk error:', err);
       showToast('Simulation failed — see console', true);
     }
@@ -1251,16 +1249,12 @@
   CR.initResultsTabs();
   CR.initTableSelector();
 
-  // Risk Outcomes tab is hidden until the simulation has been run
-  const _riskTabBtn = document.querySelector('.results-tab[data-results-tab="risk"]');
-  if (_riskTabBtn) _riskTabBtn.style.display = 'none';
-
-  // ── Hide metrics band when Risk Outcomes sub-tab is active ────────────────
+  // ── Hide metrics band when Your outlook sub-tab is active ──────────────
   document.querySelectorAll('.results-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       const band = document.querySelector('.metrics-band');
       if (!band) return;
-      band.style.display = btn.dataset.resultsTab === 'risk' ? 'none' : '';
+      band.style.display = btn.dataset.resultsTab === 'outlook' ? 'none' : '';
     });
   });
 
