@@ -818,58 +818,126 @@
           <div class="wiz-col">
             <div class="wiz-col-heading">Gift planning <span class="wiz-badge-soon">coming soon</span></div>
             <p class="wiz-col-intro">Model lump-sum outflows - for example, a house deposit contribution for a child.<br><br>The amount is deducted from the portfolio in the year it occurs, reducing the balance available for drawdown from that point forward.</p>
+
+            <!-- Gift 1 (permanent) -->
             <div class="wiz-col-heading wiz-col-heading--sub">Gift 1</div>
             <table class="wiz-table">
-              <tr><td class="wiz-label">Year</td><td class="wiz-val" style="text-align:right"><input type="number" id="gift1Year" placeholder="e.g. 2027" min="2025" max="2060" disabled ></td></tr>
-              <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val" style="text-align:right"><input type="text" id="gift1Amount" class="currency-input" placeholder="e.g. 250,000" disabled ></td></tr>
+              <tr><td class="wiz-label">Year</td><td class="wiz-val"><input type="number" id="gift1Year" placeholder="e.g. 2027" min="2025" max="2060" disabled></td></tr>
+              <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val"><input type="text" id="gift1Amount" class="currency-input" placeholder="e.g. 250,000" disabled></td></tr>
+              <tr><td class="wiz-label">Funded from</td><td class="wiz-val"><select id="gift1Wrapper" disabled><option value="Cash">Cash</option><option value="GIA" selected>GIA</option><option value="ISA">ISA</option></select></td></tr>
             </table>
-            <div class="wiz-section-divider"></div>
-            <div class="wiz-col-heading wiz-col-heading--sub">Gift 2</div>
-            <table class="wiz-table">
-              <tr><td class="wiz-label">Year</td><td class="wiz-val" style="text-align:right"><input type="number" id="gift2Year" placeholder="e.g. 2030" min="2025" max="2060" disabled ></td></tr>
-              <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val" style="text-align:right"><input type="text" id="gift2Amount" class="currency-input" placeholder="e.g. 250,000" disabled ></td></tr>
-            </table>
+
+            <!-- Gift 2 (hidden until Add another clicked) -->
+            <div id="gift2-slot" style="display:none">
+              <div class="wiz-section-divider"></div>
+              <div class="wiz-col-heading wiz-col-heading--sub">Gift 2 <button type="button" class="wiz-remove-btn" onclick="wizRemoveSlot('gift2-slot','gift3-slot','gifts-add-btn')">✕ Remove</button></div>
+              <table class="wiz-table">
+                <tr><td class="wiz-label">Year</td><td class="wiz-val"><input type="number" id="gift2Year" placeholder="e.g. 2030" min="2025" max="2060" disabled></td></tr>
+                <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val"><input type="text" id="gift2Amount" class="currency-input" placeholder="e.g. 250,000" disabled></td></tr>
+                <tr><td class="wiz-label">Funded from</td><td class="wiz-val"><select id="gift2Wrapper" disabled><option value="Cash">Cash</option><option value="GIA" selected>GIA</option><option value="ISA">ISA</option></select></td></tr>
+              </table>
+            </div>
+
+            <!-- Gift 3 (hidden until second Add another clicked) -->
+            <div id="gift3-slot" style="display:none">
+              <div class="wiz-section-divider"></div>
+              <div class="wiz-col-heading wiz-col-heading--sub">Gift 3 <button type="button" class="wiz-remove-btn" onclick="wizRemoveSlot('gift3-slot',null,'gifts-add-btn')">✕ Remove</button></div>
+              <table class="wiz-table">
+                <tr><td class="wiz-label">Year</td><td class="wiz-val"><input type="number" id="gift3Year" placeholder="e.g. 2033" min="2025" max="2060" disabled></td></tr>
+                <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val"><input type="text" id="gift3Amount" class="currency-input" placeholder="e.g. 250,000" disabled></td></tr>
+                <tr><td class="wiz-label">Funded from</td><td class="wiz-val"><select id="gift3Wrapper" disabled><option value="Cash">Cash</option><option value="GIA" selected>GIA</option><option value="ISA">ISA</option></select></td></tr>
+              </table>
+            </div>
+
+            <button type="button" id="gifts-add-btn" class="wiz-add-btn" onclick="wizAddSlot('gifts-add-btn',['gift2-slot','gift3-slot'])">+ Add another gift</button>
           </div>
 
           <!-- Inheritance windfall -->
           <div class="wiz-col">
             <div class="wiz-col-heading">Inheritance windfall <span class="wiz-badge-soon">coming soon</span></div>
             <p class="wiz-col-intro">Model a one-off lump-sum inflow - for example, an expected inheritance.<br><br>The amount is added to the portfolio in the year it occurs, and you can choose which wrapper it lands in.</p>
+
+            <!-- Windfall 1 (permanent) -->
+            <div class="wiz-col-heading wiz-col-heading--sub">Windfall 1</div>
             <table class="wiz-table">
-              <tr><td class="wiz-label">Year</td><td class="wiz-val" style="text-align:right"><input type="number" id="windfall1Year" placeholder="e.g. 2032" min="2025" max="2060" disabled ></td></tr>
-              <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val" style="text-align:right"><input type="text" id="windfall1Amount" class="currency-input" placeholder="e.g. 400,000" disabled ></td></tr>
-              <tr>
-                <td class="wiz-label">Added to wrapper</td>
-                <td class="wiz-val" style="text-align:right">
-                  <select id="windfall1Wrapper" disabled >
-                    <option value="Cash">Cash</option>
-                    <option value="ISA">ISA</option>
-                    <option value="GIA" selected>GIA</option>
-                  </select>
-                </td>
-              </tr>
+              <tr><td class="wiz-label">Year</td><td class="wiz-val"><input type="number" id="windfall1Year" placeholder="e.g. 2032" min="2025" max="2060" disabled></td></tr>
+              <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val"><input type="text" id="windfall1Amount" class="currency-input" placeholder="e.g. 400,000" disabled></td></tr>
+              <tr><td class="wiz-label">Added to wrapper</td><td class="wiz-val"><select id="windfall1Wrapper" disabled><option value="Cash">Cash</option><option value="ISA">ISA</option><option value="GIA" selected>GIA</option></select></td></tr>
             </table>
+
+            <!-- Windfall 2 (hidden until Add another clicked) -->
+            <div id="windfall2-slot" style="display:none">
+              <div class="wiz-section-divider"></div>
+              <div class="wiz-col-heading wiz-col-heading--sub">Windfall 2 <button type="button" class="wiz-remove-btn" onclick="wizRemoveSlot('windfall2-slot',null,'windfalls-add-btn')">✕ Remove</button></div>
+              <table class="wiz-table">
+                <tr><td class="wiz-label">Year</td><td class="wiz-val"><input type="number" id="windfall2Year" placeholder="e.g. 2038" min="2025" max="2060" disabled></td></tr>
+                <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val"><input type="text" id="windfall2Amount" class="currency-input" placeholder="e.g. 400,000" disabled></td></tr>
+                <tr><td class="wiz-label">Added to wrapper</td><td class="wiz-val"><select id="windfall2Wrapper" disabled><option value="Cash">Cash</option><option value="ISA">ISA</option><option value="GIA" selected>GIA</option></select></td></tr>
+              </table>
+            </div>
+
+            <button type="button" id="windfalls-add-btn" class="wiz-add-btn" onclick="wizAddSlot('windfalls-add-btn',['windfall2-slot'])">+ Add another windfall</button>
           </div>
 
           <!-- One-off purchase -->
           <div class="wiz-col">
             <div class="wiz-col-heading">One-off purchase <span class="wiz-badge-soon">coming soon</span></div>
             <p class="wiz-col-intro">Model a one-off capital expenditure - for example, buying a new car or funding a home improvement.<br><br>The amount is deducted from the portfolio in the year it occurs, reducing the balance available for drawdown from that point forward.</p>
+
+            <!-- Purchase 1 (permanent) -->
+            <div class="wiz-col-heading wiz-col-heading--sub">Purchase 1</div>
             <table class="wiz-table">
-              <tr><td class="wiz-label">Year</td><td class="wiz-val" style="text-align:right"><input type="number" id="purchase1Year" placeholder="e.g. 2028" min="2025" max="2060" disabled></td></tr>
-              <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val" style="text-align:right"><input type="text" id="purchase1Amount" class="currency-input" placeholder="e.g. 30,000" disabled></td></tr>
-              <tr>
-                <td class="wiz-label">Funded from</td>
-                <td class="wiz-val" style="text-align:right">
-                  <select id="purchase1Wrapper" disabled>
-                    <option value="Cash">Cash</option>
-                    <option value="GIA" selected>GIA</option>
-                    <option value="ISA">ISA</option>
-                  </select>
-                </td>
-              </tr>
+              <tr><td class="wiz-label">Year</td><td class="wiz-val"><input type="number" id="purchase1Year" placeholder="e.g. 2028" min="2025" max="2060" disabled></td></tr>
+              <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val"><input type="text" id="purchase1Amount" class="currency-input" placeholder="e.g. 30,000" disabled></td></tr>
+              <tr><td class="wiz-label">Funded from</td><td class="wiz-val"><select id="purchase1Wrapper" disabled><option value="Cash">Cash</option><option value="GIA" selected>GIA</option><option value="ISA">ISA</option></select></td></tr>
             </table>
+
+            <!-- Purchase 2 (hidden until Add another clicked) -->
+            <div id="purchase2-slot" style="display:none">
+              <div class="wiz-section-divider"></div>
+              <div class="wiz-col-heading wiz-col-heading--sub">Purchase 2 <button type="button" class="wiz-remove-btn" onclick="wizRemoveSlot('purchase2-slot',null,'purchases-add-btn')">✕ Remove</button></div>
+              <table class="wiz-table">
+                <tr><td class="wiz-label">Year</td><td class="wiz-val"><input type="number" id="purchase2Year" placeholder="e.g. 2035" min="2025" max="2060" disabled></td></tr>
+                <tr><td class="wiz-label">Amount (£)</td><td class="wiz-val"><input type="text" id="purchase2Amount" class="currency-input" placeholder="e.g. 30,000" disabled></td></tr>
+                <tr><td class="wiz-label">Funded from</td><td class="wiz-val"><select id="purchase2Wrapper" disabled><option value="Cash">Cash</option><option value="GIA" selected>GIA</option><option value="ISA">ISA</option></select></td></tr>
+              </table>
+            </div>
+
+            <button type="button" id="purchases-add-btn" class="wiz-add-btn" onclick="wizAddSlot('purchases-add-btn',['purchase2-slot'])">+ Add another purchase</button>
           </div>
+
+          <script>
+            // Reveal the next hidden slot in the queue; hide the add button when all slots are shown.
+            function wizAddSlot(addBtnId, slotIds) {
+              for (const id of slotIds) {
+                const el = document.getElementById(id);
+                if (el && el.style.display === 'none') {
+                  el.style.display = '';
+                  // If this was the last slot, hide the add button
+                  const remaining = slotIds.filter(s => document.getElementById(s)?.style.display === 'none');
+                  if (remaining.length === 0) document.getElementById(addBtnId).style.display = 'none';
+                  return;
+                }
+              }
+            }
+            // Hide a slot, clear its inputs, and restore the add button.
+            function wizRemoveSlot(slotId, cascadeSlotId, addBtnId) {
+              // If removing slot N-1, also remove slot N if visible
+              if (cascadeSlotId) {
+                const cascade = document.getElementById(cascadeSlotId);
+                if (cascade && cascade.style.display !== 'none') {
+                  cascade.style.display = 'none';
+                  cascade.querySelectorAll('input').forEach(i => i.value = '');
+                }
+              }
+              const slot = document.getElementById(slotId);
+              if (slot) {
+                slot.style.display = 'none';
+                slot.querySelectorAll('input').forEach(i => i.value = '');
+              }
+              document.getElementById(addBtnId).style.display = '';
+            }
+          </script>
 
         </div><!-- /.wiz-grid -->
         <div class="wiz-footer">
