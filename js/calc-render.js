@@ -92,6 +92,9 @@
   }
 
   function initResultsTabs() {
+    // Wire up disclaimer link
+    initDisclaimerLink();
+
     document.querySelectorAll('.results-tab').forEach(btn => {
       btn.addEventListener('click', () => {
         const tab = btn.dataset.resultsTab;
@@ -108,9 +111,22 @@
           panel.style.display = panel.id === `results-panel-${tab}` ? 'grid' : 'none';
         });
 
+        // Show/hide deterministic disclaimer
+        const disclaimer = document.getElementById('det-disclaimer');
+        if (disclaimer) disclaimer.classList.toggle('det-disclaimer--hidden', tab === 'outlook');
+
         // Render tables on first visit
         if (tab === 'tables') renderTables();
       });
+    });
+  }
+
+  function initDisclaimerLink() {
+    const btn = document.querySelector('.det-disclaimer__link[data-results-tab="outlook"]');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const outlookTab = document.querySelector('.results-tab[data-results-tab="outlook"]');
+      if (outlookTab) outlookTab.click();
     });
   }
 
@@ -840,6 +856,13 @@
     const strategyLabels = { balanced: 'Tax Band Optimiser', isaFirst: 'Pension Preservation', sippFirst: 'Pension Front-Loading', taxMin: 'Allowance Maximiser' };
     const titleEl = document.getElementById('income-chart-title');
     if (titleEl) titleEl.textContent = 'Sources of income: ' + (strategyLabels[_strategy] || _strategy);
+    const stratLabel = strategyLabels[_strategy] || _strategy;
+    const spendTitleEl = document.getElementById('spendingChartTitle');
+    if (spendTitleEl) spendTitleEl.textContent = 'Gross vs net income: ' + stratLabel;
+    const taxTitleEl = document.getElementById('taxChartTitle');
+    if (taxTitleEl) taxTitleEl.textContent = 'Tax paid & effective rate: ' + stratLabel;
+    const wealthTitleEl = document.getElementById('wealthChartTitle');
+    if (wealthTitleEl) wealthTitleEl.textContent = 'Wealth by type: ' + stratLabel;
 
     const labels = _rows.map(r => r.year);
     const { p1, p2 } = getNames();
@@ -976,9 +999,6 @@
 
       renderGrossNetLegend(_spendingChart);
 
-      // Update chart panel heading if present
-      const heading = document.getElementById('spendingChartTitle');
-      if (heading) heading.textContent = 'Gross vs net income';
     }
 
     // ─────────────────────────────────────────────
@@ -1346,6 +1366,7 @@
     setView,
     setReal,
     initResultsTabs,
+    initDisclaimerLink,
     initTableSelector,
     renderMetrics,
     renderCharts,
