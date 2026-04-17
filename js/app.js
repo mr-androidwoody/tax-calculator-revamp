@@ -886,6 +886,16 @@
     const _outlookTab = document.querySelector('.results-tab[data-results-tab="outlook"]');
     if (_outlookTab) _outlookTab.classList.add('results-tab--simulating');
 
+    const _loaderStart   = Date.now();
+    const _MIN_LOADER_MS = 4000;
+    const _loaderDelay   = () => {
+      const elapsed    = Date.now() - _loaderStart;
+      const remaining  = _MIN_LOADER_MS - elapsed;
+      return remaining > 0
+        ? new Promise(res => setTimeout(res, remaining))
+        : Promise.resolve();
+    };
+
     try {
       // ── Main run: 10,000 paths at current spending ─────────────────────
       const result = await MCE.run({
@@ -974,6 +984,8 @@
       // ── Loading: switch phase label before delay perturbations ──────────
       _setLoadingPhase('Stress-testing delay scenarios…');
       _setLoadingProgress(0);
+
+      await _loaderDelay();
 
       const MCR = window.RetireMCRender;
       if (!MCR) throw new Error('RetireMCRender not loaded');
