@@ -1510,7 +1510,7 @@ input[type="radio"] { accent-color: var(--accent); }
 
 .results-header {
   display: grid;
-  grid-template-columns: 1fr calc(25% - 14px);
+  grid-template-columns: 1fr calc(25% - 14px + 20px);
   grid-template-rows: auto auto;
   gap: 0 12px;
   margin-bottom: 0;
@@ -4109,18 +4109,19 @@ input[type="radio"] { accent-color: var(--accent); }
   font-size: 0.95rem;
   font-weight: 700;
   color: #fff;
-  background: var(--accent, #2d5bff);
+  background: linear-gradient(180deg, #4774ff 0%, #315ce8 100%);
   border: 2px solid var(--border);
   border-radius: 10px;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 140ms ease, opacity 140ms ease;
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 140ms ease;
   letter-spacing: -0.01em;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(49,92,232,0.28);
 }
 
 .btn-test-plan:hover {
-  background: var(--accent-2, #3460e8);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(49,92,232,0.35);
 }
 
 .btn-test-plan__icon {
@@ -4135,19 +4136,14 @@ input[type="radio"] { accent-color: var(--accent); }
   pointer-events: none;
 }
 
-/* Stale state — keep accent blue, just reduce opacity to signal staleness */
+/* Stale state — keep gradient blue, reduce opacity to signal staleness */
 .btn-test-plan--stale {
-  background: var(--accent, #2d5bff);
+  background: linear-gradient(180deg, #4774ff 0%, #315ce8 100%);
   opacity: 0.7;
 }
 
 .btn-test-plan--stale:hover {
-  background: var(--accent-2, #3460e8);
   opacity: 1;
-}
-
-.btn-test-plan--stale:hover {
-  background: #92400e;
 }
 
 /* ═══════════════════════════════════════════════════════════════
