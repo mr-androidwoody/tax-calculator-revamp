@@ -415,12 +415,12 @@
     // Example rows matching the screenshots
     // Interest rate stored as plain number (3.8), displayed with literal % via format '0.0"%"'
     const exampleAccounts = [
-      ['Harry SIPP',          'SIPP',    'Person 1', 300000, 100, 0, 0, 0,   null, null, ''],
-      ['Harry ISA',           'ISA',     'Person 1', 150000, 100, 0, 0, 0,   null, null, ''],
-      ['Sally WP',            'SIPP/WP', 'Person 2', 150000, 100, 0, 0, 0,   null, null, 'SIPP/WP = Workplace Pension'],
-      ['Harry GIA',           'GIA',     'Person 1', 200000, 100, 0, 0, 0,   null, null, ''],
-      ['Harry Cash savings',  'Cash',    'Person 1',  50000,   0, 0, 100, 0, 3.8,  400, 'Set interest rate for savings accounts'],
-      ['Sally ISA',           'ISA',     'Person 2', 150000, 100, 0, 0, 0,   null, null, ''],
+      ['Fidelity SIPP',  'SIPP/WP', 'Person 1', 300000,  55,  45,   0,   0, null, null, ''],
+      ['Fidelity SIPP',  'SIPP/WP', 'Person 2', 120000,  55,  45,   0,   0, null, null, 'SIPP/WP = Workplace Pension'],
+      ['Fidelity ISA',   'ISA',     'Person 1', 100000, 100,   0,   0,   0, null, null, ''],
+      ['Fidelity ISA',   'ISA',     'Person 2',  80000, 100,   0,   0,   0, null, null, ''],
+      ['Invest Engine',  'GIA',     'Person 1',  60000,   0,   0, 100,   0,  3.8, 1000, 'Set interest rate for cashlike accounts'],
+      ['HSBC',           'Cash',    'Person 1',  40000,   0,   0,   0, 100, null, null, ''],
     ];
 
     const acExampleRows = exampleAccounts.map(r => [
