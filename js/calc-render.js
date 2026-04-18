@@ -115,10 +115,6 @@
         const disclaimer = document.getElementById('det-disclaimer');
         if (disclaimer) disclaimer.classList.toggle('det-disclaimer--hidden', tab === 'outlook');
 
-        // Hide Test my plan button on outlook tab
-        const testPlanBtn = document.getElementById('btn-test-plan');
-        if (testPlanBtn) testPlanBtn.style.display = tab === 'outlook' ? 'none' : '';
-
         // Render tables on first visit
         if (tab === 'tables') renderTables();
       });
@@ -856,17 +852,25 @@
       return;
     }
 
-    // Update Sources of income chart title with active strategy
+    // Update chart and table titles with active strategy as subtitle
     const strategyLabels = { balanced: 'Tax Band Optimiser', isaFirst: 'Pension Preservation', sippFirst: 'Pension Front-Loading', taxMin: 'Allowance Maximiser' };
-    const titleEl = document.getElementById('income-chart-title');
-    if (titleEl) titleEl.textContent = 'Sources of income: ' + (strategyLabels[_strategy] || _strategy);
     const stratLabel = strategyLabels[_strategy] || _strategy;
+    const stratSubtitle = `<p class="chart-title-strategy">${stratLabel} strategy</p>`;
+
+    const titleEl = document.getElementById('income-chart-title');
+    if (titleEl) titleEl.innerHTML = 'Sources of income' + stratSubtitle;
     const spendTitleEl = document.getElementById('spendingChartTitle');
-    if (spendTitleEl) spendTitleEl.textContent = 'Gross vs net income: ' + stratLabel;
+    if (spendTitleEl) spendTitleEl.innerHTML = 'Gross vs net income' + stratSubtitle;
     const taxTitleEl = document.getElementById('taxChartTitle');
-    if (taxTitleEl) taxTitleEl.textContent = 'Tax paid & effective rate: ' + stratLabel;
+    if (taxTitleEl) taxTitleEl.innerHTML = 'Tax paid & effective rate' + stratSubtitle;
     const wealthTitleEl = document.getElementById('wealthChartTitle');
-    if (wealthTitleEl) wealthTitleEl.textContent = 'Wealth by type: ' + stratLabel;
+    if (wealthTitleEl) wealthTitleEl.innerHTML = 'Wealth by type' + stratSubtitle;
+    const taxTableTitleEl = document.getElementById('taxTableTitle');
+    if (taxTableTitleEl) taxTableTitleEl.innerHTML = 'Tax by year' + stratSubtitle;
+    const wealthTableTitleEl = document.getElementById('wealthTableTitle');
+    if (wealthTableTitleEl) wealthTableTitleEl.innerHTML = 'Investment values by year' + stratSubtitle;
+    const drawdownTableTitleEl = document.getElementById('drawdownTableTitle');
+    if (drawdownTableTitleEl) drawdownTableTitleEl.innerHTML = 'Drawdown by year' + stratSubtitle;
 
     const labels = _rows.map(r => r.year);
     const { p1, p2 } = getNames();
