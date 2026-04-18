@@ -335,7 +335,7 @@
         if (yi === -1) return '';
         const survRate  = r.survivalByYear[yi] / r.simCount;
         if (survRate < minSurv) minSurv = survRate;
-        const barColour = survRate >= 0.95 ? '#2D5F0F' : survRate >= 0.80 ? '#9A5E00' : '#8B1F1F';
+        const barColour = survRate >= 0.95 ? '#3B6D11' : survRate >= 0.80 ? '#BA7517' : '#A32D2D';
         const isRising  = !risingMarked && survRate < 0.95;
         if (isRising) risingMarked = true;
         const rowClass  = isRising ? 'mc-decade-row mc-decade-row--rising' : 'mc-decade-row';
