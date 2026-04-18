@@ -4078,7 +4078,7 @@ input[type="radio"] { accent-color: var(--accent); }
   grid-column: 2;
   grid-row: 1 / 3;
   align-self: center;
-  width: 155px;
+  width: 175px; /* was 155px */
   display: flex;
   flex-direction: column;
   align-items: center;
