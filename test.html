@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IncomeFlow — Test Suite</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0f1117;
+      --surface: #181c27;
+      --border:  #252a38;
+      --pass:    #22c55e;
+      --fail:    #ef4444;
+      --warn:    #f59e0b;
+      --text:    #e2e8f0;
+      --muted:   #64748b;
+      --accent:  #6366f1;
+      --mono:    'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 2rem;
+    }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+    }
+
+    header span { color: var(--muted); font-size: 0.85rem; }
+
+    #run-btn {
+      margin-left: auto;
+      padding: 0.4rem 1.2rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 12px;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: opacity 0.15s;
+    }
+    #run-btn:hover { opacity: 0.85; }
+
+    .summary {
+      padding: 0.6rem 1rem;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .summary.all-pass { background: rgba(34,197,94,0.12); color: var(--pass); border: 1px solid rgba(34,197,94,0.25); }
+    .summary.has-fail  { background: rgba(239,68,68,0.12);  color: var(--fail); border: 1px solid rgba(239,68,68,0.25); }
+
+    .suite {
+      margin-bottom: 1.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .suite h2 {
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .suite h2.pass { color: var(--pass); }
+    .suite h2.fail { color: var(--fail); }
+
+    table { width: 100%; border-collapse: collapse; }
+    tr { border-bottom: 1px solid var(--border); }
+    tr:last-child { border-bottom: none; }
+    tr.pass:hover { background: rgba(34,197,94,0.04); }
+    tr.fail       { background: rgba(239,68,68,0.06); }
+    tr.fail:hover { background: rgba(239,68,68,0.10); }
+
+    td { padding: 0.35rem 0.8rem; vertical-align: top; }
+    td.icon { width: 1.5rem; text-align: center; font-weight: 700; padding-left: 1rem; }
+    tr.pass td.icon { color: var(--pass); }
+    tr.fail td.icon { color: var(--fail); }
+    td.label { color: var(--text); }
+    tr.fail td.label { color: #fca5a5; }
+    td.error { color: var(--fail); font-size: 0.82rem; opacity: 0.9; }
+
+    #test-output:empty::before {
+      content: 'Click "Run Tests" to execute the suite.';
+      color: var(--muted);
+      display: block;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    #load-warning {
+      background: rgba(245,158,11,0.12);
+      border: 1px solid rgba(245,158,11,0.3);
+      color: var(--warn);
+      padding: 0.6rem 1rem;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>IncomeFlow / Test Suite</h1>
+  <span>ledger.js · withdrawal-strategy.js</span>
+  <button id="run-btn" onclick="TestRunner.run()">▶ Run Tests</button>
+</header>
+
+<div id="load-warning"></div>
+<div id="test-output"></div>
+
+<!--
+  LOAD ORDER IS MANDATORY:
+  1. RetireCalc stub   — window.RetireCalc must exist before ledger/strategy load
+  2. ledger.js         — exposes window.RetireLedger
+  3. withdrawal-strategy.js — exposes window.RetireWithdrawalStrategy
+  4. test-runner.js
+  5. test files (order between them doesn't matter)
+-->
+
+<script>
+  // ── RetireCalc stub ───────────────────────────────────────────────────────
+  // Minimal C.withdraw: drains bal[wrapper] greedily up to amount.
+  // sippTaxable = SIPP draw × 0.75. Sufficient fidelity for strategy tests.
+  window.RetireCalc = {
+    SIPP_TAXABLE_RATIO: 0.75,
+    withdraw(bal, wrappers, amount) {
+      const drawn = { GIA: 0, SIPP: 0, ISA: 0, Cash: 0, sippTaxable: 0 };
+      if (!amount || amount <= 0) return drawn;
+      let rem = amount;
+      for (const w of wrappers) {
+        if (rem <= 0) break;
+        const avail = bal[w] || 0;
+        const take  = Math.min(avail, rem);
+        drawn[w] = (drawn[w] || 0) + take;
+        bal[w]   = avail - take;
+        rem      -= take;
+        if (w === 'SIPP') drawn.sippTaxable += take * 0.75;
+      }
+      return drawn;
+    },
+  };
+</script>
+
+<!--
+  Adjust src paths to match your repo structure.
+  If test.html is in the repo root alongside js/, these paths are correct.
+-->
+<script src="js/ledger.js"></script>
+<script src="js/withdrawal-strategy.js"></script>
+<script src="test-runner.js"></script>
+<script src="tests/ledger.test.js"></script>
+<script src="tests/strategy.test.js"></script>
+<script src="tests/strategy-robustness.test.js"></script>
+
+<script>
+  // Dependency check — warns if a global is missing due to path/load-order error
+  const missing = [];
+  if (!window.RetireLedger)             missing.push('window.RetireLedger (ledger.js)');
+  if (!window.RetireWithdrawalStrategy) missing.push('window.RetireWithdrawalStrategy (withdrawal-strategy.js)');
+  if (!window.TestRunner)               missing.push('window.TestRunner (test-runner.js)');
+  if (missing.length) {
+    const w = document.getElementById('load-warning');
+    w.style.display = 'block';
+    w.textContent = '⚠ Missing globals: ' + missing.join(', ') +
+      ' — check script src paths and load order.';
+  }
+</script>
+
+</body>
+</html>
