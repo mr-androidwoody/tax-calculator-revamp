@@ -1508,8 +1508,18 @@ input[type="radio"] { accent-color: var(--accent); }
    Results tab
    ======================================== */
 
-.results-intro {
+.results-header {
+  display: grid;
+  grid-template-columns: 1fr 310px;
+  grid-template-rows: auto auto;
+  gap: 0 12px;
   margin-bottom: 16px;
+}
+
+.results-intro {
+  grid-column: 1;
+  grid-row: 1;
+  padding-bottom: 8px;
 }
 
 .results-intro h1 {
@@ -2576,18 +2586,7 @@ input[type="radio"] { accent-color: var(--accent); }
    RESULTS HEADER — two-column layout for Run risk outcomes button
    ═══════════════════════════════════════════════════════════════ */
 
-.results-intro {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.results-intro__left { flex: 1; }
-.results-intro__left h1  { margin: 0 0 6px; }
-.results-intro__left .results-projection { margin: 0; }
-.results-intro__right { flex-shrink: 0; padding-top: 4px; }
+/* results-intro and results-tab-bar are grid children — see .results-header above */
 
 /* ═══════════════════════════════════════════════════════════════
    RUN RISK OUTCOMES button
@@ -4059,6 +4058,8 @@ input[type="radio"] { accent-color: var(--accent); }
    ═══════════════════════════════════════════════════════════════ */
 
 .results-tab-bar {
+  grid-column: 1;
+  grid-row: 2;
   display: flex;
   align-items: flex-end;
   gap: 3px;
