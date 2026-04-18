@@ -415,7 +415,8 @@
             <span class="mc-decade-row__bar-wrap">
               <span class="mc-decade-row__bar" style="width:${(survRate*100).toFixed(1)}%;background:${barColour}"></span>
             </span>
-            <span class="mc-decade-row__pct" style="color:${barColour}">${fmtPct(survRate)}${subLabel}</span>
+            <span class="mc-decade-row__pct" style="color:${barColour}">${fmtPct(survRate)}</span>
+            ${subLabel}
           </div>`;
       }).join('');
 
