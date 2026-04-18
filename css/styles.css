@@ -961,7 +961,7 @@ input[type="radio"] { accent-color: var(--accent); }
 .status-warn { color: #a16207; }
 .status-err  { color: #b91c1c; }
 
-.row-warn td { background: #fef9c3; }
+.row-warn td { background: #fff0f0; }
 .row-err  td { background: #fee2e2; }
 
 .col-name { width: 11%; }
