@@ -1579,7 +1579,6 @@ input[type="radio"] { accent-color: var(--accent); }
 .metrics-band {
   background: var(--panel-soft);
   border: 1px solid var(--border);
-  border-top: none;
   border-radius: 0 0 10px 10px;
   padding: 8px;
   margin-top: 0;
@@ -1670,13 +1669,15 @@ input[type="radio"] { accent-color: var(--accent); }
 }
 
 .results-tab--active {
-  background: var(--panel-solid);
+  background: var(--panel-soft);
   color: var(--accent);
   font-weight: 700;
   border-top: 3px solid var(--accent);
-  border-bottom: 1px solid var(--panel-solid);
-  margin-bottom: -5px;
-  padding-bottom: 12px;
+  border-bottom: 2px solid var(--panel-soft);
+  margin-bottom: -2px;
+  padding-bottom: 10px;
+  position: relative;
+  z-index: 2;
 }
 
 .results-tab--inactive {
@@ -4062,7 +4063,7 @@ input[type="radio"] { accent-color: var(--accent); }
   align-items: flex-end;
   gap: 3px;
   margin-bottom: 0;
-  padding-bottom: 4px;
+  padding-bottom: 0;
   position: relative;
   z-index: 1;
 }
