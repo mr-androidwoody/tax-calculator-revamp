@@ -4223,6 +4223,11 @@ input[type="radio"] { accent-color: var(--accent); }
   display: flex;
   justify-content: center;
   padding: 3rem 1.5rem 2rem;
+  margin: 24px 24px 0;
+  background: var(--shell);
+  border: 1px solid var(--shell-border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 6px 16px rgba(22,39,67,0.04);
 }
 
 .splash-content {
@@ -4408,6 +4413,8 @@ input[type="radio"] { accent-color: var(--accent); }
 #splash-screen .app-footer-wrap {
   width: 100%;
   border-top: 1px solid var(--border);
+  padding: 0 24px;
+  box-sizing: border-box;
 }
 
 .app-footer__copy {
