@@ -4076,16 +4076,15 @@ input[type="radio"] { accent-color: var(--accent); }
 .btn-test-plan {
   grid-column: 2;
   grid-row: 1 / 3;
-  align-self: center;
-  height: 76px;
-  margin-bottom: 8px;
+  align-self: stretch;
   width: 310px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 6px;
   padding: 10px 20px;
+  padding-bottom: 14px;
   font-size: 1.1rem;
   font-weight: 700;
   color: #fff;
