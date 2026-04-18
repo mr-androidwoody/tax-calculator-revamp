@@ -1951,6 +1951,10 @@ input[type="radio"] { accent-color: var(--accent); }
   grid-template-columns: 1fr;
 }
 
+#results-panel-outlook {
+  margin-top: 0;
+}
+
 /* Table toolbar — sits above table content */
 .table-toolbar {
   display: flex;
