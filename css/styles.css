@@ -4119,6 +4119,8 @@ input[type="radio"] { accent-color: var(--accent); }
   justify-content: center;
   gap: 0;
   padding: 10px 30px 10px 20px;
+  min-height: 70px;
+  margin-bottom: 12px;
   font-size: 0.95rem;
   font-weight: 700;
   color: #fff;
