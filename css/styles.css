@@ -1355,6 +1355,7 @@ input[type="radio"] { accent-color: var(--accent); }
   white-space: normal;
   text-transform: none;
   letter-spacing: 0;
+  text-align: left;
 }
 
 .assump-tooltip-anchor:hover .assump-tooltip {
