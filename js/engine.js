@@ -18,7 +18,7 @@
       p2SPAge, p2SPAmt,
       growth, inflation,
       thresholdMode, thresholdFromYear,
-      bniEnabled, bniP1GIA, bniP2GIA,
+      bniEnabled, bniP1GIA, bniP1Years, bniP2GIA, bniP2Years,
       dividendYield,
       dividendMode,
       strategy,
@@ -86,6 +86,10 @@
     const annotations = [];
     let cumInfl = 1;
     const rows = [];
+
+    // Bed-and-ISA: track how many active transfer years have elapsed per person
+    let bniP1YearsUsed = 0;
+    let bniP2YearsUsed = 0;
 
     for (let year = startYear; year <= endYear; year++) {
       const p1Age = year - p1DOB;
@@ -173,21 +177,23 @@
 
       // Bed-and-ISA: accumulate gains only, no exemption applied here
       if (bniEnabled) {
-        if (bniP1GIA > 0 && p1Bal.GIA > 0) {
+        if (bniP1GIA > 0 && p1Bal.GIA > 0 && bniP1YearsUsed < bniP1Years) {
           const transfer  = Math.min(bniP1GIA, p1Bal.GIA, ISA_ALLOWANCE);
           p1AnnualGains  += transfer * p1GainRatio;
           const costFrac  = p1GIABalBefore > 0 ? transfer / p1GIABalBefore : 1;
           p1Bal.GIA      -= transfer;
           p1Bal.ISA      += transfer;
           p1GIACost       = Math.max(0, p1GIACost * (1 - costFrac));
+          bniP1YearsUsed++;
         }
-        if (bniP2GIA > 0 && p2Bal.GIA > 0) {
+        if (bniP2GIA > 0 && p2Bal.GIA > 0 && bniP2YearsUsed < bniP2Years) {
           const transfer  = Math.min(bniP2GIA, p2Bal.GIA, ISA_ALLOWANCE);
           p2AnnualGains  += transfer * p2GainRatio;
           const costFrac  = p2GIABalBefore > 0 ? transfer / p2GIABalBefore : 1;
           p2Bal.GIA      -= transfer;
           p2Bal.ISA      += transfer;
           p2GIACost       = Math.max(0, p2GIACost * (1 - costFrac));
+          bniP2YearsUsed++;
         }
       }
 
