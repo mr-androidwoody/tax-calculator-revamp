@@ -492,7 +492,11 @@
     }
 
     // Is the plan already strong (no action needed)?
-    const effectiveHeadroom = headroom !== null ? roundToNearest(headroom, 500) : null;
+    const roundedGap     = sustainableSpending !== null && !sustainableIsFloor && headroom < 0
+      ? roundToNearest(Math.abs(headroom), 500) : 0;
+    const hasGap         = roundedGap >= 500;
+
+        const effectiveHeadroom = headroom !== null ? roundToNearest(headroom, 500) : null;
     const planIsStrong = rate >= targetConfidence &&
       (sustainableSpending === null || sustainableIsFloor || (headroom !== null && headroom >= 0 && effectiveHeadroom >= 0));
 
@@ -582,9 +586,6 @@
     // ── Section 4: PRIMARY ACTION ─────────────────────────────────────
     let actionLine, actionImpact;
 
-    const roundedGap     = sustainableSpending !== null && !sustainableIsFloor && headroom < 0
-      ? roundToNearest(Math.abs(headroom), 500) : 0;
-    const hasGap         = roundedGap >= 500;
     const delayMin       = delayPerturbations.find(p => p.successRate >= targetConfidence);
     const delayEffective = !!delayMin;
 
