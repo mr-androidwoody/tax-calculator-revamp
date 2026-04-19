@@ -56,7 +56,7 @@
    * @param {function} [opts.onProgress] — (pct: number) => void
    * @returns {Promise<object>} — resolves with the result from mc-worker.js
    */
-  function run({ inputs, simCount, equityVol, inflationVol, onProgress }) {
+  function run({ inputs, simCount, equityVol, inflationVol, mcGrowth, onProgress }) {
     // Abort any previous in-flight run immediately.
     if (_activeWorker) {
       _activeWorker.terminate();
@@ -111,7 +111,7 @@
       };
 
       // Fire the simulation.
-      worker.postMessage({ inputs, simCount: count, equityVol, inflationVol });
+      worker.postMessage({ inputs, simCount: count, equityVol, inflationVol, mcGrowth });
     });
   }
 
