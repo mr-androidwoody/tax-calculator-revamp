@@ -1,21 +1,6 @@
 (function () {
   'use strict';
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // summary-render.js
-  //
-  // Renders the Plan Summary tab after a projection run.
-  //
-  // Public API (window.RetireSummary):
-  //   setData(inputs, result, accounts) — called by app.js after runProjection
-  //   render()                          — called by calc-render.js tab switcher
-  //                                       on first activation of the summary tab
-  //
-  // The render is lazy: setData marks the content as stale, render() rebuilds
-  // it only when the tab is actually visited. Subsequent projection runs mark
-  // it stale again so the next visit gets fresh content.
-  // ─────────────────────────────────────────────────────────────────────────
-
   const D = window.RetireData;
   const C = window.RetireCalc;
 
@@ -23,10 +8,6 @@
   let _result   = null;
   let _accounts = [];
   let _stale    = true;
-
-  // ─────────────────────────────────────────────
-  // PUBLIC
-  // ─────────────────────────────────────────────
 
   function setData(inputs, result, accounts) {
     _inputs   = inputs;
@@ -39,503 +20,315 @@
     if (!_stale) return;
     const el = document.getElementById('plan-summary-content');
     if (!el) return;
-
     if (!_inputs || !_result) {
-      el.innerHTML = `<div class="ps-empty">
-        <strong>No projection run yet</strong>
-        Run a projection to see a summary of your plan assumptions and verdicts.
-      </div>`;
+      el.innerHTML = '<div class="ps-empty"><strong>No projection run yet</strong>Run a projection to see a summary of your plan assumptions and verdicts.</div>';
       return;
     }
-
     el.innerHTML = _buildHTML(_inputs, _result, _accounts);
     _stale = false;
   }
 
-  // ─────────────────────────────────────────────
-  // CHIP + ROW HELPERS
-  // ─────────────────────────────────────────────
-
   function chip(colour, label) {
-    return `<span class="ps-chip ps-chip--${colour}"><span class="ps-chip__dot"></span>${label}</span>`;
+    return '<span class="ps-chip ps-chip--' + colour + '"><span class="ps-chip__dot"></span>' + label + '</span>';
   }
 
-  // Single-value cell (no person split)
-  function singleVal(v) {
-    return `<div class="ps-row__value">${v}</div>`;
+  function valLine(val, chipHTML, pname) {
+    const n = pname ? '<span class="ps-pname">' + pname + '</span>' : '';
+    return '<div class="ps-val-line">' + n + '<span class="ps-val">' + val + '</span>' + (chipHTML || '') + '</div>';
   }
 
-  // Two-person value cells. When p2 is disabled, renders just the p1 block.
-  function dualVal(dual, p1name, v1, chip1, p2name, v2, chip2) {
-    if (!dual) {
-      return `<div class="ps-row__value">${v1}</div>`;
-    }
-    return `
-      <div class="ps-person">
-        <div class="ps-person__name">${p1name}</div>
-        <div class="ps-person__value">${v1}</div>
-        ${chip1 ? `<div class="ps-person__chip">${chip1}</div>` : ''}
-      </div>
-      <div class="ps-person">
-        <div class="ps-person__name">${p2name}</div>
-        <div class="ps-person__value">${v2}</div>
-        ${chip2 ? `<div class="ps-person__chip">${chip2}</div>` : ''}
-      </div>`;
+  function noteEl(text) {
+    return text ? '<div class="ps-note">' + text + '</div>' : '';
   }
 
-  // A single verdict row.
-  // isDual controls whether the value area uses 1 or 2 person columns.
-  // When isDual=false a spacer div fills the unused second value column.
-  function row(label, valHTML, verdictHTML, note, isDual, dual) {
-    const cls = (isDual && dual) ? 'ps-row ps-row--dual' : 'ps-row ps-row--single';
-    const spacer = (!isDual || !dual) ? '<div></div>' : '';
-    return `<div class="${cls}">
-      <div class="ps-row__label">${label}</div>
-      ${valHTML}
-      ${spacer}
-      <div class="ps-row__verdict">${verdictHTML}<div class="ps-row__note">${note}</div></div>
-    </div>`;
+  function row(label, rightHTML) {
+    return '<div class="ps-row"><div class="ps-row__label">' + label + '</div><div class="ps-row__right">' + rightHTML + '</div></div>';
   }
 
-  function section(label, rows) {
-    const content = rows.filter(Boolean).join('');
-    if (!content) return '';
-    return `<div class="ps-section">
-      <div class="ps-section__label">${label}</div>
-      ${content}
-    </div>`;
+  function heading(text) {
+    return '<div class="ps-card__heading">' + text + '</div>';
   }
 
-  // ─────────────────────────────────────────────
-  // BnI VERDICT HELPER
-  // ─────────────────────────────────────────────
+  function subheading(text) {
+    return '<div class="ps-card__heading ps-card__heading--sub">' + text + '</div>';
+  }
 
-  // Returns { planned, survival, survivalLabel, survivalNote }
-  // where planned and survival are each [colour, label] pairs.
-  function _bniVerdict(enabled, annualAmt, years, startingGIA, depletionYear, lastTransferYear, startYear, rows, snapGIAKey) {
+  function card(inner, fullWidth) {
+    return '<div class="ps-card' + (fullWidth ? ' ps-card--full' : '') + '">' + inner + '</div>';
+  }
+
+  function _bniVerdict(enabled, annualAmt, years, startingGIA, depletionYear, lastTransferYear, startYear, rows, snapKey) {
     if (!enabled || !(annualAmt > 0) || !(years > 0)) {
-      return {
-        planned:       ['amber', 'Not configured'],
-        survival:      ['info',  'n/a'],
-        survivalLabel: 'n/a',
-        survivalNote:  '',
-      };
+      return { planned: ['amber','Not configured'], survival: ['info','n/a'], survivalLabel: 'n/a', survivalNote: '' };
     }
+    const pct      = startingGIA > 0 ? (annualAmt * years / startingGIA) * 100 : 100;
+    const plannedC = pct >= 98 ? 'green' : 'amber';
+    const plannedL = pct >= 98 ? 'Full shelter' : 'Partial';
 
-    const totalShelter  = annualAmt * years;
-    const pctSheltered  = startingGIA > 0 ? (totalShelter / startingGIA) * 100 : 100;
-    const plannedColour = pctSheltered >= 98 ? 'green' : 'amber';
-    const plannedLabel  = pctSheltered >= 98 ? 'Full shelter' : 'Partial';
-
-    // Red: GIA depletes before the final transfer year
     if (depletionYear && depletionYear <= lastTransferYear) {
-      const failYr = depletionYear - startYear + 1;
+      const failYr  = depletionYear - startYear + 1;
       const safeYrs = failYr - 1;
       return {
-        planned:       [plannedColour, plannedLabel],
-        survival:      ['red', 'At risk'],
-        survivalLabel: `GIA depletes year ${failYr}`,
-        survivalNote:  `GIA is exhausted in year ${failYr} before the ${years}-year transfer period ends. ` +
-                       `Transfers in the remaining years will not occur. ` +
-                       `Consider reducing the duration to ${safeYrs} year${safeYrs !== 1 ? 's' : ''}.`,
+        planned: [plannedC, plannedL],
+        survival: ['red','At risk'],
+        survivalLabel: 'GIA depletes year ' + failYr,
+        survivalNote: 'GIA exhausted in year ' + failYr + ' before the ' + years + '-year period ends. Transfers in the remaining years will not occur. Consider reducing to ' + safeYrs + ' year' + (safeYrs !== 1 ? 's' : '') + '.',
       };
     }
-
-    // Amber: GIA survives but the final year's balance is less than 20% of the annual transfer amount
-    const finalRow   = rows.find(r => r.year === lastTransferYear);
-    const giaAtEnd   = finalRow?.snap?.[snapGIAKey] || 0;
+    const finalRow = rows.find(function(r) { return r.year === lastTransferYear; });
+    const giaAtEnd = (finalRow && finalRow.snap && finalRow.snap[snapKey]) || 0;
     if (giaAtEnd < annualAmt * 0.2) {
       return {
-        planned:       [plannedColour, plannedLabel],
-        survival:      ['amber', 'Marginal'],
+        planned: [plannedC, plannedL],
+        survival: ['amber','Marginal'],
         survivalLabel: 'Transfers may be partial',
-        survivalNote:  `GIA balance in the final transfer year is low relative to the planned ` +
-                       `${D.formatMoney(annualAmt)} transfer. A market downturn could prevent ` +
-                       `the last transfer completing in full.`,
+        survivalNote: 'GIA balance in the final transfer year is low. A market downturn could prevent the last transfer completing in full.',
       };
     }
-
-    // Green: GIA comfortably funds all transfers
     return {
-      planned:       [plannedColour, plannedLabel],
-      survival:      ['green', 'On track'],
+      planned: [plannedC, plannedL],
+      survival: ['green','On track'],
       survivalLabel: 'GIA funds all transfers',
-      survivalNote:  `GIA balance is sufficient to fund all planned transfers. ` +
-                     `The strategy should complete as set.`,
+      survivalNote: 'GIA balance is sufficient to fund all planned transfers. The strategy should complete as set.',
     };
   }
-
-  // ─────────────────────────────────────────────
-  // MAIN BUILD FUNCTION
-  // ─────────────────────────────────────────────
 
   function _buildHTML(inputs, result, accounts) {
-    const dual = inputs.p2enabled;
-    const rows = result.rows || [];
-    const p1   = inputs.p1name || 'Person 1';
-    const p2   = inputs.p2name || 'Person 2';
+    var dual = inputs.p2enabled;
+    var rows = result.rows || [];
+    var p1   = inputs.p1name || 'Person 1';
+    var p2   = inputs.p2name || 'Person 2';
 
     if (!rows.length) {
-      return `<div class="ps-empty"><strong>No data</strong>Projection produced no rows.</div>`;
+      return '<div class="ps-empty"><strong>No data</strong>Projection produced no rows.</div>';
     }
 
-    // ── Portfolio summary ──────────────────────────────────────────────────
-    const portSummary  = C.summarisePortfolio(accounts);
-    const equityPct    = Math.round(portSummary.overallAllocation.equities || 0);
-    const totalPortfolio = rows[0]?.totalPortfolio || 0;
+    var portSum      = C.summarisePortfolio(accounts);
+    var equityPct    = Math.round(portSum.overallAllocation.equities || 0);
+    var totalPort    = rows[0] ? rows[0].totalPortfolio || 0 : 0;
 
-    // Per-person starting portfolio (sum of all wrappers)
-    const p1Total = (inputs.p1Bal.Cash || 0) + (inputs.p1Bal.GIAeq || 0) +
-                    (inputs.p1Bal.GIAcash || 0) + (inputs.p1Bal.SIPP || 0) + (inputs.p1Bal.ISA || 0);
-    const p2Total = dual
-      ? (inputs.p2Bal.Cash || 0) + (inputs.p2Bal.GIAeq || 0) +
-        (inputs.p2Bal.GIAcash || 0) + (inputs.p2Bal.SIPP || 0) + (inputs.p2Bal.ISA || 0)
-      : 0;
+    var p1Total = (inputs.p1Bal.Cash || 0) + (inputs.p1Bal.GIAeq || 0) + (inputs.p1Bal.GIAcash || 0) + (inputs.p1Bal.SIPP || 0) + (inputs.p1Bal.ISA || 0);
+    var p2Total = dual ? (inputs.p2Bal.Cash || 0) + (inputs.p2Bal.GIAeq || 0) + (inputs.p2Bal.GIAcash || 0) + (inputs.p2Bal.SIPP || 0) + (inputs.p2Bal.ISA || 0) : 0;
+    var p1GIA   = (inputs.p1Bal.GIAeq || 0) + (inputs.p1Bal.GIAcash || 0);
+    var p2GIA   = dual ? (inputs.p2Bal.GIAeq || 0) + (inputs.p2Bal.GIAcash || 0) : 0;
+    var giaTotal = p1GIA + p2GIA;
 
-    const p1GIA = (inputs.p1Bal.GIAeq || 0) + (inputs.p1Bal.GIAcash || 0);
-    const p2GIA = dual ? (inputs.p2Bal.GIAeq || 0) + (inputs.p2Bal.GIAcash || 0) : 0;
-    const giaTotal = p1GIA + p2GIA;
+    var wrRate    = totalPort > 0 ? (inputs.spending / totalPort) * 100 : 0;
+    var wrRateStr = wrRate.toFixed(1);
+    var wrV       = wrRate < 3.5 ? ['green','Low risk'] : wrRate < 4.5 ? ['amber','Moderate'] : ['red','High risk'];
 
-    // ── Withdrawal rate ────────────────────────────────────────────────────
-    const wrRate   = totalPortfolio > 0 ? (inputs.spending / totalPortfolio) * 100 : 0;
-    const wrRateStr = wrRate.toFixed(1);
-    const wrVerdict = wrRate < 3.5  ? ['green', 'Low risk']
-                    : wrRate < 4.5  ? ['amber', 'Moderate']
-                    :                 ['red',   'High risk'];
+    var gPct  = (inputs.growth || 0) * 100;
+    var growV = gPct < 2 ? ['red','Very low'] : gPct < 4 ? ['amber','Conservative'] : gPct <= 6 ? ['green','Reasonable'] : gPct <= 8 ? ['amber','Optimistic'] : ['red','Very high'];
 
-    // ── Growth ─────────────────────────────────────────────────────────────
-    const growthPct = (inputs.growth || 0) * 100;
-    const growthVerdict = growthPct < 2   ? ['red',   'Very low']
-                        : growthPct < 4   ? ['amber', 'Conservative']
-                        : growthPct <= 6  ? ['green', 'Reasonable']
-                        : growthPct <= 8  ? ['amber', 'Optimistic']
-                        :                   ['red',   'Very high'];
+    var iPct  = (inputs.inflation || 0) * 100;
+    var inflV = iPct < 1.5 ? ['amber','Low'] : iPct <= 3 ? ['green','Reasonable'] : iPct <= 4 ? ['amber','Elevated'] : ['red','High'];
 
-    // ── Inflation ──────────────────────────────────────────────────────────
-    const inflPct = (inputs.inflation || 0) * 100;
-    const inflVerdict = inflPct < 1.5  ? ['amber', 'Low']
-                      : inflPct <= 3   ? ['green', 'Reasonable']
-                      : inflPct <= 4   ? ['amber', 'Elevated']
-                      :                  ['red',   'High'];
+    var eqV   = equityPct < 60 ? ['amber','Conservative'] : equityPct <= 90 ? ['green','Balanced'] : ['amber','Aggressive'];
 
-    // ── Equity allocation ──────────────────────────────────────────────────
-    const eqVerdict = equityPct < 60  ? ['amber', 'Conservative']
-                    : equityPct <= 90 ? ['green', 'Balanced']
-                    :                   ['amber', 'Aggressive'];
+    var giaPct = totalPort > 0 ? (giaTotal / totalPort) * 100 : 0;
+    var giaV   = giaPct < 20 ? ['green','Low'] : giaPct < 40 ? ['amber','High'] : ['red','Very high'];
 
-    // ── GIA exposure ───────────────────────────────────────────────────────
-    const giaPct    = totalPortfolio > 0 ? (giaTotal / totalPortfolio) * 100 : 0;
-    const giaVerdict = giaPct < 20 ? ['green', 'Low']
-                     : giaPct < 40 ? ['amber', 'High']
-                     :               ['red',   'Very high'];
+    var tmV = inputs.thresholdMode === 'frozen' ? ['green','Conservative'] : inputs.thresholdMode === 'always' ? ['amber','Optimistic'] : ['info','Mixed'];
 
-    // ── Tax thresholds ─────────────────────────────────────────────────────
-    const tmVerdict = inputs.thresholdMode === 'frozen'   ? ['green', 'Conservative']
-                    : inputs.thresholdMode === 'always'   ? ['amber', 'Optimistic']
-                    :                                       ['info',  'Mixed'];
+    var p1EndAge = inputs.endYear - inputs.p1DOB;
+    var p2EndAge = dual ? inputs.endYear - inputs.p2DOB : null;
+    var endV = p1EndAge >= 90 ? ['green','Prudent'] : p1EndAge >= 85 ? ['amber','Moderate'] : ['red','Short horizon'];
 
-    // ── Projection end longevity ───────────────────────────────────────────
-    const p1EndAge  = inputs.endYear - inputs.p1DOB;
-    const p2EndAge  = dual ? inputs.endYear - inputs.p2DOB : null;
-    const endVerdict = p1EndAge >= 90 ? ['green', 'Prudent']
-                     : p1EndAge >= 85 ? ['amber', 'Moderate']
-                     :                  ['red',   'Short horizon'];
+    function spVFn(amt) { return amt <= 0 ? ['amber','Not set'] : amt > 12500 ? ['amber','Above full SP'] : ['green','Plausible']; }
 
-    // ── State Pension plausibility (full SP 2025/26 ≈ £11,502) ────────────
-    const spVerdictFn = (amt) => amt <= 0          ? ['amber', 'Not set']
-                               : amt > 12500        ? ['amber', 'Above full SP']
-                               :                      ['green', 'Plausible'];
+    var p1RetAge = inputs.p1SalaryStop > 0 ? inputs.p1SalaryStop : (inputs.startYear - inputs.p1DOB);
+    var p2RetAge = dual && inputs.p2SalaryStop > 0 ? inputs.p2SalaryStop : (dual ? inputs.startYear - inputs.p2DOB : null);
+    function retVFn(age) { return age >= 57 ? ['green','Fine'] : ['red','Pre-57 \u2014 SIPP locked']; }
 
-    // ── Retirement age ─────────────────────────────────────────────────────
-    const p1RetAge = inputs.p1SalaryStop > 0
-      ? inputs.p1SalaryStop
-      : (inputs.startYear - inputs.p1DOB);
-    const p2RetAge = dual && inputs.p2SalaryStop > 0
-      ? inputs.p2SalaryStop
-      : (dual ? inputs.startYear - inputs.p2DOB : null);
+    var p1GIADep = (result.depletions && result.depletions[p1 + ' GIA']) ? result.depletions[p1 + ' GIA'].year : null;
+    var p2GIADep = dual && result.depletions && result.depletions[p2 + ' GIA'] ? result.depletions[p2 + ' GIA'].year : null;
+    var bniP1Last = inputs.startYear + (inputs.bniP1Years || 0) - 1;
+    var bniP2Last = inputs.startYear + (inputs.bniP2Years || 0) - 1;
 
-    const retVerdictFn = (age) => age >= 57 ? ['green', 'Fine'] : ['red', 'Pre-57 — SIPP locked'];
+    var p1BniV = _bniVerdict(inputs.bniEnabled, inputs.bniP1GIA, inputs.bniP1Years, p1GIA, p1GIADep, bniP1Last, inputs.startYear, rows, 'p1GIA');
+    var p2BniV = dual ? _bniVerdict(inputs.bniEnabled, inputs.bniP2GIA, inputs.bniP2Years, p2GIA, p2GIADep, bniP2Last, inputs.startYear, rows, 'p2GIA') : null;
 
-    // ── BnI depletions ─────────────────────────────────────────────────────
-    const p1GIADepletionYear = result.depletions?.[`${p1} GIA`]?.year || null;
-    const p2GIADepletionYear = dual ? (result.depletions?.[`${p2} GIA`]?.year || null) : null;
-
-    const bniP1LastYear = inputs.startYear + (inputs.bniP1Years || 0) - 1;
-    const bniP2LastYear = inputs.startYear + (inputs.bniP2Years || 0) - 1;
-
-    const p1BniV = _bniVerdict(
-      inputs.bniEnabled, inputs.bniP1GIA, inputs.bniP1Years,
-      p1GIA, p1GIADepletionYear, bniP1LastYear, inputs.startYear, rows, 'p1GIA'
-    );
-    const p2BniV = dual ? _bniVerdict(
-      inputs.bniEnabled, inputs.bniP2GIA, inputs.bniP2Years,
-      p2GIA, p2GIADepletionYear, bniP2LastYear, inputs.startYear, rows, 'p2GIA'
-    ) : null;
-
-    // ── Interest-bearing accounts ──────────────────────────────────────────
-    const intAccts = accounts.filter(a => a.rate != null || a.monthlyDraw != null);
-
-    // ── Strategy label ─────────────────────────────────────────────────────
-    const stratLabels = {
-      balanced:  'Tax Band Optimiser',
-      isaFirst:  'ISA first',
-      sippFirst: 'Pension first',
-    };
-    const stratLabel = stratLabels[inputs.strategy] || inputs.strategy;
-    const stratNotes = {
+    var stratLabels = { balanced: 'Tax Band Optimiser', isaFirst: 'ISA first', sippFirst: 'Pension first' };
+    var stratNotes  = {
       balanced:  'Draws from wrappers in the order that minimises marginal tax each year, blending GIA, SIPP, and ISA.',
-      isaFirst:  'Prioritises drawing from the ISA first, preserving taxable wrappers. Best when the ISA is large relative to spending needs.',
-      sippFirst: 'Draws from the pension first, reducing its future tax exposure. Best suited to plans with a large SIPP balance.',
+      isaFirst:  'Prioritises drawing from the ISA first, preserving taxable wrappers.',
+      sippFirst: 'Draws from the pension first, reducing its future taxable balance.',
     };
 
-    // ══════════════════════════════════════════════════════════════════════
-    // BUILD SECTIONS
-    // ══════════════════════════════════════════════════════════════════════
+    var intAccts = accounts.filter(function(a) { return a.rate != null || a.monthlyDraw != null; });
 
-    // ── 1. People and timeline ─────────────────────────────────────────────
-    const peopleSection = section('People and timeline', [
-
+    // ── Card 1: People and timeline ──
+    var c1 = card(
+      heading('People and timeline') +
       row('Retirement age',
-        dualVal(dual,
-          p1, `Age ${p1RetAge} (${inputs.p1DOB + p1RetAge})`, dual ? chip(...retVerdictFn(p1RetAge)) : null,
-          p2, p2RetAge ? `Age ${p2RetAge} (${inputs.p2DOB + p2RetAge})` : '–', chip(...retVerdictFn(p2RetAge || 0))
-        ),
-        dual ? '' : chip(...retVerdictFn(p1RetAge)),
-        p1RetAge >= 57
-          ? `Both above the minimum pension access age of 57. SIPP accessible from age 57 (from 2028).`
-          : `SIPP is locked until age 57 from 2028. GIA and ISA can be drawn before that.`,
-        true, dual),
-
+        (dual
+          ? valLine('Age ' + p1RetAge + ' (' + (inputs.p1DOB + p1RetAge) + ')', chip.apply(null, retVFn(p1RetAge)), p1) +
+            valLine('Age ' + p2RetAge + ' (' + (inputs.p2DOB + p2RetAge) + ')', chip.apply(null, retVFn(p2RetAge || 0)), p2)
+          : valLine('Age ' + p1RetAge + ' (' + (inputs.p1DOB + p1RetAge) + ')', chip.apply(null, retVFn(p1RetAge)))) +
+        noteEl(p1RetAge >= 57
+          ? 'Both above the minimum pension access age of 57 (from 2028).'
+          : 'SIPP locked until age 57 from 2028. GIA and ISA can be drawn before that.')
+      ) +
       row('State Pension',
-        dualVal(dual,
-          p1, `${D.formatMoney(inputs.p1SPAmt)}/yr at ${inputs.p1SPAge}`, dual ? chip(...spVerdictFn(inputs.p1SPAmt)) : null,
-          p2, `${D.formatMoney(inputs.p2SPAmt)}/yr at ${inputs.p2SPAge}`, chip(...spVerdictFn(inputs.p2SPAmt))
-        ),
-        dual ? '' : chip(...spVerdictFn(inputs.p1SPAmt)),
-        'Close to the full new State Pension (£11,502/yr 2025/26). Consistent with a complete NI record.',
-        true, dual),
-
+        (dual
+          ? valLine(D.formatMoney(inputs.p1SPAmt) + '/yr at ' + inputs.p1SPAge, chip.apply(null, spVFn(inputs.p1SPAmt)), p1) +
+            valLine(D.formatMoney(inputs.p2SPAmt) + '/yr at ' + inputs.p2SPAge, chip.apply(null, spVFn(inputs.p2SPAmt)), p2)
+          : valLine(D.formatMoney(inputs.p1SPAmt) + '/yr at ' + inputs.p1SPAge, chip.apply(null, spVFn(inputs.p1SPAmt)))) +
+        noteEl('Full new State Pension is \u00a311,502/yr (2025/26). Check your Government Gateway forecast.')
+      ) +
       row('Salary',
-        dualVal(dual,
-          p1, inputs.p1Salary > 0 ? `${D.formatMoney(inputs.p1Salary)}/yr to age ${inputs.p1SalaryStop}` : 'None', null,
-          p2, inputs.p2Salary > 0 ? `${D.formatMoney(inputs.p2Salary)}/yr to age ${inputs.p2SalaryStop}` : 'None', null
-        ),
-        chip('info', 'Note'),
-        inputs.p2Salary > 0
-          ? `${p2}'s salary reduces portfolio draws in early years, easing sequence-of-returns risk.`
-          : inputs.p1Salary > 0
-            ? `${p1}'s salary reduces portfolio draws until retirement.`
-            : 'No salary income modelled. Portfolio draws begin immediately.',
-        true, dual),
-
+        (dual
+          ? valLine(inputs.p1Salary > 0 ? D.formatMoney(inputs.p1Salary) + '/yr to ' + inputs.p1SalaryStop : 'None', null, p1) +
+            valLine(inputs.p2Salary > 0 ? D.formatMoney(inputs.p2Salary) + '/yr to ' + inputs.p2SalaryStop : 'None', inputs.p2Salary > 0 ? chip('info','Note') : null, p2)
+          : valLine(inputs.p1Salary > 0 ? D.formatMoney(inputs.p1Salary) + '/yr to ' + inputs.p1SalaryStop : 'None', null)) +
+        noteEl(inputs.p2Salary > 0
+          ? p2 + "'s salary reduces portfolio draws in early years, easing sequence-of-returns risk."
+          : inputs.p1Salary > 0 ? p1 + "'s salary reduces portfolio draws until retirement."
+          : 'No salary income modelled. Portfolio draws begin immediately.')
+      ) +
       row('Projection end',
-        singleVal(`${inputs.endYear} — ${p1} age ${p1EndAge}${dual && p2EndAge ? `, ${p2} age ${p2EndAge}` : ''}`),
-        chip(...endVerdict),
-        `${inputs.endYear - inputs.startYear}-year horizon. ` +
-        (p1EndAge >= 90
-          ? 'A sound upper bound for longevity planning for a couple in their late 50s.'
-          : 'Consider extending to age 90+ for a more prudent longevity buffer.'),
-        false, dual),
-    ]);
+        valLine(inputs.endYear + ' \u2014 ' + p1 + ' age ' + p1EndAge + (dual && p2EndAge ? ', ' + p2 + ' age ' + p2EndAge : ''), chip.apply(null, endV)) +
+        noteEl((inputs.endYear - inputs.startYear) + '-year horizon. ' + (p1EndAge >= 90 ? 'A sound upper bound for longevity planning.' : 'Consider extending to age 90+ for a more prudent buffer.'))
+      )
+    );
 
-    // ── 2. Spending ────────────────────────────────────────────────────────
-    const spendingSection = section('Spending', [
-
+    // ── Card 2: Spending + Returns ──
+    var c2 = card(
+      heading('Spending') +
       row('Spending target',
-        singleVal(`${D.formatMoney(inputs.spending)}/yr`),
-        chip(...wrVerdict) + `&ensp;${wrRateStr}% withdrawal rate`,
-        wrRate < 3.5
-          ? 'Well within the low-risk withdrawal range. Portfolio should grow or hold steady in most scenarios.'
-          : wrRate < 4.5
-            ? 'Above the 3.5% low-risk threshold. Sustainable in most scenarios but leaves limited buffer.'
-            : 'Exceeds the 4.5% caution threshold. High risk of portfolio depletion. Stress-test with Test my plan.',
-        false, dual),
-
-      inputs.stepDownPct > 0
-        ? row('Step-down at 75',
-            singleVal(`${inputs.stepDownPct}% (${D.formatMoney(inputs.spending * (1 - inputs.stepDownPct / 100))} from age 75)`),
-            chip('info', 'Note'),
-            `Spending reduces by ${inputs.stepDownPct}% in the year ${p1} turns 75. Eases late-stage drawdown pressure.`,
-            false, dual)
-        : '',
-    ]);
-
-    // ── 3. Returns and inflation ───────────────────────────────────────────
-    const returnsSection = section('Returns and inflation', [
-
+        valLine(D.formatMoney(inputs.spending) + '/yr', chip.apply(null, wrV)) +
+        noteEl(wrRateStr + '% withdrawal rate. ' + (
+          wrRate < 3.5 ? 'Well within the low-risk range.'
+          : wrRate < 4.5 ? 'Above the 3.5% low-risk threshold. Leaves limited buffer.'
+          : 'Exceeds the 4.5% caution threshold. High depletion risk \u2014 stress-test with Test my plan.'
+        ))
+      ) +
+      (inputs.stepDownPct > 0 ? row('Step-down at 75',
+        valLine(inputs.stepDownPct + '% (' + D.formatMoney(inputs.spending * (1 - inputs.stepDownPct / 100)) + ' from 75)', chip('info','Note')) +
+        noteEl('Spending reduces in the year ' + p1 + ' turns 75. Eases late-stage drawdown pressure.')
+      ) : '') +
+      subheading('Returns and inflation') +
       row('Growth rate',
-        singleVal(`${growthPct.toFixed(1)}% nominal`),
-        chip(...growthVerdict),
-        growthPct <= 6
-          ? 'Within the 4–6% cautious-to-balanced range. Consistent with long-run global equity returns net of fees.'
-          : growthPct <= 8
-            ? 'Above the typical 4–6% range. Verify this is realistic for your asset mix and fee level.'
-            : 'Significantly above long-run averages. Results will be optimistic — consider a lower assumption.',
-        false, dual),
-
+        valLine(gPct.toFixed(1) + '% nominal', chip.apply(null, growV)) +
+        noteEl(gPct <= 6 ? 'Within the 4\u20136% cautious-to-balanced range. Consistent with long-run global equity returns.'
+          : gPct <= 8 ? 'Above the typical 4\u20136% range. Verify this is realistic for your asset mix.'
+          : 'Significantly above long-run averages. Results will be optimistic.')
+      ) +
       row('Inflation',
-        singleVal(`${inflPct.toFixed(1)}%`),
-        chip(...inflVerdict),
-        inflPct <= 3
-          ? 'Aligned with the Bank of England long-run target.'
-          : 'Above the BoE target. Spending power erodes faster — verify the plan still holds at this rate.',
-        false, dual),
-
+        valLine(iPct.toFixed(1) + '%', chip.apply(null, inflV)) +
+        noteEl(iPct <= 3 ? 'Aligned with the Bank of England long-run target.' : 'Above the BoE target \u2014 spending power erodes faster.')
+      ) +
       row('Tax thresholds',
-        singleVal(
-          inputs.thresholdMode === 'frozen'   ? 'Frozen' :
-          inputs.thresholdMode === 'always'   ? 'Uprated with inflation' :
-          `Uprated from ${inputs.thresholdFromYear}`
-        ),
-        chip(...tmVerdict),
-        inputs.thresholdMode === 'frozen'
-          ? 'Fiscal drag fully modelled. Pessimistic but prudent — thresholds have been frozen since 2021.'
-          : inputs.thresholdMode === 'always'
-            ? 'Thresholds rise with inflation. Optimistic — reduces the modelled impact of fiscal drag.'
-            : `Thresholds frozen until ${inputs.thresholdFromYear}, then uprated. A reasonable middle-ground assumption.`,
-        false, dual),
-    ]);
+        valLine(
+          inputs.thresholdMode === 'frozen' ? 'Frozen' : inputs.thresholdMode === 'always' ? 'Uprated with inflation' : 'Uprated from ' + inputs.thresholdFromYear,
+          chip.apply(null, tmV)
+        ) +
+        noteEl(inputs.thresholdMode === 'frozen' ? 'Fiscal drag fully modelled. Pessimistic but prudent.'
+          : inputs.thresholdMode === 'always' ? 'Optimistic \u2014 reduces modelled fiscal drag.'
+          : 'Frozen until ' + inputs.thresholdFromYear + ', then uprated. A middle-ground assumption.')
+      )
+    );
 
-    // ── 4. Portfolio ───────────────────────────────────────────────────────
-    const portfolioSection = section('Portfolio', [
-
+    // ── Card 3: Portfolio ──
+    var c3 = card(
+      heading('Portfolio') +
       row('Total portfolio',
-        dualVal(dual,
-          p1, D.formatMoney(p1Total), null,
-          p2, D.formatMoney(p2Total), null
-        ),
-        chip(...wrVerdict) + (dual ? `&ensp;${wrRateStr}% of ${D.formatMoney(totalPortfolio)}` : ''),
-        'Historically sustainable over 30 years in most market environments. Use Test my plan to stress-test.',
-        true, dual),
-
+        (dual
+          ? valLine(D.formatMoney(p1Total), null, p1) + valLine(D.formatMoney(p2Total), null, p2)
+          : valLine(D.formatMoney(p1Total), null)) +
+        valLine(wrRateStr + '% of ' + D.formatMoney(totalPort), chip.apply(null, wrV)) +
+        noteEl('Use Test my plan to stress-test this across 10,000 market scenarios.')
+      ) +
       row('Equity allocation',
-        singleVal(`${equityPct}% equities`),
-        chip(...eqVerdict),
-        equityPct < 60
-          ? 'Low equity allocation may limit long-run growth. Consider whether this matches your risk tolerance for a long retirement.'
-          : equityPct <= 90
-            ? 'Appropriate for a long retirement horizon.'
-            : 'High equity tilt increases sequence-of-returns risk in early retirement years.',
-        false, dual),
-
+        valLine(equityPct + '% equities', chip.apply(null, eqV)) +
+        noteEl(equityPct < 60
+          ? 'May limit long-run growth. Consider raising for a long retirement horizon.'
+          : equityPct <= 90 ? 'Appropriate for a long retirement horizon.'
+          : 'High equity tilt increases sequence-of-returns risk in early retirement.')
+      ) +
       row('GIA exposure',
-        dualVal(dual,
-          p1, D.formatMoney(p1GIA), null,
-          p2, D.formatMoney(p2GIA), null
-        ),
-        chip(...giaVerdict),
-        'Significant assets in a taxable wrapper. Bed-and-ISA can shelter up to £20k/yr per person into an ISA.',
-        true, dual),
-
+        (dual
+          ? valLine(D.formatMoney(p1GIA), null, p1) + valLine(D.formatMoney(p2GIA), null, p2)
+          : valLine(D.formatMoney(p1GIA), null)) +
+        valLine('', chip.apply(null, giaV)) +
+        noteEl('Assets in a taxable wrapper. Bed-and-ISA can shelter up to \u00a320k/yr per person.')
+      ) +
       row('Dividend yield',
-        singleVal(`${((inputs.dividendYield || 0) * 100).toFixed(1)}%`),
-        chip('green', 'Reasonable'),
-        'GIA dividends are taxed on an arising basis each year regardless of payout or reinvest mode.',
-        false, dual),
-    ]);
+        valLine(((inputs.dividendYield || 0) * 100).toFixed(1) + '%', chip('green','Reasonable')) +
+        noteEl('GIA dividends taxed on an arising basis each year regardless of payout or reinvest mode.')
+      )
+    );
 
-    // ── 5. Strategy ────────────────────────────────────────────────────────
-    const strategySection = section('Strategy', [
-
-      row('Withdrawal strategy',
-        singleVal(stratLabel),
-        chip('info', 'Active'),
-        stratNotes[inputs.strategy] || '',
-        false, dual),
-
-      row('Dividend mode',
-        singleVal(inputs.dividendMode === 'reinvest' ? 'Reinvest' : 'Payout'),
-        chip('info', 'Note'),
-        inputs.dividendMode === 'reinvest'
-          ? 'GIA dividends compound inside the wrapper but are still taxed on an arising basis each year.'
-          : 'GIA dividends are paid out and counted as cashflow income. Taxed on an arising basis regardless.',
-        false, dual),
-    ]);
-
-    // ── 6. Bed-and-ISA ────────────────────────────────────────────────────
-    let bniSection = '';
+    // ── Card 4: Strategy + BnI ──
+    var bniContent = '';
     if (inputs.bniEnabled) {
+      var p1Pl = inputs.bniP1GIA > 0 ? D.formatMoney(inputs.bniP1GIA) + '/yr x ' + inputs.bniP1Years + ' yr' + (inputs.bniP1Years !== 1 ? 's' : '') : 'Not configured';
+      var p2Pl = dual ? (inputs.bniP2GIA > 0 ? D.formatMoney(inputs.bniP2GIA) + '/yr x ' + inputs.bniP2Years + ' yr' + (inputs.bniP2Years !== 1 ? 's' : '') : 'Not configured') : null;
 
-      const p1BniPlanned = inputs.bniP1GIA > 0
-        ? `${D.formatMoney(inputs.bniP1GIA)}/yr x ${inputs.bniP1Years} yr${inputs.bniP1Years !== 1 ? 's' : ''}`
-        : 'Not configured';
-      const p2BniPlanned = dual
-        ? (inputs.bniP2GIA > 0
-            ? `${D.formatMoney(inputs.bniP2GIA)}/yr x ${inputs.bniP2Years} yr${inputs.bniP2Years !== 1 ? 's' : ''}`
-            : 'Not configured')
-        : '–';
+      var survNote = p1BniV.survival[0] === 'red' ? p1BniV.survivalNote
+        : (p2BniV && p2BniV.survival[0] === 'red') ? p2BniV.survivalNote
+        : p1BniV.survival[0] === 'amber' ? p1BniV.survivalNote
+        : (p2BniV && p2BniV.survival[0] === 'amber') ? p2BniV.survivalNote
+        : p1BniV.survivalNote;
 
-      bniSection = section('Bed-and-ISA', [
-
+      bniContent = subheading('Bed-and-ISA') +
         row('Transfers planned',
-          dualVal(dual,
-            p1, p1BniPlanned, chip(...p1BniV.planned),
-            p2, p2BniPlanned, p2BniV ? chip(...p2BniV.planned) : ''
-          ),
-          dual ? '' : chip(...p1BniV.planned),
-          `Sells GIA holdings and rebuys within an ISA, sheltering future gains and income from tax. Annual ISA allowance cap: £20k per person.`,
-          true, dual),
-
+          (dual
+            ? valLine(p1Pl, chip.apply(null, p1BniV.planned), p1) + valLine(p2Pl, chip.apply(null, p2BniV.planned), p2)
+            : valLine(p1Pl, chip.apply(null, p1BniV.planned))) +
+          noteEl('Sells GIA and rebuys within an ISA, sheltering future gains and income. Annual ISA cap: \u00a320k/person.')
+        ) +
         row('GIA funds transfers?',
-          dualVal(dual,
-            p1, p1BniV.survivalLabel, chip(...p1BniV.survival),
-            p2, p2BniV ? p2BniV.survivalLabel : 'n/a', p2BniV ? chip(...p2BniV.survival) : ''
-          ),
-          dual ? '' : chip(...p1BniV.survival),
-          // Show the most severe note — red takes priority over amber
-          (p1BniV.survival[0] === 'red'
-            ? p1BniV.survivalNote
-            : p2BniV?.survival[0] === 'red'
-              ? p2BniV.survivalNote
-              : p1BniV.survival[0] === 'amber'
-                ? p1BniV.survivalNote
-                : p2BniV?.survival[0] === 'amber'
-                  ? p2BniV.survivalNote
-                  : p1BniV.survivalNote),
-          true, dual),
-      ]);
-
+          (dual
+            ? valLine(p1BniV.survivalLabel, chip.apply(null, p1BniV.survival), p1) +
+              valLine(p2BniV ? p2BniV.survivalLabel : 'n/a', p2BniV ? chip.apply(null, p2BniV.survival) : '', p2)
+            : valLine(p1BniV.survivalLabel, chip.apply(null, p1BniV.survival))) +
+          noteEl(survNote)
+        );
     } else if (giaTotal > 20000) {
-      // BnI disabled but GIA is significant — surface as an opportunity
-      bniSection = section('Bed-and-ISA', [
+      bniContent = subheading('Bed-and-ISA') +
         row('Bed-and-ISA',
-          singleVal('Not enabled'),
-          chip('amber', 'Opportunity'),
-          `GIA holdings of ${D.formatMoney(giaTotal)} could be progressively sheltered via Bed-and-ISA transfers of up to £20k/yr per person.`,
-          false, dual),
-      ]);
+          valLine('Not enabled', chip('amber','Opportunity')) +
+          noteEl('GIA holdings of ' + D.formatMoney(giaTotal) + ' could be progressively sheltered via Bed-and-ISA transfers of up to \u00a320k/yr per person.')
+        );
     }
 
-    // ── 7. Interest-bearing accounts ───────────────────────────────────────
-    const intSection = intAccts.length ? section('Interest-bearing accounts',
-      intAccts.map(a => {
-        const owner    = a.owner === 'p1' ? p1 : p2;
-        const rateStr  = a.rate != null ? ` · ${a.rate}% AER` : '';
-        const drawStr  = a.monthlyDraw ? ` · ${D.formatMoney(a.monthlyDraw)}/mo draw` : '';
-        return row(
-          a.name || '(unnamed)',
-          singleVal(`${D.formatMoney(a.value || 0)}${rateStr}${drawStr} — ${owner}`),
-          chip('info', 'Included'),
-          'Handled separately from GIA equity balance. Interest is taxed on an arising basis and is excluded from dividend calculations.',
-          false, dual
-        );
-      })
-    ) : '';
+    var c4 = card(
+      heading('Strategy') +
+      row('Withdrawal strategy',
+        valLine(stratLabels[inputs.strategy] || inputs.strategy, chip('info','Active')) +
+        noteEl(stratNotes[inputs.strategy] || '')
+      ) +
+      row('Dividend mode',
+        valLine(inputs.dividendMode === 'reinvest' ? 'Reinvest' : 'Payout', chip('info','Note')) +
+        noteEl(inputs.dividendMode === 'reinvest'
+          ? 'GIA dividends compound inside the wrapper but are still taxed annually on an arising basis.'
+          : 'GIA dividends paid out as income. Taxed on an arising basis regardless.')
+      ) +
+      bniContent
+    );
 
-    return [
-      peopleSection,
-      spendingSection,
-      returnsSection,
-      portfolioSection,
-      strategySection,
-      bniSection,
-      intSection,
-    ].join('');
+    // ── Card 5: Interest-bearing accounts (full width) ──
+    var c5 = '';
+    if (intAccts.length) {
+      c5 = card(
+        heading('Interest-bearing accounts') +
+        intAccts.map(function(a) {
+          var owner   = a.owner === 'p1' ? p1 : p2;
+          var rateStr = a.rate != null ? ' \u00b7 ' + a.rate + '% AER' : '';
+          var drawStr = a.monthlyDraw ? ' \u00b7 ' + D.formatMoney(a.monthlyDraw) + '/mo draw' : '';
+          return row(a.name || '(unnamed)',
+            valLine(D.formatMoney(a.value || 0) + rateStr + drawStr + ' \u2014 ' + owner, chip('info','Included')) +
+            noteEl('Handled separately from GIA equity balance. Interest taxed on arising basis; excluded from dividend calculations.')
+          );
+        }).join(''),
+        true
+      );
+    }
+
+    return '<div class="ps-grid">' + c1 + c2 + c3 + c4 + c5 + '</div>';
   }
 
-  // ─────────────────────────────────────────────
-  // EXPORT
-  // ─────────────────────────────────────────────
-  window.RetireSummary = { setData, render };
+  window.RetireSummary = { setData: setData, render: render };
 
 })();
