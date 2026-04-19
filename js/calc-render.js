@@ -107,9 +107,9 @@
         });
 
         // Show the matching panel, hide others.
-        // Full-width panels (summary, tables, outlook) use display:block;
-        // chart panels with a sidebar use display:grid.
-        const fullWidthPanels = new Set(['summary', 'tables', 'outlook']);
+        // Full-width panels (tables, outlook) use display:block;
+        // chart panels with a sidebar (including summary) use display:grid.
+        const fullWidthPanels = new Set(['tables', 'outlook']);
         document.querySelectorAll('.chart-panel').forEach(panel => {
           const isActive = panel.id === `results-panel-${tab}`;
           panel.style.display = isActive
