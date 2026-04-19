@@ -7,7 +7,7 @@
   let _annotations = [];
   let _depletions  = {};
   let _viewPerson = 'both';
-  let _useReal    = true;
+  let _useReal    = false;
   let _p2enabled  = true;
   let _activeResultsTab = 'income';
   let _incomeChart     = null;
