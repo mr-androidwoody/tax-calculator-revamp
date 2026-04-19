@@ -193,45 +193,34 @@
     if (mTarget) mTarget.textContent = incomeTargetStr;
     if (mPort)   mPort.textContent   = fmt(_lp);
 
-    // ── MC comparison badge ────────────────────────────────────────────
-    // Compare raw nominal end values so real/nominal toggle differences don't distort the gap.
-    // window.RetireMCResults is written by mc-render.js after each MC run.
+    // ── MC comparison icon + tooltip ──────────────────────────────────
+    // Compare raw nominal values — avoids real/nominal toggle mismatch.
     if (mPort) {
       const nominalDetEnd = _rows.length ? (_rows[_rows.length - 1]?.totalPortfolio || 0) : 0;
       const mcNominal     = window.RetireMCResults?.medianEndPortfolioNominal ?? null;
-      let badge = document.getElementById('m-port-mc-badge');
+      let mcIcon = document.getElementById('m-port-mc-icon');
 
       if (mcNominal !== null && nominalDetEnd > 0) {
-        const gap = (nominalDetEnd - mcNominal) / nominalDetEnd; // positive = MC lower
-        if (!badge) {
-          badge = document.createElement('div');
-          badge.id = 'm-port-mc-badge';
-          badge.style.cssText = [
-            'margin-top:6px',
-            'padding:4px 8px',
-            'border-radius:4px',
-            'font-size:0.78rem',
-            'line-height:1.35',
-            'background:#faeeda',
-            'color:#854f0b',
-          ].join(';');
-          mPort.insertAdjacentElement('afterend', badge);
+        const gap    = (nominalDetEnd - mcNominal) / nominalDetEnd;
+        const gapPct = Math.round(gap * 100);
+        const tipBody = gap >= 0.25
+          ? `Based on fixed return assumptions, real markets vary. Typical market outcome is ${gapPct}% lower. See Plan Outlook for a market-adjusted view.`
+          : `Consistent with the market-adjusted estimate from Plan Outlook.`;
+        const tipTitle = 'Straight-line estimate';
+
+        if (!mcIcon) {
+          mcIcon = document.createElement('span');
+          mcIcon.id = 'm-port-mc-icon';
+          mcIcon.style.cssText = 'display:inline-block;margin-left:6px;cursor:default;vertical-align:middle;opacity:0.7;font-size:0.85rem;color:#3460e8';
+          mcIcon.textContent = 'ⓘ';
+          // Insert after the metric-value element
+          mPort.insertAdjacentElement('afterend', mcIcon);
         }
-        if (gap >= 0.25) {
-          const gapPct = Math.round(gap * 100);
-          badge.textContent = `Based on fixed return assumptions — real markets vary. Typical market outcome is ${gapPct}% lower. See Plan Outlook for a market-adjusted view.`;
-          badge.style.display = '';
-        } else {
-          // Gap < 25%: show a neutral note, no alarm
-          badge.textContent = 'Consistent with market-adjusted estimate.';
-          badge.style.cssText = badge.style.cssText
-            .replace('background:#faeeda', 'background:#f0f0f0')
-            .replace('color:#854f0b', 'color:#555');
-          badge.style.display = '';
-        }
-      } else if (badge) {
-        // MC not yet run: hide any existing badge
-        badge.style.display = 'none';
+        mcIcon.style.display = '';
+        mcIcon.onmouseenter = e => showTooltip(mcIcon, tipBody, tipTitle);
+        mcIcon.onmouseleave = hideTooltip;
+      } else if (mcIcon) {
+        mcIcon.style.display = 'none';
       }
     }
   }
@@ -254,9 +243,14 @@
     return _tooltip;
   }
 
-  function showTooltip(anchorEl, text) {
+  function showTooltip(anchorEl, text, title) {
     const tip = getTooltip();
-    tip.textContent = text;
+    // Build two-part panel: blue header with (i) + title, white body with text
+    const iIcon = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;margin-right:5px;flex-shrink:0" aria-hidden="true"><circle cx="8" cy="8" r="7" stroke="white" stroke-width="1.5"/><line x1="8" y1="7" x2="8" y2="11.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="4.5" r="0.85" fill="white"/></svg>`;
+    tip.innerHTML = `
+      <div class="tooltip-header">${iIcon}<span class="tooltip-title">${title || ''}</span></div>
+      <div class="tooltip-body">${text}</div>
+    `;
     tip.classList.add('is-visible');
     const rect = anchorEl.getBoundingClientRect();
     // Position above the icon, centred on it
@@ -424,7 +418,7 @@
         const info = document.createElement('span');
         info.className = 'sidebar-legend__info';
         info.textContent = 'ⓘ';
-        info.addEventListener('mouseenter', e => { e.stopPropagation(); showTooltip(info, tipText); });
+        info.addEventListener('mouseenter', e => { e.stopPropagation(); showTooltip(info, tipText, _tooltipTitle(ds.label)); });
         info.addEventListener('mouseleave', hideTooltip);
         item.appendChild(info);
       }
@@ -466,7 +460,7 @@
       const sfInfo = document.createElement('span');
       sfInfo.className = 'sidebar-legend__info';
       sfInfo.textContent = 'ⓘ';
-      sfInfo.addEventListener('mouseenter', e => { e.stopPropagation(); showTooltip(sfInfo, sfTipText); });
+      sfInfo.addEventListener('mouseenter', e => { e.stopPropagation(); showTooltip(sfInfo, sfTipText, _tooltipTitle('Shortfall')); });
       sfInfo.addEventListener('mouseleave', hideTooltip);
       sfItem.appendChild(sfInfo);
     }
@@ -843,6 +837,24 @@
     if (label.includes('Cash')) return 'Liquid cash reserves — interest taxed as savings income within standard allowances. Used to bridge spending before investment wrappers are drawn.';
     return null;
   }
+  function _tooltipTitle(label) {
+    if (label === 'Shortfall')                          return 'Spending shortfall';
+    if (label === 'Salary'      || label.endsWith("'s Salary"))       return 'Employment income';
+    if (label === 'Cash'        || label.endsWith("'s Cash"))         return 'Cash reserves';
+    if (label === 'Interest'    || label.endsWith("'s Interest"))     return 'Interest income';
+    if (label === 'Dividends'   || label.endsWith("'s Dividends"))    return 'Dividend income';
+    if (label === 'GIA'         || label.endsWith("'s GIA"))          return 'GIA withdrawals';
+    if (label === 'ISA'         || label.endsWith("'s ISA"))          return 'ISA withdrawals';
+    if (label === 'SIPP / WP'   || label.endsWith("'s SIPP / WP"))   return 'Pension withdrawals';
+    if (label === 'State Pension'|| label.endsWith("'s State Pension")) return 'State Pension';
+    if (label.includes('SIPP')) return 'Pension (SIPP)';
+    if (label.includes('ISA'))  return 'ISA';
+    if (label.includes('GIA'))  return 'General Investment Account';
+    if (label.includes('Interest')) return 'Interest accounts';
+    if (label.includes('Cash')) return 'Cash';
+    return label;
+  }
+
 
   function renderWealthLegend(chart) {
     const host = document.getElementById('wealthLegend');
@@ -887,7 +899,7 @@
         const info = document.createElement('span');
         info.className = 'sidebar-legend__info';
         info.textContent = 'ⓘ';
-        info.addEventListener('mouseenter', e => { e.stopPropagation(); showTooltip(info, tipText); });
+        info.addEventListener('mouseenter', e => { e.stopPropagation(); showTooltip(info, tipText, _tooltipTitle(ds.label)); });
         info.addEventListener('mouseleave', hideTooltip);
         item.appendChild(info);
       }
