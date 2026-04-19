@@ -457,7 +457,7 @@
       );
     }
 
-    var intro = '<p class="ps-intro">This page summarises every assumption driving your projection and gives each one a verdict. Green means the assumption is sound. Amber means it’s worth a second look. Red means it’s likely to cause a problem and should be addressed. If you want to change anything, go back to Your plan, adjust the inputs, and re-run the projection to see the updated results here.</p>';
+    var intro = '<p class="ps-intro">This page summarises every assumption driving your projection and gives each one a verdict. <strong style="color:#3b6d11">Green</strong> means the assumption is sound. <strong style="color:#854f0b">Amber</strong> means it’s worth a second look. <strong style="color:#a32d2d">Red</strong> means it’s likely to cause a problem and should be addressed. If you want to change anything, go back to Your plan, adjust the inputs, and re-run the projection to see the updated results here.</p>';
 
     return intro + '<div class="ps-grid">' + c1 + c2 + c3 + c4 + c5 + '</div>';
   }
