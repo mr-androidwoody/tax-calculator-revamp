@@ -4493,7 +4493,7 @@ input[type="radio"] { accent-color: var(--accent); }
 /* Rows inside a card: label | values | chip+note */
 .ps-row {
   display: grid;
-  grid-template-columns: 105px 1fr 140px;
+  grid-template-columns: 25% 25% 50%;
   gap: 8px;
   padding: 7px 0;
   border-bottom: 1px solid var(--border);
