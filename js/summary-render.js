@@ -264,9 +264,12 @@
           ? vline(money(inputs.p1SPAmt) + '/yr at ' + inputs.p1SPAge, p1) +
             vline(money(inputs.p2SPAmt) + '/yr at ' + inputs.p2SPAge, p2)
           : vline(money(inputs.p1SPAmt) + '/yr at ' + inputs.p1SPAge),
-        dual
-          ? chip.apply(null, spVFn(inputs.p1SPAmt)) + ' ' + chip.apply(null, spVFn(inputs.p2SPAmt))
-          : chip.apply(null, spVFn(inputs.p1SPAmt)),
+        (function() {
+          var v1 = spVFn(inputs.p1SPAmt);
+          var v2 = dual ? spVFn(inputs.p2SPAmt) : null;
+          if (!dual || (v1[0] === v2[0] && v1[1] === v2[1])) return chip.apply(null, v1);
+          return chip.apply(null, v1) + ' ' + chip.apply(null, v2);
+        })(),
         spNote(dual ? Math.max(inputs.p1SPAmt, inputs.p2SPAmt) : inputs.p1SPAmt, inputs.p1SPAge)
       ) +
 
@@ -282,8 +285,9 @@
       row('Projection end',
         vline('From ' + inputs.startYear + ' to ' + inputs.endYear + ' (' + (inputs.endYear - inputs.startYear) + ' years)') +
         (dual && p2EndAge
-          ? vline(p1 + ' age ' + p1EndAge) + vline(p2 + ' age ' + p2EndAge)
-          : vline(p1 + ' age ' + p1EndAge)),
+          ? '<div class="ps-val-line"><span class="ps-pname">' + p1 + '</span><span class="ps-age">age ' + p1EndAge + '</span></div>' +
+            '<div class="ps-val-line"><span class="ps-pname">' + p2 + '</span><span class="ps-age">age ' + p2EndAge + '</span></div>'
+          : '<div class="ps-val-line"><span class="ps-age">age ' + p1EndAge + '</span></div>'),
         chip.apply(null, endV),
         endNote
       )
@@ -297,8 +301,8 @@
 
       row('Spending target',
         vline(money(inputs.spending) + '/yr'),
-        chip.apply(null, wrV),
-        wrNote
+        chip('info', 'Note'),
+        'This is the gross household spending target in today\'s money. The engine inflates it each year by your inflation assumption. The withdrawal rate this implies is assessed in the Portfolio card.'
       ) +
 
       (inputs.stepDownPct > 0 ? row('Step-down at 75',
@@ -331,14 +335,19 @@
     // ══════════════════════════════════════════════════════════════════════
     // CARD 3 — Portfolio
     // ══════════════════════════════════════════════════════════════════════
-    var portSummaryVal = wrRateStr + '% of ' + money(totalPort);
     var c3 = card(
       heading('Portfolio') +
 
-      row('Withdrawal rate',
+      row('Total portfolio',
         dual
-          ? vline(money(p1Total), p1) + vline(money(p2Total), p2) + vline(portSummaryVal)
-          : vline(portSummaryVal),
+          ? vline(money(p1Total), p1) + vline(money(p2Total), p2) + vline(money(totalPort) + ' total')
+          : vline(money(totalPort)),
+        chip('info', 'Note'),
+        'Combined starting portfolio across all wrappers and both people. This is the base from which the withdrawal rate is calculated.'
+      ) +
+
+      row('Withdrawal rate',
+        vline(wrRateStr + '% of ' + money(totalPort)),
         chip.apply(null, wrV),
         wrNote
       ) +
