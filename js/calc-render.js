@@ -7,7 +7,7 @@
   let _annotations = [];
   let _depletions  = {};
   let _viewPerson = 'both';
-  let _useReal    = false;
+  let _useReal    = true;
   let _p2enabled  = true;
   let _activeResultsTab = 'income';
   let _incomeChart     = null;
@@ -217,8 +217,9 @@
           mcIcon.id = 'm-port-mc-icon';
           mcIcon.style.cssText = 'display:inline-block;margin-left:6px;cursor:default;vertical-align:middle;opacity:0.7;font-size:0.85rem;color:#3460e8';
           mcIcon.textContent = 'ⓘ';
-          // Insert after the metric-value element
-          mPort.insertAdjacentElement('afterend', mcIcon);
+          // Insert into the metric-value-row wrapper, after the value
+          const row = mPort.closest('.metric-value-row') || mPort.parentElement;
+          row.appendChild(mcIcon);
         }
         mcIcon.style.display = '';
         mcIcon.onmouseenter = e => showTooltip(mcIcon, tipBody, tipTitle);
