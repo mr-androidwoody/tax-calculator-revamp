@@ -797,14 +797,15 @@
       state.projectionRun = true;
       refreshTabGating(_isPortfolioValid());
       CR.setResults(result, inputs.strategy, inputs.p2enabled);
+      window.RetireSummary?.setData(inputs, result, state.portfolioAccounts);
       CR.renderMetrics();
       CR.renderCharts();
       RetireTabs.switchTab('results');
       state.activeTab = 'results';
 
-      // Land on Sources of Income (first chart tab) — never auto-trigger MC
-      const incomeBtn = document.querySelector('.results-tab[data-results-tab="income"]');
-      if (incomeBtn) incomeBtn.click();
+      // Land on Plan Summary tab after each projection run
+      const summaryBtn = document.querySelector('.results-tab[data-results-tab="summary"]');
+      if (summaryBtn) summaryBtn.click();
 
       // If risk has been run before, mark results as stale and hide outlook tab
       if (state.riskRun) {

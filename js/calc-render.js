@@ -106,14 +106,20 @@
           b.classList.toggle('results-tab--inactive', b !== btn);
         });
 
-        // Show the matching panel, hide others
+        // Show the matching panel, hide others.
+        // Full-width panels (summary, tables, outlook) use display:block;
+        // chart panels with a sidebar use display:grid.
+        const fullWidthPanels = new Set(['summary', 'tables', 'outlook']);
         document.querySelectorAll('.chart-panel').forEach(panel => {
-          panel.style.display = panel.id === `results-panel-${tab}` ? 'grid' : 'none';
+          const isActive = panel.id === `results-panel-${tab}`;
+          panel.style.display = isActive
+            ? (fullWidthPanels.has(tab) ? 'block' : 'grid')
+            : 'none';
         });
 
         // Show/hide deterministic disclaimer
         const disclaimer = document.getElementById('det-disclaimer');
-        if (disclaimer) disclaimer.classList.toggle('det-disclaimer--hidden', tab === 'outlook');
+        if (disclaimer) disclaimer.classList.toggle('det-disclaimer--hidden', tab === 'outlook' || tab === 'summary');
 
         // Hide Test my plan button on outlook tab
         const testPlanBtn = document.getElementById('btn-test-plan');
@@ -121,6 +127,9 @@
 
         // Render tables on first visit
         if (tab === 'tables') renderTables();
+
+        // Render plan summary on first visit (or when stale after a new projection)
+        if (tab === 'summary') window.RetireSummary?.render();
       });
     });
   }
@@ -1155,6 +1164,55 @@
       renderWealthLegend(_wealthChart);
       renderInsightButton('wealth', _annotations.length > 0);
     }
+
+    // Update depletion alert on income chart after every render
+    _updateDepletionAlert();
+  }
+
+  // ─────────────────────────────────────────────
+  // DEPLETION ALERT
+  // Shown top-right of the income chart canvas when the total portfolio
+  // drops below 15% of its starting value at any point in the projection.
+  // ─────────────────────────────────────────────
+  function _updateDepletionAlert() {
+    const wrap = document.getElementById('income-chart-wrap');
+    if (!wrap) return;
+
+    const existing = document.getElementById('depletion-alert');
+
+    if (!_rows.length) {
+      if (existing) existing.remove();
+      return;
+    }
+
+    const startPortfolio = _rows[0]?.totalPortfolio || 0;
+    const threshold      = startPortfolio * 0.15;
+    const depletionRisk  = startPortfolio > 0 &&
+      _rows.some(r => r.totalPortfolio < threshold);
+
+    if (!depletionRisk) {
+      if (existing) existing.remove();
+      return;
+    }
+
+    // Already present — nothing to do
+    if (existing) return;
+
+    const alert = document.createElement('div');
+    alert.id = 'depletion-alert';
+    alert.innerHTML = `
+      <span class="depletion-alert__icon">&#9888;</span>
+      <div class="depletion-alert__text">
+        <strong>Portfolio approaches depletion.</strong>
+        Stress-test across 10,000 market scenarios.
+        <button class="depletion-alert__cta" id="depletion-alert-cta">Test my plan &rarr;</button>
+      </div>`;
+
+    alert.querySelector('#depletion-alert-cta').addEventListener('click', () => {
+      document.getElementById('btn-test-plan')?.click();
+    });
+
+    wrap.appendChild(alert);
   }
 
 
