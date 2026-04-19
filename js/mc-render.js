@@ -376,7 +376,7 @@
         <div class="mc-verdict-lower">
           <div class="mc-verdict-lower__left">
             <p class="mc-verdict-sentence">${verdictSentence}</p>
-            <div class="mc-verdict-meta">Based on ${r.simCount.toLocaleString('en-GB')} simulations · ${firstYear} – ${lastYear}</div><div class="mc-verdict-framing" style="color:rgba(255,255,255,0.75);margin-top:6px;font-size:0.82rem;line-height:1.4">Fixed return assumptions produce a straight-line estimate. These simulations show how real market variability affects your plan — the median path is your most realistic planning figure.</div>
+            <div class="mc-verdict-meta">Based on ${r.simCount.toLocaleString('en-GB')} simulations · ${firstYear} – ${lastYear}</div><div class="mc-verdict-framing" style="color:rgba(255,255,255,0.75);margin-top:6px;font-size:0.82rem;line-height:1.4">The Summary tab uses your conservative planning rate as a straight-line estimate. These simulations use historically-grounded market returns and real volatility — the median path is a more realistic central estimate of how your plan could unfold.</div>
           </div>
           <div class="mc-verdict-lower__right">
             ${shortfallHTML}
@@ -741,7 +741,7 @@
           </div>` : ''}
         </div>
       </div>
-      <p class="mc-bridge-note">Use the tabs above to explore charts and tables showing how your plan unfolds year by year under fixed assumptions.</p>`;
+      <p class="mc-bridge-note">Use the tabs above to explore charts and tables showing how your plan unfolds year by year under your planning assumptions.</p>`;
 
     const staleBanner = _stale
       ? `<div class="mc-stale-banner">⚠ Based on previous inputs. Re-run to update.</div>`
