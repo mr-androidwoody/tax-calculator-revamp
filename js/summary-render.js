@@ -88,7 +88,7 @@
     }
     var pct      = startingGIA > 0 ? (annualAmt * years / startingGIA) * 100 : 100;
     var plannedC = pct >= 98 ? 'green' : 'amber';
-    var plannedL = pct >= 98 ? 'Full shelter' : 'Partial — ' + Math.round(pct) + '% of GIA';
+    var plannedL = pct >= 98 ? 'Full shelter' : 'Partial (' + Math.round(pct) + '% of GIA)';
 
     if (depletionYear && depletionYear <= lastTransferYear) {
       var failYr  = depletionYear - startYear + 1;
@@ -168,7 +168,7 @@
 
     var eqV = equityPct < 60 ? ['amber','Conservative'] : equityPct <= 90 ? ['green','Balanced'] : ['amber','Aggressive'];
     var eqNote = equityPct < 60
-      ? equityPct + '% in equities may not generate enough long-run growth to support a multi-decade retirement. A higher allocation — even moving to 70% — would meaningfully improve expected outcomes, with sequence risk managed through a cash buffer.'
+      ? equityPct + '% in equities may not generate enough long-run growth to support a multi-decade retirement. Even moving to 70% would meaningfully improve expected outcomes, with sequence risk managed through a cash buffer.'
       : equityPct <= 90
         ? equityPct + '% in equities is well-suited to a long retirement horizon. The portfolio should generate real growth over time while the remaining allocation provides some cushion in down markets.'
         : equityPct + '% in equities is high. The portfolio will grow faster in good markets but is exposed to large drawdowns in the early years of retirement, which is when sequence risk does the most damage. A modest reduction in equity weighting now would reduce this exposure.';
@@ -183,9 +183,9 @@
 
     var tmV = inputs.thresholdMode === 'frozen' ? ['green','Conservative'] : inputs.thresholdMode === 'always' ? ['amber','Optimistic'] : ['info','Mixed'];
     var tmNote = inputs.thresholdMode === 'frozen'
-      ? 'Tax thresholds are held flat in nominal terms, so fiscal drag compounds as inflation pushes income into higher bands. This is the prudent assumption — it is what has happened in practice since 2021.'
+      ? 'Tax thresholds are held flat in nominal terms, so fiscal drag compounds as inflation pushes income into higher bands. This is the prudent assumption: it is what has happened in practice since 2021.'
       : inputs.thresholdMode === 'always'
-        ? 'Thresholds rise with inflation each year, which keeps effective tax rates stable. This is the optimistic assumption — it has not been government policy in recent years and may overstate post-tax income.'
+        ? 'Thresholds rise with inflation each year, which keeps effective tax rates stable. This is the optimistic assumption: it has not been government policy in recent years and may overstate post-tax income.'
         : 'Thresholds are frozen until ' + inputs.thresholdFromYear + ', then uprated with inflation. A pragmatic middle path that reflects near-term political reality while allowing for future indexation.';
 
     var p1EndAge = inputs.endYear - inputs.p1DOB;
@@ -194,7 +194,7 @@
     var endNote = p1EndAge >= 90
       ? 'Planning to ' + p1EndAge + ' covers the realistic upper end of life expectancy for someone retiring now. The plan should not run short unless returns are very poor for an extended period.'
       : p1EndAge >= 85
-        ? 'Planning to ' + p1EndAge + ' covers average life expectancy with some headroom. There is a reasonable chance of living longer — extending to age 90 would give the plan a more robust longevity buffer.'
+        ? 'Planning to ' + p1EndAge + ' covers average life expectancy with some headroom. There is a reasonable chance of living longer, so extending to age 90 would give the plan a more robust longevity buffer.'
         : 'Planning to only age ' + p1EndAge + ' is a short horizon for a retirement that could last 35 or more years. Extending the end year significantly reduces the risk of outliving the plan.';
 
     var FULL_SP = 12547;
@@ -202,14 +202,14 @@
       return amt <= 0 ? ['amber','Not set'] : amt > FULL_SP ? ['amber','Above full SP'] : ['green','Plausible'];
     }
     function spNote(amt, age) {
-      if (amt <= 0) return 'No State Pension entered. If you expect to receive one, add it — it is the most inflation-proof income stream in the plan.';
+      if (amt <= 0) return 'No State Pension entered. If you expect to receive one, add it: it is the most inflation-proof income stream in the plan.';
       if (amt > FULL_SP) return money(amt) + '/yr exceeds the full new State Pension (\u00a3' + FULL_SP.toLocaleString('en-GB') + '/yr in 2026\u201327). Check your Government Gateway forecast to confirm this is correct.';
       return money(amt) + '/yr at age ' + age + ' is consistent with a full or near-full NI record. State Pension is triple-lock linked and index-proof, making it the most reliable income source in the plan.';
     }
 
     var p1RetAge = inputs.p1SalaryStop > 0 ? inputs.p1SalaryStop : (inputs.startYear - inputs.p1DOB);
     var p2RetAge = dual && inputs.p2SalaryStop > 0 ? inputs.p2SalaryStop : (dual ? inputs.startYear - inputs.p2DOB : null);
-    function retVFn(age) { return age >= 57 ? ['green','Fine'] : ['red','Pre-57 \u2014 SIPP locked']; }
+    function retVFn(age) { return age >= 57 ? ['green','Fine'] : ['red','Pre-57: SIPP locked']; }
     function retNote(age, name, salary) {
       if (age < 57) return name + ' retires before the minimum pension access age of 57 (from 2028). The SIPP cannot be touched until then. GIA and ISA can bridge the gap, but make sure there is enough in those wrappers to cover the shortfall years.';
       return name + ' retires at ' + age + ', above the minimum pension access age. All wrappers are available from day one.';
@@ -228,7 +228,7 @@
     };
 
     var divNote = inputs.dividendMode === 'reinvest'
-      ? 'GIA dividends are reinvested rather than paid out. The balance compounds inside the wrapper, but dividends are still taxed on an arising basis each year — the tax cost is the same regardless of whether cash is received.'
+      ? 'GIA dividends are reinvested rather than paid out. The balance compounds inside the wrapper, but dividends are still taxed on an arising basis each year. The tax cost is the same regardless of whether cash is received.'
       : 'GIA dividends are paid out as income and counted against the household spending target. Taxed on an arising basis each year using the dividend allowance (currently \u00a3500) and dividend tax rates.';
 
     // BnI
@@ -280,7 +280,10 @@
       ) +
 
       row('Projection end',
-        vline(inputs.endYear + ' \u2014 ' + p1 + ' age ' + p1EndAge + (dual && p2EndAge ? ', ' + p2 + ' age ' + p2EndAge : '')),
+        vline('From ' + inputs.startYear + ' to ' + inputs.endYear + ' (' + (inputs.endYear - inputs.startYear) + ' years)') +
+        (dual && p2EndAge
+          ? vline(p1 + ' age ' + p1EndAge) + vline(p2 + ' age ' + p2EndAge)
+          : vline(p1 + ' age ' + p1EndAge)),
         chip.apply(null, endV),
         endNote
       )
@@ -445,7 +448,7 @@
           var drawStr = a.monthlyDraw ? ' \u00b7 ' + money(a.monthlyDraw) + '/mo draw' : '';
           return row(
             a.name || '(unnamed)',
-            vline(money(a.value || 0) + rateStr + drawStr + ' \u2014 ' + owner),
+            vline(money(a.value || 0) + rateStr + drawStr + ', ' + owner),
             chip('info','Included'),
             'This account is modelled separately from the main GIA balance. Interest is taxed as savings income each year using the Starting Rate for Savings, Personal Savings Allowance, and standard savings rates as applicable. Its balance is excluded from the dividend yield calculation to prevent double-counting.'
           );
