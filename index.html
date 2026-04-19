@@ -1102,8 +1102,20 @@
       </div>
 
       <!-- ── Plan summary tab ── -->
-      <div id="results-panel-summary" class="chart-panel chart-panel--full">
-        <div class="chart-canvas-area" id="summary-panel">
+      <div id="results-panel-summary" class="chart-panel">
+        <div class="chart-sidebar ps-sidebar">
+          <p class="chart-sidebar__label">Plan summary</p>
+          <p class="ps-sidebar__intro">This page summarises every assumption driving your projection and gives each one a verdict. <strong>Green</strong> means the assumption is sound. <strong>Amber</strong> means it's worth a second look. <strong>Red</strong> means it's likely to cause a problem and should be addressed.</p>
+          <hr class="chart-sidebar__divider" style="display:block; margin: 10px 0;">
+          <p class="chart-sidebar__label" style="margin-top:4px;">Jump to</p>
+          <nav class="ps-nav">
+            <a class="ps-nav__link" href="#ps-card-people">People &amp; timeline</a>
+            <a class="ps-nav__link" href="#ps-card-spending">Spending</a>
+            <a class="ps-nav__link" href="#ps-card-portfolio">Portfolio</a>
+            <a class="ps-nav__link" href="#ps-card-strategy">Strategy</a>
+          </nav>
+        </div>
+        <div class="chart-canvas-area ps-canvas-area" id="summary-panel">
           <div id="plan-summary-content">
             <div class="ps-empty">
               <strong>No projection run yet</strong>
