@@ -165,10 +165,10 @@
     // ── Derived values ─────────────────────────────────────────────────────
     var portSum   = C.summarisePortfolio(accounts);
     var equityPct = Math.round(portSum.overallAllocation.equities || 0);
-    var totalPort = rows[0] ? (rows[0].totalPortfolio || 0) : 0;
 
     var p1Total = (inputs.p1Bal.Cash || 0) + (inputs.p1Bal.GIAeq || 0) + (inputs.p1Bal.GIAcash || 0) + (inputs.p1Bal.SIPP || 0) + (inputs.p1Bal.ISA || 0);
     var p2Total = dual ? ((inputs.p2Bal.Cash || 0) + (inputs.p2Bal.GIAeq || 0) + (inputs.p2Bal.GIAcash || 0) + (inputs.p2Bal.SIPP || 0) + (inputs.p2Bal.ISA || 0)) : 0;
+    var totalPort = p1Total + p2Total;
     var p1GIA   = (inputs.p1Bal.GIAeq || 0) + (inputs.p1Bal.GIAcash || 0);
     var p2GIA   = dual ? ((inputs.p2Bal.GIAeq || 0) + (inputs.p2Bal.GIAcash || 0)) : 0;
     var giaTotal = p1GIA + p2GIA;
