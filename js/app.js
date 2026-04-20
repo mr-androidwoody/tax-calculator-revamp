@@ -826,6 +826,16 @@
       },
       p1Order: ['GIA', 'SIPP', 'ISA'],
       p2Order: ['GIA', 'SIPP', 'ISA'],
+      // Interest-bearing accounts (e.g. Invest Engine, QMMF with monthly draw).
+      // Passed to MC worker so it can model guaranteed income and balance depletion.
+      intAccts: (state.portfolioAccounts || [])
+        .filter(a => a.rate != null || a.monthlyDraw != null)
+        .map(a => ({
+          owner:       a.owner,
+          balance:     a.value || 0,
+          rate:        a.rate  || 0,
+          monthlyDraw: a.monthlyDraw || 0,
+        })),
     };
   }
 
@@ -1030,7 +1040,6 @@
     const _mcGrowth      = _mcAssume.growth;
     const _mcEquityVol   = _mcAssume.equityVol;
     const _mcInflationVol = _mcAssume.inflationVol;
-    window._mcDebug = { alloc: _mcAlloc, assume: _mcAssume, inputs };
 
     try {
       // ── Main run: 10,000 paths at current spending ─────────────────────

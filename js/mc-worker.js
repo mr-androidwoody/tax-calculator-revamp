@@ -341,6 +341,7 @@ function runPath(inputs, equityVol, inflationVol) {
     dividendYield,
     p2enabled,
     deferYears,
+    intAccts,
   } = inputs;
 
   const numYears = endYear - startYear + 1;
@@ -348,6 +349,9 @@ function runPath(inputs, equityVol, inflationVol) {
   // Deep-copy balances — each path starts from the same opening position.
   const p1Bal = { ...inputs.p1Bal };
   const p2Bal = { ...inputs.p2Bal };
+
+  // Deep-copy interest accounts so each path starts from the same balances.
+  const pathIntAccts = (intAccts || []).map(a => ({ ...a }));
 
   // Frozen tax thresholds (see file-level note).
   const PA = 12570;
@@ -398,6 +402,31 @@ function runPath(inputs, equityVol, inflationVol) {
     if (surplus > 0) p1Bal.Cash = (p1Bal.Cash || 0) + surplus;
 
     let shortfall = Math.max(0, target - guaranteed);
+
+    // ── Interest-bearing accounts ──────────────────────────────────────────
+    // Draw from each account up to its monthly draw target, capped by balance.
+    // Interest is earned at the account's nominal rate (not inflation-linked).
+    // This mirrors engine.js intAccts handling but without tax tracking.
+    let intBudget = shortfall;
+    for (const a of pathIntAccts) {
+      if ((a.balance || 0) <= 0 || intBudget <= 0) continue;
+      const effectiveRate  = Math.pow(1 + (a.rate / 100) / 365, 365) - 1;
+      const interestEarned = a.balance * effectiveRate;
+      const annualTarget   = (a.monthlyDraw || 0) * 12;
+      if (annualTarget <= 0) {
+        // No draw — just accrue interest
+        a.balance += interestEarned;
+        continue;
+      }
+      const drawActual    = Math.min(annualTarget, intBudget, a.balance + interestEarned);
+      const interestDrawn = Math.min(drawActual, interestEarned);
+      a.balance -= Math.max(0, drawActual - interestDrawn);
+      a.balance += interestEarned - interestDrawn;
+      a.balance  = Math.max(0, a.balance);
+      shortfall -= drawActual;
+      intBudget -= drawActual;
+    }
+    shortfall = Math.max(0, shortfall);
 
     // ── Deferral: suppress all portfolio draws during delay period ────────
     if (deferYears && yi < deferYears) shortfall = 0;
@@ -454,7 +483,8 @@ function runPath(inputs, equityVol, inflationVol) {
     if (p2enabled) p2Bal.Cash = Math.max(0, (p2Bal.Cash || 0) - p2TaxPaid);
 
     // ── Record end-of-year values ──────────────────────────────────────────
-    const portfolio = totalBal(p1Bal) + (p2enabled ? totalBal(p2Bal) : 0);
+    const intAcctTotal = pathIntAccts.reduce((sum, a) => sum + (a.balance || 0), 0);
+    const portfolio = totalBal(p1Bal) + (p2enabled ? totalBal(p2Bal) : 0) + intAcctTotal;
     portfolioByYear[yi] = portfolio;
     taxByYear[yi]       = totalTax;
 
