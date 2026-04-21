@@ -1421,9 +1421,9 @@
     const growthEl = document.getElementById('growth');
     if (!growthEl) return;
     growthEl.value = suggEl.dataset.suggestedRate;
-    // Clear preset radio selection since this is a custom value
+    // Clear preset radio selection since this is a custom-suggested value
     document.querySelectorAll('input[name="growthPreset"]').forEach(r => r.checked = false);
-    // Trigger drawdown rate refresh
+    // Refresh drawdown rates
     const s = C.summarisePortfolio(state.portfolioAccounts);
     refreshDrawdownRates(s.total);
   });
