@@ -371,14 +371,6 @@
       return `Combined state pension — ${parts.join(', ')}. The largest single lifetime income source`;
     }
 
-    if (label === 'Shortfall') {
-      const sfYears = rows
-        .map((r, i) => ({ year: r.year, sf: (_engineShortfall[i] || 0) * 1000 }))
-        .filter(x => x.sf >= 20000);
-      if (!sfYears.length) return 'Portfolio fully meets the spending target across all years with no shortfall';
-      return `Spending target unmet in ${sfYears.length} year${sfYears.length !== 1 ? 's' : ''}, first occurring in ${sfYears[0].year}`;
-    }
-
     return null;
   }
 
@@ -464,15 +456,27 @@
     sfLabel.style.flex = '1';
     sfItem.appendChild(sfSwatch);
     sfItem.appendChild(sfLabel);
-    const sfTipText = buildTooltipText('Shortfall', _rows, _viewPerson);
-    if (sfTipText) {
-      const sfInfo = document.createElement('span');
-      sfInfo.className = 'sidebar-legend__info';
-      sfInfo.textContent = 'ⓘ';
-      sfInfo.addEventListener('mouseenter', e => { e.stopPropagation(); showTooltip(sfInfo, sfTipText, _tooltipTitle('Shortfall')); });
-      sfInfo.addEventListener('mouseleave', hideTooltip);
-      sfItem.appendChild(sfInfo);
-    }
+    // Shortfall tooltip — computed dynamically so it reflects the current toggle state
+    const sfTipText = (() => {
+      if (sfRaw <= 0) return 'Portfolio fully meets the spending target across all years — no shortfall';
+      const sfYears = _rows
+        .map((r, i) => ({ year: r.year, sf: (_engineShortfall[i] || 0) * 1000 }))
+        .filter(x => x.sf >= 20000);
+      if (sfHidden > 0 && sfBase <= 0) {
+        // Shortfall is entirely due to toggled-off sources, not a genuine engine shortfall
+        return `No genuine shortfall — gap shown because one or more income sources are hidden in the chart`;
+      }
+      if (sfHidden > 0) {
+        return `Genuine shortfall in ${sfYears.length} year${sfYears.length !== 1 ? 's' : ''} from ${sfYears[0].year}, plus hidden sources adding ${fmt(sfHidden)}`;
+      }
+      return `Spending target unmet in ${sfYears.length} year${sfYears.length !== 1 ? 's' : ''}, first occurring in ${sfYears[0].year}`;
+    })();
+    const sfInfo = document.createElement('span');
+    sfInfo.className = 'sidebar-legend__info';
+    sfInfo.textContent = 'ⓘ';
+    sfInfo.addEventListener('mouseenter', e => { e.stopPropagation(); showTooltip(sfInfo, sfTipText, _tooltipTitle('Shortfall')); });
+    sfInfo.addEventListener('mouseleave', hideTooltip);
+    sfItem.appendChild(sfInfo);
     if (sfRaw > 0) {
       const sfVal = document.createElement('span');
       sfVal.className = 'sidebar-legend__value';
