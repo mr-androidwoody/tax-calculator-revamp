@@ -597,7 +597,7 @@
     const startYear = parseInt(safeEl('startYear')?.value) || new Date().getFullYear();
     const config = [
       {
-        giaIds:    ['p1GIAeq', 'p1GIAcash'],
+        giaIds:    ['p1GIAeq'],
         cashId:    'p1Cash',
         amtId:     'bniP1GIA',
         yearsId:   'bniP1Years',
@@ -606,7 +606,7 @@
         personKey: () => (safeEl('sp-p1name')?.value?.trim() || 'Person 1') + ' GIA',
       },
       {
-        giaIds:    ['p2GIAeq', 'p2GIAcash'],
+        giaIds:    ['p2GIAeq'],
         cashId:    'p2Cash',
         amtId:     'bniP2GIA',
         yearsId:   'bniP2Years',
@@ -677,7 +677,7 @@
         noteEl.textContent     = noteText;
       } else if (giaOnlyYrs > 0) {
         // Pre-projection estimate: GIA balance / annual amount
-        noteText  = `Est. ${giaOnlyYrs} yr${giaOnlyYrs !== 1 ? 's' : ''} at ${D.formatMoney(amt)}/yr from GIA balance`;
+        noteText  = `Est. ${giaOnlyYrs} yr${giaOnlyYrs !== 1 ? 's' : ''} at ${D.formatMoney(amt)}/yr (GIA excl. interest-bearing accounts)`;
         noteColor = giaOnlyYrs <= 3 ? '#a32d2d' : '#854f0b';
         noteEl.style.color     = noteColor;
         noteEl.style.fontStyle = 'italic';
