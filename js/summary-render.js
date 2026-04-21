@@ -127,7 +127,7 @@
         planned: [plannedC, plannedL],
         survival: ['red', 'At risk'],
         survivalLabel: 'GIA runs out in year ' + failYr,
-        survivalNote: 'GIA is exhausted before all transfers complete. Years ' + failYr + ' onwards will not execute. Reduce the duration to ' + safeYrs + (safeYrs !== 1 ? ' years' : ' year') + ' to match what the GIA can fund.',
+        survivalNote: 'GIA is exhausted before all transfers complete. Year ' + failYr + ' of the programme will not execute. Reduce "Number of years" to ' + safeYrs + (safeYrs !== 1 ? ' years' : ' year') + ' to match what the GIA can fund.',
       };
     }
     var finalRow = rows.find(function(r) { return r.year === lastTransferYear; });
@@ -349,7 +349,7 @@
       row('Spending target',
         vline(money(inputs.spending) + '/yr'),
         chip('info', 'Note'),
-        'This is the gross household spending target in today\'s money. The engine inflates it each year by your inflation assumption. The withdrawal rate this implies is assessed in the Portfolio card.'
+        'Your gross household spending target in today/s money. Switch to nominal view to see how this grows with inflation each year.'
       ) +
 
       (inputs.stepDownPct > 0 ? row('Step-down at 75',

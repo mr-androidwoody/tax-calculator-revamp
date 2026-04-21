@@ -17,6 +17,7 @@
     projectionRun: false,
     riskRun: false,    // true once MC has completed at least once
     riskStale: false,  // true when projection has been re-run since last MC run
+    lastResult: null,  // most recent engine projection result
   };
 
   // ─────────────────────────────
@@ -593,26 +594,29 @@
   }
 
   function _updateBniMaxYears() {
+    const startYear = parseInt(safeEl('startYear')?.value) || new Date().getFullYear();
     const config = [
       {
-        giaIds:  ['p1GIAeq', 'p1GIAcash'],
-        cashId:  'p1Cash',
-        amtId:   'bniP1GIA',
-        yearsId: 'bniP1Years',
-        noteId:  'bniP1YearsNote',
-        tableId: null,
+        giaIds:    ['p1GIAeq', 'p1GIAcash'],
+        cashId:    'p1Cash',
+        amtId:     'bniP1GIA',
+        yearsId:   'bniP1Years',
+        noteId:    'bniP1YearsNote',
+        tableId:   null,
+        personKey: () => (safeEl('sp-p1name')?.value?.trim() || 'Person 1') + ' GIA',
       },
       {
-        giaIds:  ['p2GIAeq', 'p2GIAcash'],
-        cashId:  'p2Cash',
-        amtId:   'bniP2GIA',
-        yearsId: 'bniP2Years',
-        noteId:  'bniP2YearsNote',
-        tableId: 'bniP2Table',
+        giaIds:    ['p2GIAeq', 'p2GIAcash'],
+        cashId:    'p2Cash',
+        amtId:     'bniP2GIA',
+        yearsId:   'bniP2Years',
+        noteId:    'bniP2YearsNote',
+        tableId:   'bniP2Table',
+        personKey: () => (safeEl('sp-p2name')?.value?.trim() || 'Person 2') + ' GIA',
       },
     ];
 
-    config.forEach(({ giaIds, cashId, amtId, yearsId, noteId, tableId }) => {
+    config.forEach(({ giaIds, cashId, amtId, yearsId, noteId, tableId, personKey }) => {
       const yearsEl = safeEl(yearsId);
       const noteEl  = safeEl(noteId);
       if (!yearsEl || !noteEl) return;
@@ -624,7 +628,6 @@
       const tableEl   = tableId ? safeEl(tableId) : null;
 
       if (available <= 0) {
-        // No GIA or cash — grey out section and show warning
         noteEl.textContent = 'No GIA available to fund transfers';
         noteEl.style.fontStyle = 'italic';
         noteEl.style.color = '#a32d2d';
@@ -648,28 +651,39 @@
         return;
       }
 
-      const maxYears = Math.min(30, Math.floor(available / amt));
+      // Use engine depletion year as the authoritative cap when a projection has run,
+      // otherwise fall back to static balance / annual amount estimate.
+      const depletions   = state.lastResult?.depletions;
+      const depletionYr  = depletions?.[personKey()]?.year ?? null;
+      const engineMaxYrs = depletionYr ? Math.max(1, depletionYr - startYear) : null;
+      const staticMaxYrs = Math.min(30, Math.floor(available / amt));
+      const maxYears     = engineMaxYrs !== null ? Math.min(30, engineMaxYrs) : staticMaxYrs;
+
       yearsEl.max = maxYears;
 
       // Clamp current value if it exceeds new max
       if (parseInt(yearsEl.value) > maxYears) yearsEl.value = maxYears;
 
-      // ── WR-adjusted range ────────────────────────────────────────────────
-      // Compute a withdrawal-rate-adjusted likely range alongside the static max.
-      // WR uses non-pension portfolio only (ISA + GIA + Cash) as the denominator,
-      // since pension is inaccessible early in retirement and including it flatters WR.
+      // ── Note text ──────────────────────────────────────────────────────────
       const spending = D.parseCurrency(safeEl('spending')?.value || '') || 0;
       const nonPensionTotal =
         (gv('p1GIAeq') || 0) + (gv('p1GIAcash') || 0) + (gv('p1Cash') || 0) + (gv('p1ISA') || 0) +
         (state.p2enabled ? ((gv('p2GIAeq') || 0) + (gv('p2GIAcash') || 0) + (gv('p2Cash') || 0) + (gv('p2ISA') || 0)) : 0);
       const wr = (spending > 0 && nonPensionTotal > 0) ? (spending / nonPensionTotal) * 100 : null;
 
-      // Midpoint multiplier by WR band, then build a ±1 year range capped at maxYears
-      let noteText = '';
+      let noteText  = '';
       let noteColor = '#854f0b';
 
-      if (maxYears < 30) {
-        noteText = `Up to ${maxYears} year${maxYears !== 1 ? 's' : ''} based on starting balances`;
+      if (engineMaxYrs !== null) {
+        // Engine result available — show depletion year as authoritative cap
+        noteText  = `GIA depletes in year ${engineMaxYrs} of the projection`;
+        noteColor = engineMaxYrs <= 3 ? '#a32d2d' : '#854f0b';
+        noteEl.style.color     = noteColor;
+        noteEl.style.fontStyle = 'italic';
+        noteEl.textContent     = noteText;
+      } else if (maxYears < 30) {
+        // No projection yet — fall back to static estimate
+        noteText  = `Up to ${maxYears} year${maxYears !== 1 ? 's' : ''} based on starting balances`;
         noteColor = maxYears <= 3 ? '#a32d2d' : '#854f0b';
 
         if (wr !== null && maxYears >= 2) {
@@ -683,7 +697,6 @@
           const rangeHigh = Math.min(maxYears, Math.round(midpoint) + 1);
 
           if (rangeHigh < maxYears) {
-            // Only show range if it's meaningfully lower than the static max
             noteText += ` · Likely ${rangeLow}–${rangeHigh} yrs at your withdrawal rate`;
           }
         }
@@ -692,7 +705,7 @@
         noteEl.style.fontStyle = 'italic';
         noteEl.textContent     = noteText;
       } else if (wr !== null) {
-        // maxYears is 30 (unconstrained by GIA) — still show WR guidance alone
+        // maxYears is 30 (unconstrained) — show WR guidance alone
         let midpointFrac;
         if (wr < 4)      { midpointFrac = 0.95; }
         else if (wr < 5) { midpointFrac = 0.80; }
@@ -1017,9 +1030,11 @@
       resetBtn();
 
       state.projectionRun = true;
+      state.lastResult = result;
       refreshTabGating(_isPortfolioValid());
       CR.setResults(result, inputs.strategy, inputs.p2enabled);
       window.RetireSummary?.setData(inputs, result, state.portfolioAccounts);
+      _updateBniMaxYears();
       window._debugResult = result;
       CR.renderMetrics();
       CR.renderCharts();
