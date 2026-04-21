@@ -200,7 +200,7 @@
         </div>
     
         <div class="setup-intro-actions">
-          <button class="btn btn-primary" data-action="switch-tab" data-tab="assumptions">
+          <button class="btn btn-primary" id="continueToAssumptionsBtn2" data-action="switch-tab" data-tab="assumptions" disabled>
             Continue to your plan →
           </button>
         </div>
@@ -1534,6 +1534,18 @@
     btn = e.target.closest('.wiz-tab[data-wiz]');
     if (btn) { showStep(parseInt(btn.dataset.wiz, 10)); }
   });
+})();
+</script>
+<script>
+// Mirror disabled state of the accounts-table Continue button onto the header one
+(function () {
+  const src  = document.getElementById('continueToAssumptionsBtn');
+  const copy = document.getElementById('continueToAssumptionsBtn2');
+  if (!src || !copy) return;
+  // Sync immediately then observe for attribute changes
+  function sync() { copy.disabled = src.disabled; }
+  sync();
+  new MutationObserver(sync).observe(src, { attributes: true, attributeFilter: ['disabled'] });
 })();
 </script>
 </body>
