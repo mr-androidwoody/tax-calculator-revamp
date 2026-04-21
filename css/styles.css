@@ -3744,17 +3744,30 @@ input[type="radio"] { accent-color: var(--accent); }
 }
 
 /* Growth rate suggestion card */
+/* Suppress borders on inflation row (sits above suggestion), suggestion row, and mgmt charge row */
 .growth-suggestion-row,
 .mgmt-charge-row {
   border-bottom: none !important;
 }
 
+.growth-suggestion-row + tr,
+.growth-suggestion-row {
+  border-top: none;
+}
+
+/* Make the td itself fill 100% width */
 .growth-suggestion-cell {
   padding-top: 12px;
   padding-bottom: 0;
+  width: 100%;
 }
 
 #growth-suggestion.growth-sugg--has-value {
+  padding: 0;
+  cursor: pointer;
+}
+
+#growth-suggestion.growth-sugg--has-value .growth-sugg__card {
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -3762,13 +3775,12 @@ input[type="radio"] { accent-color: var(--accent); }
   background: rgba(45, 91, 255, 0.06);
   border: 1px solid var(--accent);
   border-radius: var(--radius-xs);
-  cursor: pointer;
   transition: background 120ms ease;
   width: 100%;
   box-sizing: border-box;
 }
 
-#growth-suggestion.growth-sugg--has-value:hover {
+#growth-suggestion.growth-sugg--has-value:hover .growth-sugg__card {
   background: rgba(45, 91, 255, 0.11);
 }
 
@@ -3796,7 +3808,6 @@ input[type="radio"] { accent-color: var(--accent); }
   font-weight: 400;
 }
 
-/* remove old standalone rules that are now consolidated above */
 .wiz-card__hint {
   font-size: 0.76rem;
   color: var(--muted);
