@@ -1421,9 +1421,21 @@
     const growthEl = document.getElementById('growth');
     if (!growthEl) return;
     growthEl.value = suggEl.dataset.suggestedRate;
+    suggEl.classList.remove('growth-sugg--inactive');
     document.querySelectorAll('input[name="growthPreset"]').forEach(r => r.checked = false);
     const s = C.summarisePortfolio(state.portfolioAccounts);
     refreshDrawdownRates(s.total);
+  });
+
+  // Mark suggestion card inactive when a preset is chosen or growth is manually edited
+  document.querySelectorAll('input[name="growthPreset"]').forEach(r => {
+    r.addEventListener('change', () => {
+      document.getElementById('growth-suggestion')?.classList.add('growth-sugg--inactive');
+    });
+  });
+
+  safeEl('growth')?.addEventListener('input', () => {
+    document.getElementById('growth-suggestion')?.classList.add('growth-sugg--inactive');
   });
 
   document.getElementById('spending')?.addEventListener('input', () => {
