@@ -454,7 +454,7 @@
         if (sugg.cashlikePct > 0) parts.push(`${sugg.cashlikePct}% cashlike`);
         if (sugg.cashPct     > 0) parts.push(`${sugg.cashPct}% cash`);
         suggEl.dataset.suggestedRate = ratePct;
-        suggEl.innerHTML = `<div class="growth-sugg__card"><span class="growth-sugg__title">Suggested rate: <strong>${ratePct}%</strong></span><span class="growth-sugg__hint">Reflects your ${parts.join(' / ')} allocation. Click to apply.</span></div>`;
+        suggEl.innerHTML = `<div class="growth-sugg__card"><span class="growth-sugg__title">Suggested growth rate: <strong>${ratePct}%</strong></span><span class="growth-sugg__hint">Reflects your ${parts.join(' / ')} investment allocations.</span></div>`;
         suggEl.classList.add('growth-sugg--has-value');
       } else {
         suggEl.textContent = '';
