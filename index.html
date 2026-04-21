@@ -40,51 +40,6 @@
       color: #22314d;
       line-height: 1;
     }
-    /* ── Splash screen: show bg image, preserve fixed positioning and z-index ── */
-    #splash-screen {
-      background:
-        linear-gradient(
-          135deg,
-          rgba(18, 30, 60, 0.82) 0%,
-          rgba(10, 20, 50, 0.78) 50%,
-          rgba(18, 30, 60, 0.82) 100%
-        ),
-        url('img/bg.jpg') center center / cover fixed no-repeat;
-      position: fixed;
-      inset: 0;
-      z-index: 20000;
-    }
-
-    /* ── Background image ── */
-    body {
-      background:
-        url('img/bg.jpg') center center / cover fixed no-repeat;
-    }
-    /* Dark blue overlay on .app knocks back pinks, unifies to brand blues */
-    .app {
-      position: relative;
-      background: transparent;
-    }
-    .app::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background:
-        linear-gradient(
-          135deg,
-          rgba(18, 30, 60, 0.82) 0%,
-          rgba(10, 20, 50, 0.78) 50%,
-          rgba(18, 30, 60, 0.82) 100%
-        );
-      pointer-events: none;
-      z-index: 0;
-    }
-    /* Ensure content sits above the overlay — target specific children, not header or splash */
-    .page-content,
-    .app-footer {
-      position: relative;
-      z-index: 1;
-    }
   </style>
 
 </head>
