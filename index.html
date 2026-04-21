@@ -1548,5 +1548,14 @@
   new MutationObserver(sync).observe(src, { attributes: true, attributeFilter: ['disabled'] });
 })();
 </script>
+<script>
+// Ctrl+O / Cmd+O opens the Excel file picker from anywhere in the app
+document.addEventListener('keydown', function (e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+    e.preventDefault();
+    window.RetireExcelLoader?.openFilePicker();
+  }
+});
+</script>
 </body>
 </html>
