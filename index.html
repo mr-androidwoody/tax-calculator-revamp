@@ -22,6 +22,24 @@
       width: auto;
       max-height: 52px;
     }
+    .splash-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 1rem;
+    }
+    .splash-brand__logo {
+      flex-shrink: 0;
+      width: auto;
+      height: 44px;
+    }
+    .splash-brand__wordmark {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #22314d;
+      line-height: 1;
+    }
   </style>
 
 </head>
@@ -83,8 +101,20 @@
     <div class="splash-inner">
       <div class="splash-content">
 
-        <p class="splash-eyebrow">IncomeFlow</p>
-        <h1 class="splash-title">Plan your retirement income, year by year</h1>
+        <div class="splash-brand">
+          <svg class="splash-brand__logo" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="0"  y="0"  width="16" height="16" rx="3.5" fill="#adbdda"/>
+            <rect x="19" y="0"  width="16" height="16" rx="3.5" fill="#8faacc"/>
+            <rect x="38" y="0"  width="16" height="16" rx="3.5" fill="#6b8fbf"/>
+            <rect x="0"  y="19" width="16" height="16" rx="3.5" fill="#7ea3cc"/>
+            <rect x="19" y="19" width="16" height="16" rx="3.5" fill="#2e6fd4"/>
+            <rect x="38" y="19" width="16" height="16" rx="3.5" fill="#1a5ec4"/>
+            <rect x="0"  y="38" width="16" height="16" rx="3.5" fill="#1a55be"/>
+            <rect x="19" y="38" width="16" height="16" rx="3.5" fill="#1746a8"/>
+            <rect x="38" y="38" width="16" height="16" rx="3.5" fill="#1a9e4a"/>
+          </svg>
+          <span class="splash-brand__wordmark">IncomeFlow</span>
+        </div>
         <p class="splash-subtitle">IncomeFlow helps you see how your money can work through retirement, drawing from pensions, ISAs, and investments in a way that is tax-efficient and built around your life.</p>
 
         <hr class="splash-divider">
