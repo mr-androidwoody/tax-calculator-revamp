@@ -44,11 +44,18 @@
     /* ── Stress scenario toggle controls (inline inside hero band) ── */
     #mc-stress-controls { display: none; }
 
+    .mc-below-hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
     .mc-sc-inline {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin-top: 4px;
+      flex-shrink: 0;
     }
     .mc-sc-btns {
       display: flex;
@@ -67,48 +74,50 @@
       cursor: pointer;
       transition: background 0.15s, color 0.15s, border-color 0.15s;
       white-space: nowrap;
-      border: 1.5px solid rgba(255,255,255,0.45);
-      background: transparent;
-      color: rgba(255,255,255,0.75);
+      border: 1.5px solid #cbd5e1;
+      background: #f8fafc;
+      color: #64748b;
     }
     .mc-sc-btn:hover {
-      border-color: rgba(255,255,255,0.85);
-      color: #fff;
-      background: rgba(255,255,255,0.12);
+      border-color: #94a3b8;
+      color: #334155;
+      background: #f1f5f9;
     }
     .mc-sc-btn--active {
-      background: rgba(255,255,255,0.95);
-      border-color: transparent;
-      color: #1a2a1a;
+      background: #1e293b;
+      border-color: #1e293b;
+      color: #fff;
     }
     .mc-sc-btn--active:hover {
-      background: #fff;
-      color: #1a2a1a;
+      background: #0f172a;
+      color: #fff;
     }
     .mc-sc-btn--done {
-      border-color: rgba(255,255,255,0.55);
-      color: rgba(255,255,255,0.85);
+      border-color: #94a3b8;
+      color: #334155;
+      background: #fff;
     }
     .mc-sc-btn--idle {
-      border-color: rgba(255,255,255,0.28);
-      color: rgba(255,255,255,0.45);
+      border-style: dashed;
+      border-color: #cbd5e1;
+      color: #94a3b8;
     }
     .mc-sc-btn--idle:hover {
-      border-color: rgba(255,255,255,0.65);
-      color: rgba(255,255,255,0.85);
-      background: rgba(255,255,255,0.08);
+      border-color: #94a3b8;
+      color: #64748b;
+      background: #f8fafc;
     }
     .mc-sc-stale-dot {
       display: inline-block;
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background: rgba(255,200,60,0.9);
+      background: #f59e0b;
       flex-shrink: 0;
     }
     .mc-sc-desc {
       font-size: 10px;
-      color: rgba(255,255,255,0.45);
+      color: #64748b;
       line-height: 1.5;
       margin: 0;
       max-width: 420px;
