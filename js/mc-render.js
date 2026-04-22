@@ -65,6 +65,7 @@
   let _results       = { baseline: null, sorr: null, inflation: null, lostDecade: null };
   let _staleStates   = { baseline: false, sorr: false, inflation: false, lostDecade: false };
   let _activeState   = 'baseline';
+  let _narrativeSnapshot = null; // stashed by _renderNarrative for export.js
 
   // Legacy aliases — used by existing code that references _result / _stale directly.
   // These are kept as getters so existing call sites work unchanged.
@@ -1249,6 +1250,27 @@
         ${_buildStressBtnsHTML()}
       </div>`;
 
+    // Stash key computed strings for export.js snapshot.
+    // Only captured for baseline view — stress views are contextual commentary
+    // on the baseline, not primary action guidance.
+    if (!isStressView) {
+      _narrativeSnapshot = {
+        verdictWord,
+        verdictSentence,
+        pressureSentence,
+        survivalNote,
+        l1Pill,
+        l1Outcome,
+        l2Pill,
+        l2Outcome,
+        l3Pill,
+        l3Outcome,
+        actionLine,
+        actionImpact,
+        bulletItems: Array.isArray(bulletItems) ? bulletItems.slice() : [],
+      };
+    }
+
     el.innerHTML = staleBanner + s1 + stressRow + s23 + s4;
 
     // Push verdict colour onto the outlook tab button
@@ -1290,6 +1312,19 @@
     if (_result && _narrativeRevealed) render();
   }
 
-  window.RetireMCRender = { setResults, setStressResult, switchState, render, setReal, showLoader, setStale };
+  window.RetireMCRender = {
+    setResults, setStressResult, switchState, render, setReal, showLoader, setStale,
+    getSnapshot() {
+      return {
+        baseline:          _results.baseline   || null,
+        sorr:              _results.sorr        || null,
+        inflation:         _results.inflation   || null,
+        lostDecade:        _results.lostDecade  || null,
+        spendingContext:   _spendingContext,
+        meanInflation:     _meanInflation,
+        narrativeSnapshot: _narrativeSnapshot,
+      };
+    },
+  };
 
 })();

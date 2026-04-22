@@ -1061,6 +1061,8 @@
         delete document.body.dataset.riskRun;
       }
 
+      _syncHeaderBtn();
+
     } catch (err) {
       resetBtn();
       console.error('runProjection error:', err);
@@ -1496,6 +1498,19 @@
   });
 
   // ─────────────────────────────
+  // HEADER BUTTON TOGGLE
+  // Swaps Run projection ↔ Export plan when entering/leaving results tab.
+  // ─────────────────────────────
+  function _syncHeaderBtn() {
+    const runBtn    = document.querySelector('.top-header__actions [data-action="run-projection"]');
+    const exportBtn = document.querySelector('.top-header__actions [data-action="export-plan"]');
+    if (!runBtn || !exportBtn) return;
+    const onResults = state.activeTab === 'results';
+    runBtn.style.display    = onResults ? 'none' : '';
+    exportBtn.style.display = onResults ? ''     : 'none';
+  }
+
+  // ─────────────────────────────
   // GLOBAL CLICK DISPATCHER
   // ─────────────────────────────
   document.addEventListener('click', (e) => {
@@ -1509,6 +1524,9 @@
     if (action === 'remove-account') return removeAccount(el);
     if (action === 'run-projection') return runProjection();
     if (action === 'run-risk')       return runRisk();
+    if (action === 'export-plan')    return window.RetireExport?.exportJSON(
+      state.lastInputs, state.lastResult, state.portfolioAccounts
+    );
     // load-setup and load-excel handled by direct ID listeners below
 
     if (action === 'switch-tab') {
@@ -1538,6 +1556,7 @@
           r.checked = r.value === growthVal;
         });
       }
+      _syncHeaderBtn();
       window.scrollTo(0, 0);
       return RetireTabs.switchTab(tab);
     }
