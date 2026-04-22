@@ -82,6 +82,7 @@
   let _loaderInterval   = null;  // setInterval handle for progress bar
   let _resultReady      = false; // true once worker has posted its result
   let _loaderActive     = false; // true while loader is showing
+  let _narrativeRevealed = false; // true once narrative has been rendered at least once after a run
 
   // ── Deflation ─────────────────────────────────────────────────────────────
   function _deflate(v, i) {
@@ -95,8 +96,9 @@
     if (!el) return;
 
     // Reset state
-    _resultReady  = false;
-    _loaderActive = true;
+    _resultReady       = false;
+    _loaderActive      = true;
+    _narrativeRevealed = false;
     clearTimeout(_loaderTimer);
     clearInterval(_loaderInterval);
 
@@ -181,6 +183,7 @@
     if (wrap) {
       wrap.classList.add('mc-loader-wrap--fade-out');
       setTimeout(() => {
+        _narrativeRevealed = true;
         _syncToggleButtons();
         _syncStressControls();
         _renderNarrative();
@@ -191,6 +194,7 @@
         });
       }, 300);
     } else {
+      _narrativeRevealed = true;
       _syncToggleButtons();
       _syncStressControls();
       _renderNarrative();
@@ -233,7 +237,7 @@
 
   function setReal(useReal) {
     _useReal = useReal;
-    render();
+    if (_narrativeRevealed) render();
   }
 
   /**
@@ -284,7 +288,7 @@
   }
 
   function render() {
-    if (!_result) return;
+    if (!_result || !_narrativeRevealed) return;
     _syncToggleButtons();
     _syncStressControls();
     _renderNarrative();
@@ -987,8 +991,10 @@
     if (ctaBtn) ctaBtn.classList.toggle('btn-test-plan--stale', !!stale);
 
     _syncStressControls();
-    // If results are already rendered, update the banner in place.
-    if (_result) render();
+    // Only re-render if the narrative is already visible — avoids double-render
+    // during the initial reveal sequence when setStale is called before the
+    // 4s loader has finished.
+    if (_result && _narrativeRevealed) render();
   }
 
   window.RetireMCRender = { setResults, setStressResult, switchState, render, setReal, showLoader, setStale };
