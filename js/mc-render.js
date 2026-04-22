@@ -35,11 +35,40 @@
   }
 
   // ── State ─────────────────────────────────────────────────────────────────
+  // _results holds one result object per scenario state.
+  // _activeState is which one is currently displayed.
+  // _staleStates tracks stale flag per state independently.
+  // _spendingContext and _meanInflation are shared (from baseline run).
+  const STATE_IDS = ['baseline', 'sorr', 'inflation', 'lostDecade'];
+  const STATE_LABELS = {
+    baseline:    'Baseline',
+    sorr:        'Sequence risk',
+    inflation:   'High inflation',
+    lostDecade:  'Lost decade',
+  };
+  const STATE_DESCRIPTIONS = {
+    baseline:   null,
+    sorr:       'First 5 years: equity returns shifted 2\u03c3 below mean. Models an adverse early-retirement return sequence.',
+    inflation:  'Years 1\u201310: inflation drawn from N(5%, 2%). Models a 1970s-style sustained inflation regime.',
+    lostDecade: 'A fixed 10-year window of near-zero growth at an unpredictable point in the projection.',
+  };
+
+  let _results       = { baseline: null, sorr: null, inflation: null, lostDecade: null };
+  let _staleStates   = { baseline: false, sorr: false, inflation: false, lostDecade: false };
+  let _activeState   = 'baseline';
+
+  // Legacy aliases — used by existing code that references _result / _stale directly.
+  // These are kept as getters so existing call sites work unchanged.
+  function _getResult() { return _results[_activeState]; }
+  function _getStale()  { return _staleStates[_activeState]; }
+
+  // Keep _result and _stale as writable vars that are synced on state switch.
   let _result          = null;
+  let _stale           = false;
+
   let _meanInflation   = 0.025;
   let _useReal         = true;
-  let _spendingContext = null; // { currentSpending, sustainableSpending, targetConfidence, openingPortfolio }
-  let _stale           = false; // true when projection has been re-run since last MC run
+  let _spendingContext = null;
 
   // ── Loader state ──────────────────────────────────────────────────────────
   const LOADER_DURATION_MS = 4000;
@@ -168,11 +197,22 @@
 
   // ── Public API ────────────────────────────────────────────────────────────
   function setResults(result, meanInflation, spendingContext) {
-    _result          = result;
+    _results.baseline = result;
     _meanInflation   = (typeof meanInflation === 'number' && !isNaN(meanInflation))
       ? meanInflation : 0.025;
     _spendingContext = spendingContext || null;
     _resultReady     = true;
+
+    // When a new baseline arrives, all stress results that were computed from
+    // the previous inputs are now stale.
+    STATE_IDS.forEach(id => { if (id !== 'baseline') _staleStates[id] = _results[id] !== null; });
+
+    // Switch active view to baseline on a new baseline run.
+    _activeState = 'baseline';
+    _result      = _results.baseline;
+    _stale       = _staleStates.baseline;
+
+    _syncStressControls();
 
     // Write the nominal median end value immediately — before the loader delay —
     // so calc-render.js renderMetrics() can read it as soon as app.js triggers a refresh.
@@ -194,9 +234,57 @@
     render();
   }
 
+  /**
+   * Store a completed stress-test result and switch the active view to it.
+   * Called by app.js once a runStress() promise resolves.
+   *
+   * @param {string} stressId — 'sorr' | 'inflation' | 'lostDecade'
+   * @param {object} result   — same shape as baseline result
+   */
+  function setStressResult(stressId, result) {
+    if (!STATE_IDS.includes(stressId)) return;
+    _results[stressId]     = result;
+    _staleStates[stressId] = false;
+
+    // Switch to the newly arrived stress view.
+    _activeState = stressId;
+    _result      = result;
+    _stale       = false;
+
+    _syncStressControls();
+
+    // Expose median end for the metrics badge (same as baseline path).
+    if (result && result.p50Portfolio && result.p50Portfolio.length) {
+      window.RetireMCResults = {
+        medianEndPortfolioNominal: result.p50Portfolio[result.p50Portfolio.length - 1],
+      };
+    }
+
+    // Stress results arrive after the loader has already been shown by app.js;
+    // by the time we get here the loader timer has finished, so reveal directly.
+    _revealNarrative();
+  }
+
+  /**
+   * Switch the active view to a different computed state.
+   * Called when the user clicks a toggle button for an already-computed state.
+   *
+   * @param {string} stateId — 'baseline' | 'sorr' | 'inflation' | 'lostDecade'
+   */
+  function switchState(stateId) {
+    if (!STATE_IDS.includes(stateId)) return;
+    if (!_results[stateId]) return; // not yet computed — caller should fire a run instead
+    _activeState = stateId;
+    _result      = _results[stateId];
+    _stale       = _staleStates[stateId];
+    _syncStressControls();
+    _renderNarrative();
+  }
+
   function render() {
     if (!_result) return;
     _syncToggleButtons();
+    _syncStressControls();
     _renderNarrative();
   }
 
@@ -205,6 +293,74 @@
       .forEach(b => b.classList.remove('is-active'));
     document.querySelectorAll(`[data-action="${_useReal ? 'mc-real-on' : 'mc-real-off'}"]`)
       .forEach(b => b.classList.add('is-active'));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // STRESS CONTROLS
+  // Renders the four scenario toggle buttons into #mc-stress-controls.
+  // This container is a static sibling of #mc-narrative and is never replaced
+  // by narrative renders — only this function touches it.
+  // ─────────────────────────────────────────────────────────────────────────
+  function _syncStressControls() {
+    const container = document.getElementById('mc-stress-controls');
+    if (!container) return;
+
+    // Only show the controls once baseline has been run.
+    if (!_results.baseline) {
+      container.style.display = 'none';
+      return;
+    }
+
+    container.style.display = 'flex';
+
+    const btns = STATE_IDS.map(id => {
+      const hasResult  = !!_results[id];
+      const isActive   = id === _activeState;
+      const isStale    = hasResult && _staleStates[id];
+      const label      = STATE_LABELS[id];
+
+      // Pills: active gets solid fill; computed-but-inactive gets outlined; unrun gets muted outline.
+      let cls = 'mc-sc-btn';
+      if (isActive)         cls += ' mc-sc-btn--active';
+      else if (hasResult)   cls += ' mc-sc-btn--done';
+      else                  cls += ' mc-sc-btn--idle';
+
+      const staleIndicator = isStale
+        ? '<span class="mc-sc-stale-dot" title="Re-run to update"></span>'
+        : '';
+
+      // data-stress-state drives the click handler bound below.
+      return `<button class="${cls}" data-stress-state="${id}" type="button">${label}${staleIndicator}</button>`;
+    }).join('');
+
+    // Active scenario description (shown when a stress state is active).
+    const desc = (_activeState !== 'baseline' && STATE_DESCRIPTIONS[_activeState])
+      ? `<p class="mc-sc-desc">${STATE_DESCRIPTIONS[_activeState]}</p>`
+      : '';
+
+    container.innerHTML = `
+      <div class="mc-sc-row">
+        <div class="mc-sc-btns">${btns}</div>
+      </div>
+      ${desc}`;
+
+    // Bind click handlers on the freshly injected buttons.
+    container.querySelectorAll('[data-stress-state]').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const stateId = this.dataset.stressState;
+        if (stateId === _activeState) return; // already active — no-op
+
+        if (_results[stateId]) {
+          // Already computed — instant switch.
+          switchState(stateId);
+        } else {
+          // Not yet run — fire the stress run via app.js coordinator.
+          // We dispatch a custom event so mc-render.js doesn't need a direct
+          // reference to app.js. app.js listens for this and calls runStress.
+          document.dispatchEvent(new CustomEvent('mc-run-stress', { detail: { stressId: stateId } }));
+        }
+      });
+    });
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -406,7 +562,7 @@
         <div class="mc-verdict-lower">
           <div class="mc-verdict-lower__left">
             <p class="mc-verdict-sentence">${verdictSentence}</p>
-            <div class="mc-verdict-meta">Based on ${r.simCount.toLocaleString('en-GB')} simulations · ${firstYear} – ${lastYear}</div>
+            <div class="mc-verdict-meta">Based on ${r.simCount.toLocaleString('en-GB')} simulations · ${firstYear} – ${lastYear}${_activeState !== 'baseline' ? ' · ' + STATE_LABELS[_activeState] + ' scenario' : ''}</div>
           </div>
           <div class="mc-verdict-lower__right">
             ${shortfallHTML}
@@ -793,8 +949,9 @@
     const inflationPct = (_meanInflation * 100).toFixed(1);
     const basisNote = `<p class="mc-basis-note">All £ figures on this tab are in today's money, adjusted for ${inflationPct}% annual inflation.</p>`;
 
+    const staleScenario = _activeState !== 'baseline' ? ` (${STATE_LABELS[_activeState]})` : '';
     const staleBanner = _stale
-      ? `<div class="mc-stale-banner">⚠ Based on previous inputs. Re-run to update.</div>`
+      ? `<div class="mc-stale-banner">⚠ Based on previous inputs${staleScenario}. Re-run to update.</div>`
       : '';
     el.innerHTML = staleBanner + s1 + basisNote + s23 + s4;
 
@@ -806,17 +963,32 @@
     }
   }
   function setStale(stale) {
-    _stale = !!stale;
-    // Toggle stale dot on the Plan outlook tab button
+    // Mark the baseline stale.
+    _staleStates.baseline = !!stale;
+
+    // A re-projection also invalidates all stress results since their inputs
+    // have changed. Mark each computed stress state stale too.
+    if (stale) {
+      STATE_IDS.forEach(id => {
+        if (id !== 'baseline' && _results[id]) _staleStates[id] = true;
+      });
+    }
+
+    // Sync the active _stale var used by _renderNarrative.
+    _stale = _staleStates[_activeState];
+
+    // Toggle stale dot on the Plan outlook tab button (reflects baseline staleness).
     const outlookTab = document.getElementById('tab-btn-outlook');
-    if (outlookTab) outlookTab.classList.toggle('results-tab--stale', _stale);
-    // Toggle amber tint on the Test my plan CTA button
+    if (outlookTab) outlookTab.classList.toggle('results-tab--stale', !!stale);
+    // Toggle amber tint on the Test my plan CTA button.
     const ctaBtn = document.getElementById('btn-test-plan');
-    if (ctaBtn) ctaBtn.classList.toggle('btn-test-plan--stale', _stale);
-    // If results are already rendered, update the banner in place
+    if (ctaBtn) ctaBtn.classList.toggle('btn-test-plan--stale', !!stale);
+
+    _syncStressControls();
+    // If results are already rendered, update the banner in place.
     if (_result) render();
   }
 
-  window.RetireMCRender = { setResults, render, setReal, showLoader, setStale };
+  window.RetireMCRender = { setResults, setStressResult, switchState, render, setReal, showLoader, setStale };
 
 })();

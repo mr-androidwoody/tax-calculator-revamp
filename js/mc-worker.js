@@ -335,7 +335,7 @@ function sampleRate(mean, vol, floor = -0.5, ceiling = 2.0) {
 //   survived        — true if portfolio never hit zero across all years
 // ─────────────────────────────────────────────────────────────────────────────
 
-function runPath(inputs, equityVol, inflationVol) {
+function runPath(inputs, equityVol, inflationVol, stressMode, stressParams) {
   const {
     startYear, endYear,
     p1DOB, p2DOB,
@@ -376,9 +376,44 @@ function runPath(inputs, equityVol, inflationVol) {
     const p1Age = year - p1DOB;
     const p2Age = year - p2DOB;
 
-    // ── Sample this year's rates ───────────────────────────────────────────
-    const growthY    = sampleRate(growth,    equityVol,    -0.5, 2.0);
-    const inflationY = sampleRate(inflation, inflationVol, -0.1, 0.5);
+    // ── Sample this year's rates (stress-aware) ───────────────────────────
+    // Baseline: growth ~ N(growth, equityVol), inflation ~ N(inflation, inflationVol).
+    // Stress modes alter the distribution for a specific window of years only;
+    // outside the window, baseline sampling resumes.
+    //
+    // sorr (Sequence of Returns Risk):
+    //   First 5 years: growth mean shifted down by 2 sigma.
+    //   Models an adverse early-retirement return sequence (cf. 1973-77, 2000-02).
+    //
+    // inflation (High/Persistent Inflation):
+    //   Years 1-10: inflation ~ N(5%, 2.0%).
+    //   Models a 1970s-style sustained inflation regime.
+    //
+    // lostDecade (Lost Decade):
+    //   A fixed 10-year window (stressParams.lostDecadeStart, computed once per run
+    //   by mc-engine.js so all paths share the same shocked window):
+    //   growth ~ N(0%, equityVol) during the window.
+    //   Models Japan-1990s or US-2000s stagnant-growth decade at an unpredictable time.
+
+    let growthMean    = growth;
+    let growthVol     = equityVol;
+    let inflationMean = inflation;
+    let inflVol       = inflationVol;
+
+    if (stressMode === 'sorr') {
+      if (yi < 5) growthMean = growth - 2 * equityVol;
+      // inflationVol unchanged
+    } else if (stressMode === 'inflation') {
+      if (yi < 10) { inflationMean = 0.05; inflVol = 0.02; }
+      // growth unchanged
+    } else if (stressMode === 'lostDecade' && stressParams) {
+      const winStart = stressParams.lostDecadeStart;
+      if (yi >= winStart && yi < winStart + 10) growthMean = 0;
+      // inflationVol unchanged
+    }
+
+    const growthY    = sampleRate(growthMean,    growthVol, -0.5, 2.0);
+    const inflationY = sampleRate(inflationMean, inflVol,   -0.1, 0.5);
 
     // ── Guaranteed income (nominal) ────────────────────────────────────────
     const p1SP     = p1Age >= p1SPAge ? p1SPAmt * cumInfl : 0;
@@ -550,7 +585,7 @@ function percentile(sortedArr, p) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 self.onmessage = function (e) {
-  const { inputs, simCount, equityVol, inflationVol, mcGrowth } = e.data;
+  const { inputs, simCount, equityVol, inflationVol, mcGrowth, stressMode, stressParams } = e.data;
 
   // If mcGrowth is provided, override inputs.growth with the historically-grounded
   // figure from mc-assumptions.js. This allows the MC engine to use realistic
@@ -587,7 +622,7 @@ self.onmessage = function (e) {
   const PROGRESS_INTERVAL = 500;
 
   for (let sim = 0; sim < simCount; sim++) {
-    const { portfolioByYear, taxByYear, survived } = runPath(effectiveInputs, equityVol, inflationVol);
+    const { portfolioByYear, taxByYear, survived } = runPath(effectiveInputs, equityVol, inflationVol, stressMode, stressParams);
 
     for (let yi = 0; yi < numYears; yi++) {
       portfolioMatrix[yi][sim] = portfolioByYear[yi];
@@ -654,6 +689,8 @@ self.onmessage = function (e) {
 
   const result = {
     mode:             'montecarlo',
+    stressMode:       stressMode || null,
+    stressParams:     stressParams || null,
     simCount,
     years,
     p10Portfolio:     Array.from(p10),

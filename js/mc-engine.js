@@ -40,10 +40,12 @@
     : 'js/mc-worker.js'; // fallback for environments where currentScript is null
 
   const DEFAULT_SIM_COUNT = 10_000;
+  const STRESS_SIM_COUNT  = 2_500;
 
-  // Track the currently active worker so we can terminate it if a new run is
-  // requested before the previous one finishes.
-  let _activeWorker = null;
+  // Track the currently active workers so we can terminate on demand.
+  // Baseline and stress runs use separate slots so neither aborts the other.
+  let _activeWorker       = null;
+  let _activeStressWorker = null;
 
   /**
    * Run a Monte Carlo simulation.
@@ -126,5 +128,96 @@
     }
   }
 
-  window.RetireMCEngine = { run, cancel };
+  /**
+   * Run a named stress-test Monte Carlo simulation.
+   *
+   * Stress tests share the same worker code as the baseline but alter the
+   * sampling distribution for a defined window of years. Each stress run
+   * uses a separate worker slot so it cannot abort an in-flight baseline run.
+   *
+   * @param {string} stressId — 'sorr' | 'inflation' | 'lostDecade'
+   * @param {object} opts     — same shape as run() opts (inputs, equityVol, inflationVol, mcGrowth, onProgress)
+   * @returns {Promise<object>} — same result shape as run(), plus stressMode field
+   */
+  function runStress({ stressId, inputs, equityVol, inflationVol, mcGrowth, onProgress }) {
+    // Abort any previous in-flight stress run.
+    if (_activeStressWorker) {
+      _activeStressWorker.terminate();
+      _activeStressWorker = null;
+    }
+
+    // Lost decade: fix the shock window once per run on the main thread so
+    // all 2,500 paths share the same decade window (consistent presentation).
+    const numYears = inputs.endYear - inputs.startYear + 1;
+    let stressParams = null;
+    if (stressId === 'lostDecade') {
+      // Window can start any year from 0 up to numYears-10 (inclusive).
+      const maxStart = Math.max(0, numYears - 10);
+      stressParams = { lostDecadeStart: Math.floor(Math.random() * (maxStart + 1)) };
+    }
+
+    return new Promise((resolve, reject) => {
+      let worker;
+      try {
+        worker = new Worker(WORKER_URL);
+      } catch (err) {
+        reject(new Error(
+          'Failed to start stress-test worker. ' +
+          'Check that mc-worker.js is deployed alongside mc-engine.js. ' +
+          '(' + err.message + ')'
+        ));
+        return;
+      }
+
+      _activeStressWorker = worker;
+
+      worker.onmessage = function (e) {
+        const msg = e.data;
+        if (msg.type === 'progress') {
+          if (typeof onProgress === 'function') {
+            try { onProgress(msg.pct); } catch (_) { /* never let UI errors kill the run */ }
+          }
+          return;
+        }
+        if (msg.type === 'done') {
+          _activeStressWorker = null;
+          worker.terminate();
+          resolve(msg.result);
+          return;
+        }
+      };
+
+      worker.onerror = function (e) {
+        _activeStressWorker = null;
+        worker.terminate();
+        reject(new Error(
+          'Stress-test worker error: ' + (e.message || 'unknown error') +
+          (e.filename ? ' (' + e.filename + ':' + e.lineno + ')' : '')
+        ));
+      };
+
+      worker.postMessage({
+        inputs,
+        simCount:    STRESS_SIM_COUNT,
+        equityVol,
+        inflationVol,
+        mcGrowth,
+        stressMode:  stressId,
+        stressParams,
+      });
+    });
+  }
+
+  /**
+   * Cancel any in-flight stress-test run immediately.
+   * Safe to call even when no run is active.
+   */
+  function cancelStress() {
+    if (_activeStressWorker) {
+      _activeStressWorker.terminate();
+      _activeStressWorker = null;
+    }
+  }
+
+  window.RetireMCEngine = { run, cancel, runStress, cancelStress };
 })();
