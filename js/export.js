@@ -663,6 +663,82 @@
     }
   }
 
-  window.RetireExport = { exportJSON };
+  /**
+   * Hidden debug export — downloads the raw plan snapshot as JSON.
+   * Triggered by Ctrl+J in app.js. Works even if MC has not been run.
+   */
+  function exportRawJSON(inputs, engineResult, portfolioAccounts) {
+    if (!inputs || !engineResult) {
+      console.warn('RetireExport: no projection result available');
+      return;
+    }
+
+    const MCR = window.RetireMCRender;
+    const mcSnapshot = MCR && MCR.getSnapshot ? MCR.getSnapshot() : {
+      baseline: null, sorr: null, inflation: null, lostDecade: null,
+      spendingContext: null, meanInflation: 0.025, narrativeSnapshot: null,
+    };
+
+    const MCASSUME = window.RetireMCAssumptions;
+    const alloc = window.RetireCalc
+      ? window.RetireCalc.summarisePortfolio(portfolioAccounts).overallAllocation
+      : { equities: 0, bonds: 0, cashlike: 0, cash: 0 };
+    const mcDetail = MCASSUME
+      ? MCASSUME.getMCAssumptionsDetail(
+          alloc.equities  || 0,
+          alloc.bonds     || 0,
+          alloc.cashlike  || 0,
+          alloc.cash      || 0,
+        )
+      : null;
+
+    const snapshot = {
+      schema_version: SCHEMA_VERSION,
+      generated_at:   _isoNow(),
+      report_id:      _uuid(),
+      meta: {
+        report_title: 'Retirement Plan Report',
+        persons: [
+          { ref: 'p1', name: inputs.p1name, dob_year: inputs.p1DOB },
+          ...(inputs.p2enabled ? [{ ref: 'p2', name: inputs.p2name, dob_year: inputs.p2DOB }] : []),
+        ],
+        plan_start_year:     inputs.startYear,
+        plan_end_year:       inputs.endYear,
+        currency:            'GBP',
+        real_or_nominal:     'nominal',
+        withdrawal_strategy: inputs.strategy,
+        mc_run:              !!mcSnapshot.baseline,
+        stress_runs: {
+          sorr:       !!mcSnapshot.sorr,
+          inflation:  !!mcSnapshot.inflation,
+          lostDecade: !!mcSnapshot.lostDecade,
+        },
+      },
+      assumptions:  _buildAssumptions(inputs, portfolioAccounts, mcDetail),
+      plan:         _buildPlan(inputs, portfolioAccounts),
+      results:      _buildResults(inputs, engineResult, mcSnapshot),
+      stress_tests: mcSnapshot.baseline ? _buildStressTests(mcSnapshot) : null,
+      narrative:    _buildNarrative(mcSnapshot),
+      depletions:   engineResult.depletions  || {},
+      annotations:  engineResult.annotations || [],
+    };
+
+    const date  = new Date().toISOString().slice(0, 10);
+    const names = [inputs.p1name, inputs.p2enabled ? inputs.p2name : null]
+      .filter(Boolean).map(n => n.replace(/\s+/g, '-')).join('-');
+    const filename = `incomeflow-snapshot-${names}-${date}.json`;
+
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    console.info('RetireExport: snapshot downloaded as', filename);
+  }
+
+  window.RetireExport = { exportJSON, exportRawJSON };
 
 })();

@@ -1697,6 +1697,24 @@
   });
 
   // ─────────────────────────────
+  // HIDDEN DEBUG SHORTCUT — Ctrl+J
+  // Downloads the raw plan snapshot JSON without generating a PDF.
+  // Works after projection has been run; MC data included if available.
+  // ─────────────────────────────
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'j' && !e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      if (!state.lastInputs || !state.lastResult) {
+        console.warn('Ctrl+J: run a projection first');
+        return;
+      }
+      window.RetireExport?.exportRawJSON(
+        state.lastInputs, state.lastResult, state.portfolioAccounts
+      );
+    }
+  });
+
+  // ─────────────────────────────
   // STEPPER BUTTONS
   // ─────────────────────────────
   document.addEventListener('click', function (e) {
