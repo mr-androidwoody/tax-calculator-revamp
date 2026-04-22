@@ -1218,6 +1218,25 @@
       bulletItems = bulletItems.slice(0, 3);
       const bulletsHTML = bulletItems.map(b => `<li class="mc-action-bullet">${b}</li>`).join('');
 
+      // Stash key computed strings for export.js snapshot.
+      // Sits here inside the baseline branch where actionLine, actionImpact,
+      // and bulletItems are all in scope.
+      _narrativeSnapshot = {
+        verdictWord,
+        verdictSentence,
+        pressureSentence,
+        survivalNote,
+        l1Pill,
+        l1Outcome,
+        l2Pill,
+        l2Outcome,
+        l3Pill,
+        l3Outcome,
+        actionLine,
+        actionImpact,
+        bulletItems: bulletItems.slice(),
+      };
+
       s4 = `
         <div class="mc-primary-action" style="border-top-color:${verdictColour.actionBorder};background:${verdictColour.actionBg}">
           <div class="mc-primary-action__body">
@@ -1249,27 +1268,6 @@
       <div class="mc-below-hero">
         ${_buildStressBtnsHTML()}
       </div>`;
-
-    // Stash key computed strings for export.js snapshot.
-    // Only captured for baseline view — stress views are contextual commentary
-    // on the baseline, not primary action guidance.
-    if (!isStressView) {
-      _narrativeSnapshot = {
-        verdictWord,
-        verdictSentence,
-        pressureSentence,
-        survivalNote,
-        l1Pill,
-        l1Outcome,
-        l2Pill,
-        l2Outcome,
-        l3Pill,
-        l3Outcome,
-        actionLine,
-        actionImpact,
-        bulletItems: Array.isArray(bulletItems) ? bulletItems.slice() : [],
-      };
-    }
 
     el.innerHTML = staleBanner + s1 + stressRow + s23 + s4;
 
