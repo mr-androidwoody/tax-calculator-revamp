@@ -1116,7 +1116,7 @@
         <div class="mc-primary-action" style="border-top-color:${verdictColour.actionBorder};background:${verdictColour.actionBg}">
           <div class="mc-primary-action__body">
             <div class="mc-primary-action__left">
-              <div class="mc-primary-action__label" style="color:${verdictColour.actionLabel}">What this means</div>
+              <div class="mc-primary-action__label" style="color:${verdictColour.actionLabel}">Bottom line</div>
               <p class="mc-primary-action__text mc-primary-action__text--stress" style="color:${verdictColour.actionText}">${stressTakeaway}</p>
               <p class="mc-primary-action__impact" style="color:${verdictColour.actionImpact}">${stressDetail}</p>
             </div>
