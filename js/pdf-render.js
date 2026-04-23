@@ -275,7 +275,7 @@ function page1(s) {
   page.appendChild(brand);
   page.appendChild(content);
   page.appendChild(deco);
-  page.appendChild(footer(1, 8));
+  page.appendChild(footer(1, 9));
   return page;
 }
 
@@ -451,7 +451,7 @@ function page2(s) {
   body.appendChild(leftCol);
   body.appendChild(rightCol);
   page.appendChild(body);
-  page.appendChild(footer(2, 8));
+  page.appendChild(footer(2, 9));
   return page;
 }
 
@@ -587,7 +587,7 @@ function page3(s) {
   body.appendChild(col2);
   body.appendChild(col3);
   page.appendChild(body);
-  page.appendChild(footer(3, 8));
+  page.appendChild(footer(3, 9));
   return page;
 }
 
@@ -702,7 +702,7 @@ function page4(s) {
   body.appendChild(note);
 
   page.appendChild(body);
-  page.appendChild(footer(4, 8));
+  page.appendChild(footer(4, 9));
   return page;
 }
 
@@ -713,7 +713,7 @@ function page5(s) {
   const page = el('div','page');
   const allRows = s.results.annual_rows;
   const plan = s.plan;
-  const TOTAL = 8;
+  const TOTAL = 9;
 
   // Every other year: 2026, 2028, 2030 ... 2060
   const rows = allRows.filter(r => (r.year - s.meta.plan_start_year) % 2 === 0);
@@ -912,7 +912,7 @@ function page6(s) {
   const page = el('div','page');
   const allRows = s.results.annual_rows;
   const plan = s.plan;
-  const TOTAL = 8;
+  const TOTAL = 9;
 
   // Every other year matching asset projection
   const rows = allRows.filter(r => (r.year - s.meta.plan_start_year) % 2 === 0);
@@ -1075,7 +1075,7 @@ function page7(s) {
   const page = el('div','page');
   const allRows = s.results.annual_rows;
   const plan = s.plan;
-  const TOTAL = 8;
+  const TOTAL = 9;
 
   // Every other year
   const rows = allRows.filter(r => (r.year - s.meta.plan_start_year) % 2 === 0);
@@ -1210,7 +1210,7 @@ function page8(s) {
   const r = s.results, n = s.narrative, st = s.stress_tests || {};
   const plan = s.plan;
   const rate = r.success_rate;
-  const TOTAL = 8;
+  const TOTAL = 9;
 
   function vcol(rate) {
     if (rate == null) return { bg:'#2d55e8', ab:'#eaeffd', ac:'#2d55e8' };
@@ -1467,6 +1467,102 @@ function page8(s) {
 // RENDER
 // ══════════════════════════════════════════════════════
 
+  // ══════════════════════════════════════════════════════
+  // PAGE 9 — HOW THE ANALYSIS WORKS
+  // ══════════════════════════════════════════════════════
+  function page9(s) {
+    const page = el('div', 'page');
+    const TOTAL = 9;
+
+    const hdr = el('div', 'p3-header');
+    hdr.innerHTML = `<div class="p3-header-title">How the Analysis Works</div><div class="p3-header-sub">Methodology, assumptions, and stress scenario design</div>`;
+    page.appendChild(hdr);
+
+    const body = el('div', 'page-body');
+    body.style.cssText = 'padding:28px 48px;display:flex;flex-direction:column;gap:0;overflow:hidden;';
+
+    function section(title, text) {
+      const wrap = el('div', '');
+      wrap.style.cssText = 'margin-bottom:18px;';
+      const h = el('div', '');
+      h.style.cssText = 'font-size:11px;font-weight:800;color:var(--ink);margin-bottom:6px;letter-spacing:-.01em;';
+      h.textContent = title;
+      const p = el('p', '');
+      p.style.cssText = 'font-size:9.5px;color:var(--ink-mid);line-height:1.75;margin:0;';
+      p.textContent = text;
+      wrap.appendChild(h);
+      wrap.appendChild(p);
+      return wrap;
+    }
+
+    // Intro paragraph
+    const intro = el('p', '');
+    intro.style.cssText = 'font-size:10px;color:var(--ink-mid);line-height:1.75;margin:0 0 18px;border-left:3px solid var(--blue);padding-left:14px;';
+    intro.textContent = 'This section sets out how the numbers in this report are produced. The projection and risk analysis use different approaches that serve different purposes: the projection gives you a clear, single-path view of your plan under your chosen assumptions, while the risk analysis tests that plan across thousands of possible futures. The stress scenarios then go further, deliberately applying adverse conditions to show where your plan is most resilient and where it carries most sensitivity. Understanding how each element works helps you interpret the results with the right level of confidence.';
+    body.appendChild(intro);
+
+    body.appendChild(section(
+      'How the Projection Works',
+      'The projection runs a single, year-by-year simulation of your retirement using fixed assumptions throughout: the growth rate, inflation rate, and spending target you have set. Unlike the risk analysis, which samples thousands of random paths, the projection follows one deterministic path and shows you exactly how your portfolio, income, and tax position evolve under those assumptions. Each year the engine calculates income from all sources (salary, State Pension, and portfolio withdrawals), applies your chosen withdrawal strategy to draw from the right wrappers in the most tax-efficient order, computes income tax, capital gains tax, and National Insurance for each person, and carries the resulting balances forward into the next year. The charts and tables in this report all flow from this single projection run. Because it uses fixed assumptions, the projection is best understood as your central planning case: a clear, auditable baseline that shows where your plan is headed if the future broadly resembles your expectations. The risk analysis then sits alongside it, stress-testing that baseline across thousands of alternative futures to give you a sense of how much margin your plan carries.'
+    ));
+
+    body.appendChild(el('div', 'divider-blue'));
+
+    body.appendChild(section(
+      'How the Risk Analysis Works',
+      'The risk analysis runs 10,000 independent simulations of your retirement, each one a possible version of how markets and inflation might behave over your lifetime. In every simulation, annual returns and inflation are sampled randomly from realistic distributions based on your portfolio\'s actual asset allocation, using long-run assumptions drawn from Vanguard and BlackRock capital market estimates. Because each simulation is independent, the 10,000 paths collectively paint a picture of the range of outcomes your plan might face: some paths are kind, some are brutal, most fall somewhere in between. The plan strength figure shown is simply the proportion of those 10,000 simulations in which your portfolio survived to the end of the projection without running out of money. The stress scenarios below repeat this process under deliberately adverse conditions, so you can see how your plan holds up when markets behave at their worst.'
+    ));
+
+    body.appendChild(el('div', 'divider-blue'));
+
+    const stressLabel = el('div', 'section-label');
+    stressLabel.style.marginBottom = '10px';
+    stressLabel.textContent = 'Stress Scenario Assumptions';
+    body.appendChild(stressLabel);
+
+    const stressIntro = el('p', '');
+    stressIntro.style.cssText = 'font-size:9.5px;color:var(--ink-mid);line-height:1.75;margin:0 0 14px;';
+    stressIntro.textContent = 'The three stress scenarios test your plan against adverse but historically plausible conditions. Each scenario alters the market assumptions for a defined period only; outside that window, normal baseline assumptions apply.';
+    body.appendChild(stressIntro);
+
+    const scenGrid = el('div', '');
+    scenGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;';
+
+    const scenarios = [
+      {
+        title: 'Sequence of Returns Risk',
+        body:  'For the first five years of retirement, the expected equity return is shifted down by two standard deviations below the baseline. At typical volatility levels this implies average annual returns of around -25%, though individual simulated years will vary widely around that figure. This models the risk of a sharp market drawdown at the worst possible moment: early in retirement, before the portfolio has had time to recover and while withdrawals are already underway. Historical analogues include the oil crisis bear market of 1973-74, which saw UK equities fall over 70% in real terms, and the dot-com crash of 2000-02.',
+      },
+      {
+        title: 'High Inflation',
+        body:  'For the first ten years of retirement, the inflation rate is drawn from a distribution centred on 7.5% per year (standard deviation 2%), regardless of your planning assumption. This means individual years might range from roughly 3.5% to 11.5%. The practical effect is that your real spending target grows significantly faster than anticipated, eroding the purchasing power of each pound withdrawn. The scenario is broadly consistent with the UK inflationary experience of the late 1970s and mid-1980s, when CPI regularly exceeded 7-8% for sustained periods.',
+      },
+      {
+        title: 'Lost Decade',
+        body:  'For a randomly selected ten-year window somewhere within your retirement, the expected equity return is set to -0.5% per year nominal. Combined with a 2.5% inflation assumption, this implies real returns of approximately -3% annually throughout the window, a sustained period of gentle but compounding portfolio erosion while withdrawals continue. The timing is deliberately unpredictable: the window could fall early, mid, or late in retirement, reflecting the reality that prolonged growth droughts can strike at any point. Historical analogues include Japan following the 1990 asset bubble collapse and the US equity market across the 2000s, both of which delivered near-zero or negative real returns for a decade or more.',
+      },
+    ];
+
+    scenarios.forEach(sc => {
+      const card = el('div', '');
+      card.style.cssText = 'background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;';
+      const h = el('div', '');
+      h.style.cssText = 'font-size:10px;font-weight:800;color:var(--ink);margin-bottom:7px;';
+      h.textContent = sc.title;
+      const p = el('p', '');
+      p.style.cssText = 'font-size:8.5px;color:var(--ink-mid);line-height:1.7;margin:0;';
+      p.textContent = sc.body;
+      card.appendChild(h);
+      card.appendChild(p);
+      scenGrid.appendChild(card);
+    });
+
+    body.appendChild(scenGrid);
+    page.appendChild(body);
+    page.appendChild(footer(9, TOTAL));
+    return page;
+  }
+
   // ── Main generate function ────────────────────────────────────────────────
   async function generate(snapshot) {
     const { jsPDF } = window.jspdf;
@@ -1484,6 +1580,7 @@ function page8(s) {
       page6(snapshot),
       page7(snapshot),
       page8(snapshot),
+      page9(snapshot),
     ];
 
     // ── Off-screen container ───────────────────────────────────────────────
