@@ -740,7 +740,12 @@
         if (yi === -1) return '';
         const survRate  = r.survivalByYear[yi] / r.simCount;
         if (survRate < minSurv) minSurv = survRate;
-        const barColour  = survRate >= 0.99 ? '#3B6D11' : survRate >= 0.95 ? '#5A9E1A' : survRate >= 0.80 ? '#BA7517' : '#A32D2D';
+        const barColour  =
+          survRate >= 0.99 ? '#3B6D11' :
+          survRate >= 0.95 ? '#5A9E1A' :
+          survRate >= 0.90 ? '#8FA832' :
+          survRate >= 0.80 ? '#BA7517' :
+          survRate >= 0.70 ? '#C4513A' : '#A32D2D';
         const survWord   =
           survRate >= 0.99 ? 'Resilient' :
           survRate >= 0.95 ? 'Solid'     :
