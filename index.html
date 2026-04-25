@@ -47,7 +47,7 @@
         </svg>
         <div class="title-block">
           <h1>IncomeFlow</h1>
-          <p>Model and optimise how money flows from pensions, ISAs, and investments to fund your retirement.</p>
+          <p>Model how different retirement income scenarios may draw from pensions, ISAs and investments.</p>
         </div>
         <button id="homeBtn" class="home-btn" type="button" style="margin-left:auto">
           <span class="home-arrow">←</span>
@@ -689,9 +689,9 @@
                 </div>
               </div>
               <div class="drawdown-rate-legend">
-                <span class="drawdown-rate-legend__item drawdown-rate-legend__item--ok">Below 4% is sustainable</span>
-                <span class="drawdown-rate-legend__item drawdown-rate-legend__item--warn">4&#8211;5% monitor closely</span>
-                <span class="drawdown-rate-legend__item drawdown-rate-legend__item--err">Above 5% maybe risky</span>
+                <span class="drawdown-rate-legend__item drawdown-rate-legend__item--ok">Below 4%: lower withdrawal pressure in the model</span>
+                <span class="drawdown-rate-legend__item drawdown-rate-legend__item--warn">4&#8211;5%: moderate withdrawal pressure in the model</span>
+                <span class="drawdown-rate-legend__item drawdown-rate-legend__item--err">Above 5%: higher withdrawal pressure in the model</span>
               </div>
             </div>
             <div id="int-accts-section" style="display:none">
@@ -793,27 +793,27 @@
           <!-- Withdrawal strategy -->
           <div class="wiz-col">
             <div class="wiz-col-heading">Withdrawal strategy</div>
-            <p class="wiz-body-text">Each year, the projection decides which accounts to take money from: pension, ISA, or GIA. The order matters because each wrapper is taxed differently.<br><br>Pension withdrawals are partly taxable, ISA withdrawals are completely tax-free, and GIA withdrawals may trigger capital gains tax. Try each strategy and compare the lifetime tax figures in Your outlook to see which approach works best for your situation.</p>
+            <p class="wiz-body-text">Each year, the projection decides which accounts to take money from: pension, ISA, or GIA. The order matters because each wrapper is taxed differently.<br><br>Pension withdrawals are partly taxable, ISA withdrawals are completely tax-free, and GIA withdrawals may trigger capital gains tax. Try each strategy and compare the lifetime tax figures in Your outlook to see which scenario produces the most favourable modelled outcome.</p>
             <div class="wiz-cards">
               <label class="wiz-card">
                 <input type="radio" name="withdrawalStrategy" value="balanced" checked>
-                <span class="wiz-card__title">Tax Band Optimiser</span>
-                <span class="wiz-card__hint">Uses pension withdrawals to fill tax bands, then draws from GIA and ISA to keep income within lower rates. Balances sources each year to minimise tax.</span>
+                <span class="wiz-card__title">Tax band-led scenario</span>
+                <span class="wiz-card__hint">Uses pension withdrawals to fill tax bands, then draws from GIA and ISA to keep income within lower rates. Balances sources each year to reduce modelled tax.</span>
               </label>
               <label class="wiz-card">
                 <input type="radio" name="withdrawalStrategy" value="isaFirst">
-                <span class="wiz-card__title">Pension Preservation</span>
-                <span class="wiz-card__hint">Prioritises ISA and GIA withdrawals, deferring pension access. Keeps pension invested longer for tax advantages and potential inheritance benefits.</span>
+                <span class="wiz-card__title">Pension-later scenario</span>
+                <span class="wiz-card__hint">Prioritises ISA and GIA withdrawals, deferring pension access. Keeps pension invested longer for potential tax and inheritance advantages in the model.</span>
               </label>
               <label class="wiz-card">
                 <input type="radio" name="withdrawalStrategy" value="sippFirst">
-                <span class="wiz-card__title">Pension Front-Loading</span>
-                <span class="wiz-card__hint">Draws heavily from pension early, maximising lower tax bands before State Pension. Surplus income is reinvested into ISAs for long-term efficiency.</span>
+                <span class="wiz-card__title">Pension-earlier scenario</span>
+                <span class="wiz-card__hint">Draws heavily from pension early, modelling lower tax bands before State Pension. Surplus income is reinvested into ISAs in the projection.</span>
               </label>
               <label class="wiz-card">
                 <input type="radio" name="withdrawalStrategy" value="taxMin">
-                <span class="wiz-card__title">Allowance Maximiser</span>
-                <span class="wiz-card__hint">Uses all available tax-free allowances each year, keeping taxable income low. Defers additional withdrawals where possible to avoid higher tax exposure.</span>
+                <span class="wiz-card__title">Allowance-led scenario</span>
+                <span class="wiz-card__hint">Uses all available tax-free allowances each year, keeping modelled taxable income low. Defers additional withdrawals where possible to reduce modelled tax exposure.</span>
               </label>
             </div>
           </div>
@@ -1135,7 +1135,7 @@
       <div id="results-panel-summary" class="chart-panel">
         <div class="chart-sidebar ps-sidebar">
           <p class="chart-sidebar__label">Plan summary</p>
-          <p class="ps-sidebar__intro">In this section you'll find a verdict on every key assumption driving your projection. <strong style="color:#3b6d11">Green</strong> means the assumption is sound. <strong style="color:#854f0b">Amber</strong> means it's worth a second look. <strong style="color:#a32d2d">Red</strong> means it's likely to cause a problem and should be addressed. If anything needs changing, head back to Your plan and re-run.</p>
+          <p class="ps-sidebar__intro">In this section you'll find a review of every key assumption driving your projection. <strong style="color:#3b6d11">Green</strong> means the assumption is within the model's lower-pressure range. <strong style="color:#854f0b">Amber</strong> means the assumption has a noticeable effect on the projection. <strong style="color:#a32d2d">Red</strong> means the assumption creates significant pressure in the projection - review before relying on this result. If anything needs changing, head back to Your plan and re-run.</p>
           <hr class="chart-sidebar__divider" style="display:block; margin: 10px 0;">
           <nav class="ps-nav">
             <button class="ps-nav__link ps-nav__link--active" data-ps-tab="ps-card-people">People &amp; timeline</button>
@@ -1148,7 +1148,7 @@
           <div id="plan-summary-content">
             <div class="ps-empty">
               <strong>No projection run yet</strong>
-              Run a projection to see a summary of your plan assumptions and verdicts.
+              Run a projection to see a review of your plan assumptions.
             </div>
           </div>
         </div>
